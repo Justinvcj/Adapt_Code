@@ -1,63 +1,88 @@
 import React from 'react';
-
-interface Problem {
-  title: string;
-  description: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  conceptTag: string;
-}
+import ReactMarkdown from 'react-markdown';
+import { Clock, Loader2, Lightbulb } from 'lucide-react';
 
 interface ProblemPanelProps {
-  problem: Problem;
-  hintText: string | null;
+  problem: any;
+  timeSeconds: number;
+  attempts: number;
+  hint: string | null;
+  loadingHint: boolean;
   onShowHint: () => void;
-  showHintButton: boolean;
 }
 
-export default function ProblemPanel({ problem, hintText, onShowHint, showHintButton }: ProblemPanelProps) {
-  const diffColor = {
-    easy: 'text-green-400 bg-green-400/10',
-    medium: 'text-yellow-400 bg-yellow-400/10',
-    hard: 'text-red-400 bg-red-400/10'
-  }[problem.difficulty];
+export default function ProblemPanel({ problem, timeSeconds, attempts, hint, loadingHint, onShowHint }: ProblemPanelProps) {
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 p-6 overflow-y-auto text-slate-300">
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-white">{problem.title}</h1>
-        <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${diffColor}`}>
-          {problem.difficulty}
-        </span>
-        <span className="px-2 py-0.5 rounded text-xs font-semibold uppercase text-blue-400 bg-blue-400/10">
-          {problem.conceptTag.replace('_', ' ')}
-        </span>
+    <div className="w-1/2 flex flex-col border-r border-slate-800 bg-slate-950/50 overflow-hidden">
+      {/* Toolbar */}
+      <div className="h-14 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 bg-slate-900/50">
+        <div className="flex items-center gap-3">
+          <span className={`px-2 py-0.5 rounded text-xs font-medium border uppercase tracking-wider ${
+            problem.difficulty_level === 'easy' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
+            problem.difficulty_level === 'medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 
+            'bg-red-500/10 text-red-400 border-red-500/20'
+          }`}>
+            {problem.difficulty_level}
+          </span>
+          <span className="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 capitalize">
+            {problem.concept_tag.replace('_', ' ')}
+          </span>
+        </div>
+        <div className="flex items-center gap-4 text-slate-400 text-sm font-medium">
+          <div className="flex items-center gap-1.5 bg-slate-900 px-3 py-1 rounded-full border border-slate-800 shadow-inner">
+            <Clock className="w-4 h-4 text-indigo-400" />
+            {formatTime(timeSeconds)}
+          </div>
+        </div>
       </div>
 
-      <div className="prose prose-invert max-w-none mb-8">
-        {/* In a real app we'd use a Markdown parser here like react-markdown */}
-        <p className="whitespace-pre-wrap leading-relaxed">{problem.description}</p>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <h1 className="text-2xl font-semibold text-slate-100">{problem.title}</h1>
+        
+        <div className="prose prose-invert max-w-none text-slate-300">
+          <ReactMarkdown>{problem.description}</ReactMarkdown>
+        </div>
+
+        {problem.test_cases && problem.test_cases.length > 0 && (
+          <div className="space-y-3 mt-8">
+            <h3 className="text-lg font-medium text-slate-200">Examples</h3>
+            {problem.test_cases.slice(0, 2).map((tc: any, i: number) => (
+              <div key={i} className="bg-slate-900 border border-slate-800 rounded-lg p-4 font-mono text-sm">
+                <div className="mb-2"><span className="text-slate-500 select-none">Input: </span><span className="text-indigo-300">{tc.input}</span></div>
+                <div><span className="text-slate-500 select-none">Output: </span><span className="text-green-300">{tc.expected_output}</span></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Hint Section */}
+        {(attempts >= 2 || hint) && (
+          <div className="mt-8 p-4 border border-indigo-500/20 bg-indigo-500/5 rounded-xl">
+            {!hint ? (
+              <button 
+                onClick={onShowHint}
+                disabled={loadingHint}
+                className="flex items-center gap-2 text-indigo-400 font-medium hover:text-indigo-300 transition-colors"
+              >
+                {loadingHint ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+                Show Hint (May reduce mastery gain)
+              </button>
+            ) : (
+              <div>
+                <h4 className="flex items-center gap-2 text-indigo-400 font-medium mb-2"><Lightbulb className="w-4 h-4" /> Hint</h4>
+                <p className="text-slate-300">{hint}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {showHintButton && !hintText && (
-        <div className="mt-8 p-4 bg-slate-900 border border-slate-700 rounded-lg">
-          <p className="text-sm text-slate-400 mb-3">You've made a few attempts. Would you like a hint?</p>
-          <button 
-            onClick={onShowHint}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium text-sm transition-colors"
-          >
-            Show Hint
-          </button>
-        </div>
-      )}
-
-      {hintText && (
-        <div className="mt-8 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-lg">
-          <h3 className="text-indigo-400 font-semibold mb-2 flex items-center gap-2">
-            💡 Hint
-          </h3>
-          <p className="text-slate-300 text-sm whitespace-pre-wrap">{hintText}</p>
-        </div>
-      )}
     </div>
   );
 }
