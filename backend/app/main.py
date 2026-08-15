@@ -14,6 +14,19 @@ from app.routers.history import router as history_router
 from app.routers.admin import router as admin_router
 from app.core.rate_limit import setup_rate_limiting
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        return response
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
@@ -22,13 +35,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
 setup_rate_limiting(app)
 
-# Configure CORS
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Configure CORS strictly
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL, "http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 # Include routers

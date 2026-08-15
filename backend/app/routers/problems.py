@@ -2,16 +2,18 @@ import time
 import random
 import numpy as np
 from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from app.core.database import get_supabase
 from app.core.dependencies import get_current_user, bkt_doctor, linucb_agent
 from app.services.prerequisites import can_access_concept
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api", tags=["problems"])
 supabase = get_supabase()
 
 @router.get("/problem/next")
-async def get_next_problem(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+@limiter.limit("30/minute")
+async def get_next_problem(request: Request, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         res = supabase.table("problems").select("*").execute()
         all_problems = res.data
@@ -88,7 +90,8 @@ async def get_next_problem(user_id: str = Depends(get_current_user)) -> Dict[str
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/hint/{problem_id}")
-async def get_hint(problem_id: str, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+@limiter.limit("20/minute")
+async def get_hint(request: Request, problem_id: str, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         res = supabase.table("problems").select("hint_text").eq("problem_id", problem_id).execute()
         if not res.data:

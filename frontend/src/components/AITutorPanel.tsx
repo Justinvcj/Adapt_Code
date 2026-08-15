@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface AITutorPanelProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export default function AITutorPanel({ isOpen, explanation, onClose, onTrySimila
             </div>
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="prose prose-invert prose-indigo max-w-none text-sm">
-                <ReactMarkdown>{explanation}</ReactMarkdown>
+                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{explanation}</ReactMarkdown>
               </div>
             </div>
             <div className="p-4 border-t border-slate-800 bg-slate-900/50">

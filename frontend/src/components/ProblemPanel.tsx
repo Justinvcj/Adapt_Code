@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import { Clock, Loader2, Lightbulb } from 'lucide-react';
 
 interface ProblemPanelProps {
@@ -47,7 +48,7 @@ export default function ProblemPanel({ problem, timeSeconds, attempts, hint, loa
         <h1 className="text-2xl font-semibold text-slate-100">{problem.title}</h1>
         
         <div className="prose prose-invert max-w-none text-slate-300">
-          <ReactMarkdown>{problem.description}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{problem.description}</ReactMarkdown>
         </div>
 
         {problem.test_cases && problem.test_cases.length > 0 && (

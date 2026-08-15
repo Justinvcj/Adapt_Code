@@ -1,16 +1,18 @@
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, Request
 from typing import Dict, Any
 import uuid
 from app.core.config import settings
 from app.core.database import get_supabase
 from app.models.schemas import RegisterRequest, LoginRequest
 from app.core.dependencies import get_current_user
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 supabase = get_supabase()
 
 @router.post("/register")
-async def register(req: RegisterRequest) -> Dict[str, Any]:
+@limiter.limit("5/minute")
+async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
     try:
         # Dev bypass for e2e tests
         if settings.TEST_MODE and "testuser_" in req.email:
@@ -55,7 +57,8 @@ async def register(req: RegisterRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/login")
-async def login(req: LoginRequest) -> Dict[str, Any]:
+@limiter.limit("5/minute")
+async def login(request: Request, req: LoginRequest) -> Dict[str, Any]:
     try:
         # Dev bypass for e2e tests
         if settings.TEST_MODE and "testuser_" in req.email:
