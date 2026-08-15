@@ -95,6 +95,9 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             raise HTTPException(status_code=404, detail="Problem not found.")
         problem_data = prob_res.data[0]
         test_cases = problem_data.get("test_cases", [])
+    except Exception as e:
+        logger.error(f"Failed to fetch problem: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch problem data.")
     # 1. Judge0 Execution for ALL test cases
     judge0_down = False
     async with httpx.AsyncClient() as client:

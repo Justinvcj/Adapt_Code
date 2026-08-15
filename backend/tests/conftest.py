@@ -7,7 +7,7 @@ import sys
 # Add backend directory to sys.path so we can import from it
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from main import app
+from app.main import app
 
 @pytest.fixture
 def client():

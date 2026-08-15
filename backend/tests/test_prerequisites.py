@@ -1,5 +1,5 @@
 import pytest
-from prerequisites import can_access_concept, get_weakest_unmastered_prerequisite
+from app.services.prerequisites import can_access_concept, get_weakest_unmastered_prerequisite
 
 def test_can_access_concept():
     # Root concept
