@@ -7,6 +7,9 @@ import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, RotateCcw, Lightbulb, ChevronRight, CheckCircle2, XCircle, Code2, Sparkles, X, ChevronDown, Clock, Loader2 } from 'lucide-react';
+import CodeEditor from '@/components/CodeEditor';
+import ProblemPanel from '@/components/ProblemPanel';
+import AITutorPanel from '@/components/AITutorPanel';
 
 const LANGUAGES = [
   { id: 71, name: 'python', label: 'Python 3', defaultCode: '# Write your solution here\n' },
@@ -60,6 +63,7 @@ export default function PracticePage() {
     setAiTutorOpen(false);
     setHint(null);
     setAttempts(0);
+    if (timerRef.current) clearInterval(timerRef.current);
     setTimeSeconds(0);
     
     try {
@@ -71,7 +75,8 @@ export default function PracticePage() {
       const res = await fetchApi('/api/problem/next');
       if (res.problem) {
         setProblem(res.problem);
-        setCode(lang.defaultCode);
+        const savedCode = localStorage.getItem(`code_${res.problem.problem_id}`);
+        setCode(savedCode || lang.defaultCode);
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to load problem");
@@ -96,8 +101,15 @@ export default function PracticePage() {
     if (selected) {
       setLang(selected);
       // Only replace code if they haven't typed much, or prompt them in a real app.
-      // For now, just replace.
-      setCode(selected.defaultCode);
+      const savedCode = problem ? localStorage.getItem(`code_${problem.problem_id}`) : null;
+      setCode(savedCode || selected.defaultCode);
+    }
+  };
+
+  const handleCodeChange = (c: string) => {
+    setCode(c);
+    if (problem) {
+      localStorage.setItem(`code_${problem.problem_id}`, c);
     }
   };
 
@@ -154,6 +166,31 @@ export default function PracticePage() {
     }
   };
 
+  const handleRunCustom = async (customInput: string) => {
+    if (!problem) return;
+    setExecuting(true);
+    setResult(null);
+    setAiTutorOpen(false);
+    
+    try {
+      const res = await fetchApi('/api/execute_custom', {
+        method: 'POST',
+        body: JSON.stringify({
+          code,
+          language_id: lang.id,
+          problem_id: problem.problem_id,
+          custom_input: customInput
+        })
+      });
+      setResult(res);
+      // Don't update attempts, BKT, or LinUCB for custom runs
+    } catch (e: any) {
+      toast.error(e.message || "Custom execution failed");
+    } finally {
+      setExecuting(false);
+    }
+  };
+
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
@@ -178,10 +215,10 @@ export default function PracticePage() {
   }
 
   return (
-    <div className="flex h-full w-full relative">
+    <div className="flex flex-col lg:flex-row h-full w-full relative">
       
       {/* Left Panel: Problem */}
-      <div className="w-1/2 flex flex-col border-r border-slate-800 bg-slate-950/50 overflow-hidden">
+      <div className="w-full lg:w-1/2 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-950/50 overflow-hidden min-h-[50vh] lg:min-h-0">
         
         {/* Toolbar */}
         <div className="h-14 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 bg-slate-900/50">
@@ -194,7 +231,7 @@ export default function PracticePage() {
               {problem.difficulty_level}
             </span>
             <span className="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 capitalize">
-              {problem.concept_tag.replace('_', ' ')}
+              {problem.concept_tag.replaceAll('_', ' ')}
             </span>
           </div>
           <div className="flex items-center gap-4 text-slate-400 text-sm font-medium">
@@ -269,59 +306,18 @@ export default function PracticePage() {
       </div>
 
       {/* Right Panel: Editor & Output */}
-      <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
-        {/* Editor Toolbar */}
-        <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
-          <div className="relative">
-            <select
-              value={lang.id}
-              onChange={handleLanguageChange}
-              className="appearance-none bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              {LANGUAGES.map(l => (
-                <option key={l.id} value={l.id}>{l.label}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-          
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setCode(lang.defaultCode)}
-              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
-              title="Reset Code"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleRun}
-              disabled={executing}
-              className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white rounded-lg text-sm font-medium shadow-md disabled:opacity-50 disabled:active:scale-100"
-            >
-              {executing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              Run Code
-            </button>
-          </div>
-        </div>
-        
-        {/* Monaco Editor */}
-        <div className="flex-1 min-h-0 pt-2 relative">
-          <Editor
-            height="100%"
-            language={lang.name}
-            theme="vs-dark"
-            value={code}
-            onChange={(v) => setCode(v || '')}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-              padding: { top: 16 },
-              scrollBeyondLastLine: false,
-              roundedSelection: false,
-            }}
-          />
-        </div>
+      <div className="w-full lg:w-1/2 flex flex-col bg-[#1e1e1e] flex-1">
+        <CodeEditor 
+          lang={lang}
+          languages={LANGUAGES}
+          code={code}
+          executing={executing}
+          onLanguageChange={handleLanguageChange}
+          onCodeChange={handleCodeChange}
+          onResetCode={() => setCode(lang.defaultCode)}
+          onRunCode={handleRun}
+          onRunCustom={handleRunCustom}
+        />
 
         {/* Output Panel */}
         <div className="h-64 border-t border-slate-800 bg-slate-900 flex flex-col shrink-0">
@@ -363,51 +359,12 @@ export default function PracticePage() {
       </div>
 
       {/* AI Tutor Side Sheet */}
-      <AnimatePresence>
-        {aiTutorOpen && result?.explanation && (
-          <>
-            {/* Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setAiTutorOpen(false)}
-              className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm z-40"
-            />
-            {/* Sheet */}
-            <motion.div 
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="absolute right-0 top-0 bottom-0 w-full sm:w-[450px] bg-slate-900 border-l border-slate-800 shadow-2xl z-50 flex flex-col"
-            >
-              <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-indigo-950/30">
-                <div className="flex items-center gap-2 text-indigo-300 font-medium">
-                  <Sparkles className="w-5 h-5" />
-                  AI Tutor Analysis
-                </div>
-                <button onClick={() => setAiTutorOpen(false)} className="p-1 hover:bg-slate-800 rounded text-slate-400 transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1 p-6 overflow-y-auto">
-                <div className="prose prose-invert prose-indigo max-w-none text-sm">
-                  <ReactMarkdown>{result.explanation}</ReactMarkdown>
-                </div>
-              </div>
-              <div className="p-4 border-t border-slate-800 bg-slate-900/50">
-                <button 
-                  onClick={() => { setAiTutorOpen(false); startNewSessionAndProblem(); }}
-                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 transition-colors rounded-lg font-medium text-slate-200 border border-slate-700"
-                >
-                  Try a similar problem
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <AITutorPanel 
+        isOpen={aiTutorOpen && !!result?.explanation} 
+        explanation={result?.explanation || ''} 
+        onClose={() => setAiTutorOpen(false)} 
+        onTrySimilar={() => { setAiTutorOpen(false); startNewSessionAndProblem(); }} 
+      />
 
     </div>
   );

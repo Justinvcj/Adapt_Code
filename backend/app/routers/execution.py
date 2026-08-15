@@ -6,12 +6,55 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from app.core.config import settings, logger
 from app.core.database import get_supabase
 from app.core.dependencies import get_current_user, bkt_doctor, linucb_agent
-from app.models.schemas import CodeSubmission
+from app.models.schemas import CodeSubmission, CodeCustomSubmission
 from app.services.ai_tutor import generate_explanation
 from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api", tags=["execution"])
 supabase = get_supabase()
+
+@router.post("/execute_custom")
+@limiter.limit("10/minute")
+async def execute_custom(request: Request, submission: CodeCustomSubmission, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+    async with httpx.AsyncClient() as client:
+        try:
+            req_data = {
+                "source_code": submission.code,
+                "language_id": submission.language_id,
+                "stdin": submission.custom_input,
+                "expected_output": ""
+            }
+            res = await client.post(f"{settings.JUDGE0_URL}/submissions?base64_encoded=false&wait=true", json=req_data)
+            res.raise_for_status()
+            result = res.json()
+            
+            status_id = result.get('status', {}).get('id', 0)
+            status_desc = result.get('status', {}).get('description', 'Unknown')
+            
+            # For custom execution, anything that compiles and runs is "successful" execution
+            # but we just return the output.
+            output = result.get('stdout') or result.get('compile_output') or result.get('stderr') or status_desc
+            
+            return {
+                "status": "success",
+                "verdict": output,
+                "is_correct": status_id == 3,
+                "execution_time_ms": float(result.get('time', 0)) * 1000 if result.get('time') else 0,
+                "memory_used_kb": result.get('memory', 0),
+                "explanation": None
+            }
+        except httpx.ConnectError:
+            return {
+                "status": "error",
+                "verdict": "Execution Service Down",
+                "is_correct": False,
+                "execution_time_ms": 0,
+                "memory_used_kb": 0,
+                "explanation": "Judge0 execution engine is currently unreachable."
+            }
+        except Exception as e:
+            logger.error(f"Judge0 error: {e}")
+            raise HTTPException(status_code=500, detail=f"Judge0 execution failed: {e}")
 
 @router.post("/execute")
 @limiter.limit("5/minute")

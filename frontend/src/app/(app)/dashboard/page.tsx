@@ -35,22 +35,27 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [statsRes, masteryRes] = await Promise.all([
+        fetchApi('/api/stats'),
+        fetchApi('/api/mastery')
+      ]);
+      setStats(statsRes.data);
+      setConcepts(masteryRes.data);
+    } catch (e: any) {
+      console.error(e);
+      setError(e.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [statsRes, masteryRes] = await Promise.all([
-          fetchApi('/api/stats'),
-          fetchApi('/api/mastery')
-        ]);
-        setStats(statsRes.data);
-        setConcepts(masteryRes.data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
   }, []);
 
@@ -74,6 +79,22 @@ export default function DashboardPage() {
           {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-800 rounded-xl" />)}
         </div>
         <div className="h-64 bg-slate-800 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto h-full flex flex-col items-center justify-center">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-medium text-slate-200 mb-2">Error Loading Dashboard</h2>
+        <p className="text-slate-400 mb-6">{error}</p>
+        <button 
+          onClick={loadData}
+          className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white rounded-lg text-sm font-medium shadow-md"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -138,13 +159,13 @@ export default function DashboardPage() {
               {stats.strongest_concept && (
                 <div className="flex-1">
                   <h3 className="text-indigo-400 font-medium mb-1 text-sm uppercase tracking-wider">Strongest Concept</h3>
-                  <p className="text-xl text-slate-200 capitalize">{stats.strongest_concept.replace('_', ' ')}</p>
+                  <p className="text-xl text-slate-200 capitalize">{stats.strongest_concept.replaceAll('_', ' ')}</p>
                 </div>
               )}
               {stats.weakest_concept && (
                 <div className="flex-1">
                   <h3 className="text-orange-400 font-medium mb-1 text-sm uppercase tracking-wider">Needs Work</h3>
-                  <p className="text-xl text-slate-200 capitalize">{stats.weakest_concept.replace('_', ' ')}</p>
+                  <p className="text-xl text-slate-200 capitalize">{stats.weakest_concept.replaceAll('_', ' ')}</p>
                   <p className="text-sm text-slate-400 mt-1">Focus your next practice session here.</p>
                 </div>
               )}
@@ -168,7 +189,7 @@ export default function DashboardPage() {
                     className={`relative p-5 rounded-xl border ${c.is_unlocked ? 'bg-slate-900 border-slate-700' : 'bg-slate-900/50 border-slate-800 opacity-60'} w-64 flex flex-col`}
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <h3 className="font-medium text-slate-200 capitalize">{c.concept_tag.replace('_', ' ')}</h3>
+                      <h3 className="font-medium text-slate-200 capitalize">{c.concept_tag.replaceAll('_', ' ')}</h3>
                       {!c.is_unlocked ? (
                         <Lock className="w-4 h-4 text-slate-500" />
                       ) : (

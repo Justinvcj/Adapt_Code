@@ -66,47 +66,50 @@ export default function LandingPage() {
         {/* Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-24">
           <motion.div 
+            whileHover={{ y: -8 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.6, delay: 0.1 }}
-            className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl text-left backdrop-blur-sm"
+            className="group bg-slate-900/40 hover:bg-slate-800/60 border border-slate-800/60 hover:border-indigo-500/30 p-8 rounded-[2rem] text-left backdrop-blur-md transition-all shadow-lg hover:shadow-indigo-500/10"
           >
-            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-6 border border-indigo-500/20">
-              <BrainCircuit className="w-6 h-6 text-indigo-400" />
+            <div className="w-14 h-14 bg-indigo-500/10 group-hover:bg-indigo-500/20 group-hover:scale-110 rounded-2xl flex items-center justify-center mb-8 border border-indigo-500/20 transition-all">
+              <BrainCircuit className="w-7 h-7 text-indigo-400" />
             </div>
-            <h3 className="text-xl font-semibold mb-3">Adaptive Difficulty</h3>
-            <p className="text-slate-400 leading-relaxed">
-              Powered by LinUCB Contextual Bandits. We pick problems that are just right for your current skill level, keeping you in the zone of proximal development.
+            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-indigo-300 transition-colors">Adaptive Contextual Bandits</h3>
+            <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+              Stop grinding blindly. Our LinUCB Contextual Bandit agent dynamically selects problems modeled exactly for your current skill level, keeping you perfectly engaged in your zone of proximal development.
             </p>
           </motion.div>
 
           <motion.div 
+            whileHover={{ y: -8 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.6, delay: 0.2 }}
-            className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl text-left backdrop-blur-sm"
+            className="group bg-slate-900/40 hover:bg-slate-800/60 border border-slate-800/60 hover:border-purple-500/30 p-8 rounded-[2rem] text-left backdrop-blur-md transition-all shadow-lg hover:shadow-purple-500/10"
           >
-            <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6 border border-purple-500/20">
-              <LineChart className="w-6 h-6 text-purple-400" />
+            <div className="w-14 h-14 bg-purple-500/10 group-hover:bg-purple-500/20 group-hover:scale-110 rounded-2xl flex items-center justify-center mb-8 border border-purple-500/20 transition-all">
+              <LineChart className="w-7 h-7 text-purple-400" />
             </div>
-            <h3 className="text-xl font-semibold mb-3">Knowledge Tracking</h3>
-            <p className="text-slate-400 leading-relaxed">
-              Using Bayesian Knowledge Tracing (BKT), we map your mastery across a graph of interconnected algorithms and data structures.
+            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-purple-300 transition-colors">Bayesian Knowledge Tracing</h3>
+            <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+              We mathematically model your brain. As you solve challenges, AdaptCode updates your hidden mastery state across a 12-node prerequisite graph using continuous-evidence BKT algorithms.
             </p>
           </motion.div>
 
           <motion.div 
+            whileHover={{ y: -8 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.6, delay: 0.3 }}
-            className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl text-left backdrop-blur-sm"
+            className="group bg-slate-900/40 hover:bg-slate-800/60 border border-slate-800/60 hover:border-cyan-500/30 p-8 rounded-[2rem] text-left backdrop-blur-md transition-all shadow-lg hover:shadow-cyan-500/10"
           >
-            <div className="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-6 border border-cyan-500/20">
-              <Sparkles className="w-6 h-6 text-cyan-400" />
+            <div className="w-14 h-14 bg-cyan-500/10 group-hover:bg-cyan-500/20 group-hover:scale-110 rounded-2xl flex items-center justify-center mb-8 border border-cyan-500/20 transition-all">
+              <Sparkles className="w-7 h-7 text-cyan-400" />
             </div>
-            <h3 className="text-xl font-semibold mb-3">AI Tutor</h3>
-            <p className="text-slate-400 leading-relaxed">
-              Stuck on a test case? Get instant, tailored explanations analyzing exactly what went wrong in your code and how to think about the solution.
+            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-cyan-300 transition-colors">GLM-4 Flash AI Tutor</h3>
+            <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+              Never stay stuck. When your test cases fail, our integrated LLM tutor analyzes your specific logic errors and runtime crashes to provide targeted, Socratic feedback without spoiling the answer.
             </p>
           </motion.div>
         </div>

@@ -21,6 +21,12 @@ class CodeSubmission(BaseModel):
     hint_used: bool
     attempt_count: int
 
+class CodeCustomSubmission(BaseModel):
+    code: str
+    language_id: int
+    problem_id: str
+    custom_input: str
+
 class SessionStart(BaseModel):
     session_number: int = 1
 
