@@ -85,3 +85,27 @@ async def get_hint(problem_id: str, user_id: str = Depends(get_current_user)) ->
         return {"status": "success", "hint_text": res.data[0]["hint_text"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/problems")
+async def get_all_problems(concept_tag: str = None, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+    try:
+        query = supabase.table("problems").select("*")
+        if concept_tag:
+            query = query.eq("concept_tag", concept_tag)
+        res = query.execute()
+        
+        all_problems = res.data or []
+        
+        # Determine solved status from session_events
+        events_res = supabase.table("session_events").select("problem_id, final_verdict").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
+        solved_problem_ids = {event["problem_id"] for event in (events_res.data or [])}
+        
+        for p in all_problems:
+            p["is_solved"] = p["problem_id"] in solved_problem_ids
+            # Exclude full test_cases to keep payload small, just send basic info
+            if "test_cases" in p:
+                del p["test_cases"]
+                
+        return {"status": "success", "data": all_problems}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
