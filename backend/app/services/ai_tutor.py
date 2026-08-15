@@ -4,9 +4,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize ZhipuAI client
-ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY")
-client = ZhipuAI(api_key=ZHIPU_API_KEY)
+from app.core.config import settings
+
+def _get_client():
+    if not settings.ZHIPU_API_KEY:
+        return None
+    return ZhipuAI(api_key=settings.ZHIPU_API_KEY)
 
 def generate_explanation(code: str, problem_description: str, error_verdict: str, expected_output: str = "", actual_output: str = "") -> str:
     """
@@ -42,6 +45,9 @@ Respond in EXACTLY three parts, separated by newlines:
 """
 
     try:
+        client = _get_client()
+        if not client:
+            return "AI Tutor Error: API Key not configured."
         response = client.chat.completions.create(
             model="glm-4-flash",
             messages=[

@@ -33,18 +33,32 @@ async def get_next_problem(user_id: str = Depends(get_current_user)) -> Dict[str
             context_vector[i] = mastery_dict.get(c, bkt_doctor.p_prior)
             
         diff_map = {'easy': 0, 'medium': 1, 'hard': 2}
-        valid_mask = [False, False, False, False, False]
+        valid_mask = [False, False, False]
         for p in valid_problems:
             valid_mask[diff_map[p['difficulty_level']]] = True
+            
+        # Dynamic features from session_events
+        events_res = supabase.table("session_events").select("*").eq("student_id", user_id).order("timestamp", desc=True).limit(20).execute()
+        events = events_res.data or []
+        
+        avg_time = np.mean([e['time_on_task_seconds'] for e in events]) if events else 0.5 * 1800
+        hrate = np.mean([1.0 if e['hint_used'] else 0.0 for e in events]) if events else 0.2
+        srate = np.mean([1.0 if e['final_verdict'] == 'Accepted' else 0.0 for e in events]) if events else 0.9
+        avg_attempts = np.mean([e['attempt_count'] for e in events]) if events else 1.0
+        
+        session_duration_feat = min(1.0, avg_time / 1800.0)
+        hint_rate_feat = hrate
+        error_rate_feat = 1.0 - srate
+        idle_time_feat = min(1.0, avg_attempts / 10.0)
             
         best_diff_idx = linucb_agent.select_action(
             student_id=user_id, 
             context_vector=context_vector, 
             valid_actions_mask=valid_mask,
-            session_duration=0.5,
-            hint_rate=0.2,
-            error_rate=0.1,
-            idle_time=0.0
+            session_duration=session_duration_feat,
+            hint_rate=hint_rate_feat,
+            error_rate=error_rate_feat,
+            idle_time=idle_time_feat
         )
         reverse_map = {0: 'easy', 1: 'medium', 2: 'hard'}
         target_diff = reverse_map.get(best_diff_idx, 'easy')

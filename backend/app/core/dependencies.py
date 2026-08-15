@@ -8,7 +8,7 @@ from app.services.linucb import LinUCBAgent
 
 supabase = get_supabase()
 bkt_doctor = BKTDoctor()
-linucb_agent = LinUCBAgent(n_actions=5, context_dim=16)
+linucb_agent = LinUCBAgent(n_actions=3, context_dim=16)
 
 async def get_current_user(authorization: str = Header(None)) -> str:
     if not authorization or not authorization.startswith("Bearer "):

@@ -75,9 +75,9 @@ export default function LandingPage() {
             <div className="w-14 h-14 bg-indigo-500/10 group-hover:bg-indigo-500/20 group-hover:scale-110 rounded-2xl flex items-center justify-center mb-8 border border-indigo-500/20 transition-all">
               <BrainCircuit className="w-7 h-7 text-indigo-400" />
             </div>
-            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-indigo-300 transition-colors">Adaptive Contextual Bandits</h3>
+            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-indigo-300 transition-colors">Smart Problem Selection</h3>
             <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
-              Stop grinding blindly. Our LinUCB Contextual Bandit agent dynamically selects problems modeled exactly for your current skill level, keeping you perfectly engaged in your zone of proximal development.
+              Stop grinding blindly. Our adaptive engine dynamically selects problems modeled exactly for your current skill level, keeping you perfectly engaged in your zone of proximal development.
             </p>
           </motion.div>
 
@@ -91,9 +91,9 @@ export default function LandingPage() {
             <div className="w-14 h-14 bg-purple-500/10 group-hover:bg-purple-500/20 group-hover:scale-110 rounded-2xl flex items-center justify-center mb-8 border border-purple-500/20 transition-all">
               <LineChart className="w-7 h-7 text-purple-400" />
             </div>
-            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-purple-300 transition-colors">Bayesian Knowledge Tracing</h3>
+            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-purple-300 transition-colors">Knowledge Tracking</h3>
             <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
-              We mathematically model your brain. As you solve challenges, AdaptCode updates your hidden mastery state across a 12-node prerequisite graph using continuous-evidence BKT algorithms.
+              We mathematically model your brain. As you solve challenges, AdaptCode updates your hidden mastery state across a 12-node prerequisite graph using continuous-evidence tracking algorithms.
             </p>
           </motion.div>
 
@@ -107,7 +107,7 @@ export default function LandingPage() {
             <div className="w-14 h-14 bg-cyan-500/10 group-hover:bg-cyan-500/20 group-hover:scale-110 rounded-2xl flex items-center justify-center mb-8 border border-cyan-500/20 transition-all">
               <Sparkles className="w-7 h-7 text-cyan-400" />
             </div>
-            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-cyan-300 transition-colors">GLM-4 Flash AI Tutor</h3>
+            <h3 className="text-2xl font-semibold mb-4 text-slate-100 group-hover:text-cyan-300 transition-colors">AI Tutor</h3>
             <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
               Never stay stuck. When your test cases fail, our integrated LLM tutor analyzes your specific logic errors and runtime crashes to provide targeted, Socratic feedback without spoiling the answer.
             </p>

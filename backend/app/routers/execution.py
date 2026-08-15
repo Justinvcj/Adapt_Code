@@ -167,7 +167,7 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             ctx[i] = mastery_dict.get(c, bkt_doctor.p_prior)
             
         # Dynamic features from session_events
-        events_res = supabase.table("session_events").select("*").eq("student_id", user_id).order("created_at", desc=True).limit(20).execute()
+        events_res = supabase.table("session_events").select("*").eq("student_id", user_id).order("timestamp", desc=True).limit(20).execute()
         events = events_res.data or []
         
         avg_time = np.mean([e['time_on_task_seconds'] for e in events]) if events else elapsed_seconds
