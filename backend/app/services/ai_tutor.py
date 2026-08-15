@@ -53,5 +53,6 @@ Respond in EXACTLY three parts, separated by newlines:
         )
         return response.choices[0].message.content
     except Exception as e:
-        print(f"Error calling Zhipu API: {e}")
-        return "1. What went wrong: We couldn't analyze your code at this time.\n2. Why it fails: The AI explanation service is currently unavailable.\n3. What to review: Please review the problem constraints manually."
+        from app.core.config import logger
+        logger.error(f"Error calling Zhipu API: {e}")
+        return "Unable to generate explanation at this time. Please check your logic and try again."
