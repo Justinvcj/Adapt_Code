@@ -19,7 +19,7 @@ export default function ProblemPanel({ problem, timeSeconds, attempts, hint, loa
   };
 
   return (
-    <div className="w-1/2 flex flex-col border-r border-slate-800 bg-slate-950/50 overflow-hidden">
+    <div className="w-full lg:w-1/2 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-950/50 overflow-hidden min-h-[50vh] lg:min-h-0">
       {/* Toolbar */}
       <div className="h-14 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 bg-slate-900/50">
         <div className="flex items-center gap-3">
@@ -31,7 +31,7 @@ export default function ProblemPanel({ problem, timeSeconds, attempts, hint, loa
             {problem.difficulty_level}
           </span>
           <span className="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 capitalize">
-            {problem.concept_tag.replace('_', ' ')}
+            {problem.concept_tag.replaceAll('_', ' ')}
           </span>
         </div>
         <div className="flex items-center gap-4 text-slate-400 text-sm font-medium">

@@ -69,3 +69,12 @@ CREATE TABLE agent_state (
     b_vectors JSONB NOT NULL, -- JSON serialized NumPy arrays
     last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 7. Active Problem State Table
+CREATE TABLE active_problem_state (
+    student_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    problem_id UUID NOT NULL REFERENCES problems(problem_id) ON DELETE CASCADE,
+    start_time NUMERIC NOT NULL,
+    hint_used BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (student_id, problem_id)
+);

@@ -108,7 +108,7 @@ export default function HistoryPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-1 bg-slate-800 text-slate-300 rounded text-xs capitalize">
-                        {event.concept_tag.replace('_', ' ')}
+                        {event.concept_tag.replaceAll('_', ' ')}
                       </span>
                     </td>
                     <td className="px-6 py-4">
