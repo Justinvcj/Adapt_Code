@@ -52,62 +52,63 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             raise HTTPException(status_code=404, detail="Problem not found.")
         problem_data = prob_res.data[0]
         test_cases = problem_data.get("test_cases", [])
-        if not test_cases:
-            raise HTTPException(status_code=500, detail="Problem has no valid test cases.")
-        expected_input = test_cases[0].get("input", "")
-        expected_output = test_cases[0].get("expected_output", "")
-    except Exception as e:
-        logger.error(f"Error fetching test cases: {e}")
-        raise HTTPException(status_code=500, detail="Error fetching test cases.")
-
-    # 1. Judge0
+    # 1. Judge0 Execution for ALL test cases
+    judge0_down = False
     async with httpx.AsyncClient() as client:
         try:
-            # Mock Judge0 if session_id is a dev session
-            is_correct = False
-            compile_errors = 0
-            status_id = 4 # Wrong Answer
-            status_desc = "Wrong Answer"
-            result = {"time": 0, "memory": 0}
-            
-            # Simple mock: if code contains "print('wrong')", we fail it
-            if "wrong" in submission.code.lower():
-                is_correct = False
-                status_desc = "Wrong Answer"
-            else:
-                try:
-                    req_data = {
-                        "source_code": submission.code,
-                        "language_id": submission.language_id,
-                        "stdin": expected_input,
-                        "expected_output": expected_output
-                    }
-                    res = await client.post(f"{settings.JUDGE0_URL}/submissions?base64_encoded=false&wait=true", json=req_data)
-                    res.raise_for_status()
-                    result = res.json()
+            for i, tc in enumerate(test_cases):
+                expected_in = tc.get("input", "")
+                expected_out = tc.get("expected_output", "")
+                
+                req_data = {
+                    "source_code": submission.code,
+                    "language_id": submission.language_id,
+                    "stdin": expected_in,
+                    "expected_output": expected_out
+                }
+                res = await client.post(f"{settings.JUDGE0_URL}/submissions?base64_encoded=false&wait=true", json=req_data)
+                res.raise_for_status()
+                result = res.json()
+                
+                status_id = result.get('status', {}).get('id', 0)
+                status_desc = result.get('status', {}).get('description', 'Unknown')
+                
+                is_correct = (status_id == 3)
+                compile_errors = 1 if status_id == 6 else 0
+                
+                if not is_correct:
+                    # Failed on test case i
+                    status_desc = f"Failed on Test Case {i+1}: {status_desc}"
+                    break
                     
-                    status_id = result.get('status', {}).get('id', 0)
-                    status_desc = result.get('status', {}).get('description', 'Unknown')
-                    
-                    is_correct = (status_id == 3)
-                    compile_errors = 1 if status_id == 6 else 0
-                except httpx.ConnectError:
-                    # If Judge0 isn't running in E2E environment, fallback to mock
-                    is_correct = False
-                    status_desc = "Wrong Answer"
+        except httpx.ConnectError:
+            judge0_down = True
+            logger.error("Judge0 service is down.")
         except Exception as e:
+            judge0_down = True
             logger.error(f"Judge0 error: {e}")
-            raise HTTPException(status_code=500, detail=f"Judge0 execution failed: {e}")
+
+    if judge0_down:
+        return {
+            "status": "error",
+            "verdict": "Execution Service Down",
+            "is_correct": False,
+            "execution_time_ms": 0,
+            "memory_used_kb": 0,
+            "explanation": "Judge0 execution engine is currently unreachable."
+        }
 
     # 2. Reward & LinUCB
     reward = 0.0
     if is_correct:
-        if submission.attempt_count == 1 and not hint_flag:
-            reward = 1.0
-        else:
-            reward = 0.7
+        base_reward = 1.0 if submission.difficulty_level == 'hard' else (0.8 if submission.difficulty_level == 'medium' else 0.5)
+        hint_penalty = 0.2 if hint_flag else 0.0
+        time_penalty = 0.1 if elapsed_seconds > 600 else 0.0
+        reward = max(0.1, base_reward - hint_penalty - time_penalty)
     elif compile_errors == 0:
-        reward = 0.3
+        reward = 0.2
+    else:
+        reward = 0.0
     
     try:
         mastery_record = supabase.table("mastery_scores").select("*").eq("student_id", user_id).execute()
@@ -119,6 +120,20 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
         for i, c in enumerate(concepts):
             ctx[i] = mastery_dict.get(c, bkt_doctor.p_prior)
             
+        # Dynamic features from session_events
+        events_res = supabase.table("session_events").select("*").eq("student_id", user_id).order("created_at", desc=True).limit(20).execute()
+        events = events_res.data or []
+        
+        avg_time = np.mean([e['time_on_task_seconds'] for e in events]) if events else elapsed_seconds
+        hrate = np.mean([1.0 if e['hint_used'] else 0.0 for e in events]) if events else (1.0 if hint_flag else 0.0)
+        srate = np.mean([1.0 if e['final_verdict'] == 'Accepted' else 0.0 for e in events]) if events else (1.0 if is_correct else 0.0)
+        avg_attempts = np.mean([e['attempt_count'] for e in events]) if events else submission.attempt_count
+        
+        ctx[12] = min(1.0, avg_time / 1800.0)
+        ctx[13] = hrate
+        ctx[14] = srate
+        ctx[15] = min(1.0, avg_attempts / 10.0)
+            
         diff_map = {'easy': 0, 'medium': 1, 'hard': 2}
         action_idx = diff_map.get(submission.difficulty_level, 0)
         
@@ -127,10 +142,10 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             action=action_idx,
             context_vector=ctx,
             reward=reward,
-            session_duration=elapsed_seconds / 3600.0,
-            hint_rate=1.0 if hint_flag else 0.0,
-            error_rate=1.0 if compile_errors > 0 else 0.0,
-            idle_time=0.0
+            session_duration=ctx[12],
+            hint_rate=ctx[13],
+            error_rate=1.0 - ctx[14],
+            idle_time=ctx[15]
         )
     except Exception as e:
         logger.error(f"LinUCB update failed: {e}")
@@ -141,7 +156,7 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
         effective_corr = bkt_doctor.calculate_effective_correctness(
             is_correct, compile_errors, elapsed_seconds, hint_flag, submission.attempt_count
         )
-        new_mastery = bkt_doctor.update_mastery(current_mastery, effective_corr)
+        new_mastery = bkt_doctor.update_mastery(current_mastery, effective_corr, submission.concept_tag)
         supabase.table("mastery_scores").upsert({
             "student_id": user_id,
             "concept_tag": submission.concept_tag,

@@ -1,12 +1,16 @@
 import os
+import sys
 import random
 import numpy as np
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from linucb import LinUCBAgent
-from bkt import BKTDoctor
 import uuid
 import time
+
+# Ensure we can import app modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from app.services.linucb import LinUCBAgent
+from app.services.bkt import BKTDoctor
 
 load_dotenv()
 url: str = os.environ.get("SUPABASE_URL")
@@ -16,12 +20,12 @@ supabase: Client = create_client(url, key)
 def simulate_students(num_students=50, sessions_per_student=10):
     print(f"Starting simulation for {num_students} synthetic students...")
     
-    agent = LinUCBAgent(n_actions=5, context_dim=16)
+    agent = LinUCBAgent(n_actions=3, context_dim=16)
     bkt = BKTDoctor()
     
     # 3 target difficulties
     difficulties = ['easy', 'medium', 'hard']
-    valid_mask = [True, True, True, False, False]
+    valid_mask = [True, True, True]
     
     for s in range(num_students):
         student_id = f"sim_student_{uuid.uuid4().hex[:8]}"
@@ -41,7 +45,7 @@ def simulate_students(num_students=50, sessions_per_student=10):
             ctx[13] = random.uniform(0, 1) # hint usage
             
             # Agent picks difficulty
-            action = agent.select_action(ctx, valid_mask)
+            action = agent.select_action(student_id, ctx, valid_mask)
             
             # Simulate environment reward based on Vygotsky's ZPD
             # If student mastery is low, easy is best reward. If high, hard is best.
@@ -57,30 +61,14 @@ def simulate_students(num_students=50, sessions_per_student=10):
             # Calculate reward
             reward = 1.0 if action == optimal_action else 0.0
             
-            # Agent updates weights
-            agent.update(action, ctx, reward)
+            # Agent updates weights (this auto-saves to Supabase under student_id)
+            agent.update(student_id, action, ctx, reward)
             
             # Student improves slightly
             masteries['arrays'] = min(0.99, masteries['arrays'] + 0.05)
             masteries['strings'] = min(0.99, masteries['strings'] + 0.05)
             
-    # Save pretrained weights to Supabase
-    print("Pretraining complete. Saving weights to Supabase...")
-    for a in range(agent.n_actions):
-        A_flat = agent.A[a].flatten().tolist()
-        b_flat = agent.b[a].flatten().tolist()
-        
-        try:
-            supabase.table("agent_state").upsert({
-                "action_id": a,
-                "A_matrix": A_flat,
-                "b_vector": b_flat,
-                "updated_at": "now()"
-            }).execute()
-        except Exception as e:
-            print(f"Error saving state for action {a}: {e}")
-            
-    print("Successfully bootstrapped LinUCB agent in database.")
+    print("Successfully simulated students and bootstrapped per-student LinUCB agents in database.")
 
 if __name__ == "__main__":
-    simulate_students(num_students=100, sessions_per_student=20)
+    simulate_students(num_students=20, sessions_per_student=5)

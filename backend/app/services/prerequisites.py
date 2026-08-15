@@ -17,6 +17,21 @@ PREREQUISITE_GRAPH = {
     'dynamic_programming': ['recursion']
 }
 
+CONCEPT_TIERS = {
+    'basic_syntax': 1,
+    'loops': 1,
+    'arrays': 1,
+    'strings': 1,
+    'hashing': 2,
+    'two_pointers': 2,
+    'binary_search': 2,
+    'recursion': 2,
+    'sliding_window': 3,
+    'backtracking': 3,
+    'trees': 3,
+    'dynamic_programming': 3
+}
+
 def get_weakest_unmastered_prerequisite(concept: str, mastery_dict: dict, threshold: float = 0.85):
     """
     Given a target concept and the student's mastery dictionary, returns the prerequisite 

@@ -22,3 +22,9 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("adaptcode")
+
+BKT_PARAMS_BY_TIER = {
+    1: {"p_learn": 0.2, "p_guess": 0.1, "p_slip": 0.1},
+    2: {"p_learn": 0.15, "p_guess": 0.1, "p_slip": 0.15},
+    3: {"p_learn": 0.1, "p_guess": 0.05, "p_slip": 0.2}
+}

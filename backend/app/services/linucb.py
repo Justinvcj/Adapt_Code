@@ -7,7 +7,7 @@ class LinUCBAgent:
     Component 6: The Coach - LinUCB Contextual Bandit.
     Takes context (16 features) and selects next problem action.
     """
-    def __init__(self, n_actions: int = 5, context_dim: int = 16, alpha: float = 1.0):
+    def __init__(self, n_actions: int = 3, context_dim: int = 16, alpha: float = 1.0):
         self.n_actions = n_actions
         self.context_dim = context_dim
         self.alpha = alpha
