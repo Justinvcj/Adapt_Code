@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # AdaptCode
 
@@ -10,50 +10,50 @@
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Judge0](https://img.shields.io/badge/Judge0-Docker_Sandbox-E44D26?logo=docker&logoColor=white)](https://judge0.com)
 
-[Report Bug](https://github.com/Justinvcj/Adapt_Code/issues) Â· [Request Feature](https://github.com/Justinvcj/Adapt_Code/issues)
+[Report Bug](https://github.com/Justinvcj/Adapt_Code/issues) * [Request Feature](https://github.com/Justinvcj/Adapt_Code/issues)
 
 </div>
 
 ---
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                    AdaptCode Adaptive Learning Loop                         â”‚
-â”‚                                                                             â”‚
-â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                       â”‚
-â”‚  â”‚ Monaco Code Editor    â”‚  â”‚ Multi-Language Code   â”‚                       â”‚
-â”‚  â”‚ (Python/Java/C++)     â”‚  â”‚ Submission Payload    â”‚                       â”‚
-â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                       â”‚
-â”‚             â”‚                          â”‚                                    â”‚
-â”‚             â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”           â”‚
-â”‚                                        â–¼                        â–¼           â”‚
-â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
-â”‚  â”‚         Isolated Judge0 Sandbox: Secure Container Execution           â”‚  â”‚
-â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
-â”‚                                        â–¼                                    â”‚
-â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
-â”‚  â”‚ Bayesian Knowledge Tracing (BKT) â”€â”€â–º LinUCB Contextual Bandit Selectorâ”‚  â”‚
-â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
-â”‚                                        â–¼                                    â”‚
-â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
-â”‚  â”‚    LLM Diagnostic Tutoring Hint â—„â”€â”€ Next Optimal Challenge (ZPD)      â”‚  â”‚
-â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
++-----------------------------------------------------------------------------+
+|                    AdaptCode Adaptive Learning Loop                         |
+|                                                                             |
+|  +-----------------------+  +-----------------------+                       |
+|  | Monaco Code Editor    |  | Multi-Language Code   |                       |
+|  | (Python/Java/C++)     |  | Submission Payload    |                       |
+|  +----------+------------+  +----------+------------+                       |
+|             |                          |                                    |
+|             +--------------------------+------------------------+           |
+|                                        v                        v           |
+|  +-----------------------------------------------------------------------+  |
+|  |         Isolated Judge0 Sandbox: Secure Container Execution           |  |
+|  +-------------------------------------+---------------------------------+  |
+|                                        v                                    |
+|  +-----------------------------------------------------------------------+  |
+|  | Bayesian Knowledge Tracing (BKT) ---> LinUCB Contextual Bandit Selector|  |
+|  +-------------------------------------+---------------------------------+  |
+|                                        v                                    |
+|  +-----------------------------------------------------------------------+  |
+|  |    LLM Diagnostic Tutoring Hint <--- Next Optimal Challenge (ZPD)     |  |
+|  +-----------------------------------------------------------------------+  |
++-----------------------------------------------------------------------------+
 ```
 
 > Standard coding practice platforms rely on static difficulty tags and rigid problem sets, leaving students either stuck on difficult concepts or bored with repetitive questions.
-> AdaptCode models each learner's mastery in real-time across a prerequisite graph of 12 algorithmic concepts, applying Bayesian Knowledge Tracing ($P(L_0), P(T), P(G), P(S)$) and LinUCB contextual multi-armed bandits to serve challenges in the Zone of Proximal Development while providing instant LLM diagnostic feedback on failed test cases.
+> AdaptCode models each learner's mastery in real-time across a prerequisite graph of 12 algorithmic concepts, applying Bayesian Knowledge Tracing (P(L0), P(T), P(G), P(S)) and LinUCB contextual multi-armed bandits to serve challenges in the Zone of Proximal Development while providing instant LLM diagnostic feedback on failed test cases.
 
 ---
 
 ## Features
 
-- **Dynamic Knowledge Tracing** â€” Models concept mastery across 12 algorithmic topics in real time using Bayesian Knowledge Tracing (BKT).
-- **Contextual Bandit Selection** â€” Recommends optimal practice problems dynamically via LinUCB multi-armed bandit algorithms with ridge regression.
-- **Isolated Code Sandbox** â€” Executes and evaluates multi-language submissions securely inside Dockerized Judge0 containers.
-- **Monaco In-Browser IDE** â€” Delivers a complete in-browser coding environment with syntax highlighting, custom themes, and instant execution telemetry.
-- **AI Diagnostic Tutoring** â€” Generates targeted explanations and remediation hints automatically upon test case failures using LLM integration.
-- **Curriculum Prerequisite Graph** â€” Visualizes concept progression and dependencies across data structures and algorithms.
+- **Dynamic Knowledge Tracing** -- Models concept mastery across 12 algorithmic topics in real time using Bayesian Knowledge Tracing (BKT).
+- **Contextual Bandit Selection** -- Recommends optimal practice problems dynamically via LinUCB multi-armed bandit algorithms with ridge regression.
+- **Isolated Code Sandbox** -- Executes and evaluates multi-language submissions securely inside Dockerized Judge0 containers.
+- **Monaco In-Browser IDE** -- Delivers a complete in-browser coding environment with syntax highlighting, custom themes, and instant execution telemetry.
+- **AI Diagnostic Tutoring** -- Generates targeted explanations and remediation hints automatically upon test case failures using LLM integration.
+- **Curriculum Prerequisite Graph** -- Visualizes concept progression and dependencies across data structures and algorithms.
 
 ---
 
@@ -122,9 +122,9 @@ Open `http://localhost:3000` in your browser, select a topic from the curriculum
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SUPABASE_URL` | Yes | â€” | Supabase project URL |
-| `SUPABASE_KEY` | Yes | â€” | Supabase service role or anon API key |
-| `ZHIPU_API_KEY` | Yes | â€” | API key for LLM tutoring explanations |
+| `SUPABASE_URL` | Yes | -- | Supabase project URL |
+| `SUPABASE_KEY` | Yes | -- | Supabase service role or anon API key |
+| `ZHIPU_API_KEY` | Yes | -- | API key for LLM tutoring explanations |
 | `JUDGE0_URL` | No | `http://localhost:2358` | Endpoint for Judge0 execution sandbox |
 | `FRONTEND_URL` | No | `http://localhost:3000` | Allowed CORS origin |
 
