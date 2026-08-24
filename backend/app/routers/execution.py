@@ -103,10 +103,19 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
     except Exception as e:
         logger.error(f"Failed to fetch problem: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch problem data.")
-    # 1. Judge0 Execution for ALL test cases
+        
+    if not isinstance(test_cases, list) or len(test_cases) == 0:
+        raise HTTPException(status_code=422, detail="This problem has no valid test cases.")
+
+    # 1. Execution for ALL test cases
     judge0_down = False
     failed_input = ""
     failed_expected = ""
+    is_correct = False
+    compile_errors = 0
+    status_desc = "No test cases"
+    result = {}
+    
     from app.core.executor import run_code_locally
     
     try:
@@ -180,6 +189,7 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
         else:
             reward = 0.0   # Syntax errors
     
+    mastery_dict = {}
     try:
         mastery_record = supabase.table("mastery_scores").select("*").eq("student_id", user_id).execute()
         mastery_dict = {row['concept_tag']: float(row['mastery_probability']) for row in mastery_record.data}
@@ -218,10 +228,17 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             idle_time=ctx[15]
         )
     except Exception as e:
-        logger.error(f"LinUCB update failed: {e}")
+        logger.warning(f"LinUCB update failed: {e}")
+        try:
+            supabase.table("system_failures").insert({"stage": "linucb_update", "context": {"user_id": user_id, "problem_id": submission.problem_id, "error": str(e)}}).execute()
+        except:
+            pass
 
     # 3. BKT Update
     try:
+        if not mastery_dict:
+            mastery_record = supabase.table("mastery_scores").select("*").eq("student_id", user_id).execute()
+            mastery_dict = {row['concept_tag']: float(row['mastery_probability']) for row in mastery_record.data}
         current_mastery = mastery_dict.get(submission.concept_tag, bkt_doctor.p_prior)
         effective_corr = bkt_doctor.calculate_effective_correctness(
             is_correct, compile_errors, elapsed_seconds, hint_flag, submission.attempt_count
@@ -233,7 +250,11 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             "mastery_probability": new_mastery
         }).execute()
     except Exception as e:
-        logger.error(f"BKT update failed: {e}")
+        logger.warning(f"BKT update failed: {e}")
+        try:
+            supabase.table("system_failures").insert({"stage": "bkt_update", "context": {"user_id": user_id, "problem_id": submission.problem_id, "error": str(e)}}).execute()
+        except:
+            pass
 
     # 4. Record Event
     try:
@@ -256,7 +277,11 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             supabase.table("active_problem_state").delete().eq("student_id", user_id).eq("problem_id", submission.problem_id).execute()
             
     except Exception as e:
-        logger.error(f"Event insert failed: {e}")
+        logger.warning(f"Event insert failed: {e}")
+        try:
+            supabase.table("system_failures").insert({"stage": "session_events_insert", "context": {"user_id": user_id, "problem_id": submission.problem_id, "error": str(e)}}).execute()
+        except:
+            pass
 
     # 5. AI Explanation
     explanation = None

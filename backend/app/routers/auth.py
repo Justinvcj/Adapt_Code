@@ -15,17 +15,17 @@ supabase = get_supabase()
 async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
     try:
         # Dev bypass for e2e tests
-        if settings.TEST_MODE and "testuser_" in req.email:
-            dev_id = str(uuid.uuid4())
+        if settings.TEST_MODE and req.email.startswith("dev_"):
+            # Mock successful registration for end-to-end tests
+            user_id = str(uuid.uuid4())
             supabase.table("users").insert({
-                "user_id": dev_id,
+                "user_id": user_id,
                 "email": req.email,
-                "hashed_password": "dev",
                 "display_name": req.display_name
             }).execute()
             return {
                 "status": "success",
-                "user_id": dev_id,
+                "user_id": user_id,
                 "access_token": f"DEV_TOKEN_{req.email}",
                 "display_name": req.display_name
             }
@@ -45,7 +45,6 @@ async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
         supabase.table("users").insert({
             "user_id": user_id,
             "email": req.email,
-            "hashed_password": "supabase_auth",
             "display_name": req.display_name
         }).execute()
         

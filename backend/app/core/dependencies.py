@@ -27,8 +27,7 @@ async def get_current_user(authorization: str = Header(None)) -> str:
         supabase.table("users").insert({
             "user_id": dev_id,
             "email": dev_email,
-            "display_name": "Dev User",
-            "hashed_password": "dev"
+            "display_name": "Dev User"
         }).execute()
         return dev_id
         

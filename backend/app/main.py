@@ -37,9 +37,13 @@ setup_rate_limiting(app)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Configure CORS strictly
+origins = [settings.FRONTEND_URL]
+if settings.DEBUG:
+    origins.append("http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
