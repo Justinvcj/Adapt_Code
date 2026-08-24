@@ -2,8 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies including Java
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies including Java (creating man directory to fix Debian slim bug)
+RUN mkdir -p /usr/share/man/man1 && \
+    apt-get update && apt-get install -y --no-install-recommends \
     default-jdk-headless \
     && rm -rf /var/lib/apt/lists/*
 
