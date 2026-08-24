@@ -1,4 +1,4 @@
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Depends
 import httpx
 import uuid
 from app.core.config import settings
