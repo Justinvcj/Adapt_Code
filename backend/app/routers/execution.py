@@ -119,7 +119,17 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
                     "stdin": expected_in,
                     "expected_output": expected_out
                 }
-                res = await client.post(f"{settings.JUDGE0_URL}/submissions?base64_encoded=false&wait=true", json=req_data)
+                headers = {}
+                if settings.JUDGE0_API_KEY:
+                    headers = {
+                        "X-RapidAPI-Key": settings.JUDGE0_API_KEY,
+                        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
+                    }
+                res = await client.post(
+                    f"{settings.JUDGE0_URL}/submissions?base64_encoded=false&wait=true", 
+                    json=req_data,
+                    headers=headers
+                )
                 res.raise_for_status()
                 result = res.json()
                 
