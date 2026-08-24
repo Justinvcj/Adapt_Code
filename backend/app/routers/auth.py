@@ -35,7 +35,9 @@ async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
             "password": req.password
         })
         
-        if not res.user:
+        if res.user and not res.session:
+            raise HTTPException(status_code=400, detail="Registration successful, but email confirmation is required. Please check your email or disable 'Confirm Email' in Supabase.")
+        elif not res.user:
             raise HTTPException(status_code=400, detail="Registration failed.")
             
         user_id = res.user.id
@@ -77,7 +79,7 @@ async def login(request: Request, req: LoginRequest) -> Dict[str, Any]:
             "password": req.password
         })
         if not res.session:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise HTTPException(status_code=401, detail="Invalid credentials or Email not confirmed. Please check your email or disable 'Confirm Email' in Supabase.")
             
         user_id = res.user.id
         user_record = supabase.table("users").select("display_name").eq("user_id", user_id).execute()
