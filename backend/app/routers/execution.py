@@ -107,51 +107,45 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
     judge0_down = False
     failed_input = ""
     failed_expected = ""
-    async with httpx.AsyncClient() as client:
-        try:
-            for i, tc in enumerate(test_cases):
-                expected_in = tc.get("input", "")
-                expected_out = tc.get("expected_output", "")
+    from app.core.executor import run_code_locally
+    
+    try:
+        for i, tc in enumerate(test_cases):
+            expected_in = tc.get("input", "")
+            expected_out = tc.get("expected_output", "")
+            
+            stdout, stderr, retcode = run_code_locally(submission.code, submission.language_id, expected_in)
+            
+            compile_errors = 1 if retcode != 0 else 0
+            
+            if retcode == 124:
+                status_desc = "Time Limit Exceeded"
+                is_correct = False
+            elif retcode != 0 or stderr.strip():
+                status_desc = "Runtime Error / Compilation Error"
+                is_correct = False
+            else:
+                if stdout.strip() == expected_out.strip():
+                    is_correct = True
+                    status_desc = "Accepted"
+                else:
+                    is_correct = False
+                    status_desc = "Wrong Answer"
+            
+            if not is_correct:
+                status_desc = f"Failed on Test Case {i+1}: {status_desc}"
+                failed_input = expected_in
+                failed_expected = expected_out
+                result = {"stdout": stdout, "stderr": stderr, "compile_output": stderr}
+                break
+        else:
+            compile_errors = 0
+            result = {"stdout": stdout, "stderr": stderr, "time": 0.05, "memory": 1024}
                 
-                req_data = {
-                    "source_code": submission.code,
-                    "language_id": submission.language_id,
-                    "stdin": expected_in,
-                    "expected_output": expected_out
-                }
-                headers = {}
-                if settings.JUDGE0_API_KEY:
-                    headers = {
-                        "X-RapidAPI-Key": settings.JUDGE0_API_KEY,
-                        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
-                    }
-                res = await client.post(
-                    f"{settings.JUDGE0_URL}/submissions?base64_encoded=false&wait=true", 
-                    json=req_data,
-                    headers=headers
-                )
-                res.raise_for_status()
-                result = res.json()
-                
-                status_id = result.get('status', {}).get('id', 0)
-                status_desc = result.get('status', {}).get('description', 'Unknown')
-                
-                is_correct = (status_id == 3)
-                compile_errors = 1 if status_id == 6 else 0
-                
-                if not is_correct:
-                    # Failed on test case i
-                    status_desc = f"Failed on Test Case {i+1}: {status_desc}"
-                    failed_input = expected_in
-                    failed_expected = expected_out
-                    break
-                    
-        except httpx.ConnectError:
-            judge0_down = True
-            logger.error("Judge0 service is down.")
-        except Exception as e:
-            judge0_down = True
-            logger.error(f"Judge0 error: {e}")
+    except Exception as e:
+        compile_errors = 1
+        judge0_down = True
+        logger.error(f"Execution error: {e}")
 
     if judge0_down:
         return {

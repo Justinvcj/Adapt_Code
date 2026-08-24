@@ -2,6 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install system dependencies including Java
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-17-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
