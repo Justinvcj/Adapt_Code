@@ -25,6 +25,7 @@ describe('CodeEditor', () => {
         onCodeChange={jest.fn()}
         onResetCode={jest.fn()}
         onRunCode={jest.fn()}
+        onRunCustom={jest.fn()}
       />
     )
     

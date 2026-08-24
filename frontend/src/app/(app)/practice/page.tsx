@@ -42,7 +42,7 @@ export default function PracticePage() {
 
   useEffect(() => {
     startNewSessionAndProblem();
-    return () => endSession();
+    return () => { endSession(); };
   }, []);
 
   useEffect(() => {
@@ -224,9 +224,6 @@ export default function PracticePage() {
         hint={hint} 
         loadingHint={loadingHint} 
         onShowHint={handleShowHint} 
-        onSkip={startNewSessionAndProblem}
-        onNext={startNewSessionAndProblem}
-        isCorrect={result?.is_correct}
       />
 
       {/* Right Panel: Editor & Output */}
