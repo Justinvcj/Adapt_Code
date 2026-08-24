@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install system dependencies including Java
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openjdk-17-jdk-headless \
+    default-jdk-headless \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
