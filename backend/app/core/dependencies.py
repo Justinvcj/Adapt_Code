@@ -32,7 +32,7 @@ async def get_current_user(authorization: str = Header(None)) -> str:
         }).execute()
         return dev_id
         
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         res = await client.get(
             f"{settings.SUPABASE_URL}/auth/v1/user", 
             headers={"Authorization": f"Bearer {token}", "apikey": settings.SUPABASE_KEY}
@@ -41,3 +41,9 @@ async def get_current_user(authorization: str = Header(None)) -> str:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
         user_data = res.json()
         return user_data["id"]
+
+async def require_admin(user_id: str = Depends(get_current_user)) -> str:
+    user_res = supabase.table("users").select("role").eq("user_id", user_id).execute()
+    if not user_res.data or user_res.data[0].get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Forbidden. Admin access required.")
+    return user_id

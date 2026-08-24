@@ -15,7 +15,9 @@ supabase = get_supabase()
 @limiter.limit("30/minute")
 async def get_next_problem(request: Request, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
-        res = supabase.table("problems").select("*").execute()
+        res = supabase.table("problems").select(
+            "problem_id, title, description, concept_tag, difficulty_level, test_cases, hint_text"
+        ).execute()
         all_problems = res.data
         if not all_problems:
             raise HTTPException(status_code=404, detail="No problems found.")
@@ -78,16 +80,24 @@ async def get_next_problem(request: Request, user_id: str = Depends(get_current_
             "hint_used": False
         }).execute()
         
+        visible_cases = selected_problem.get("test_cases", [])[:2]
+        visible_examples = [{"input": tc.get("input", "")} for tc in visible_cases]
+        
+        problem_response = {k: v for k, v in selected_problem.items() if k not in ("solution_code", "solution_explanation", "test_cases")}
+        problem_response["examples"] = visible_examples
+        
         return {
             "status": "success",
-            "problem": selected_problem,
+            "problem": problem_response,
             "routing_info": {
                 "target_difficulty": target_diff,
                 "context_features": context_vector.tolist()
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"Failed to fetch next problem for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.post("/hint/{problem_id}")
 @limiter.limit("20/minute")
@@ -101,7 +111,9 @@ async def get_hint(request: Request, problem_id: str, user_id: str = Depends(get
         supabase.table("active_problem_state").update({"hint_used": True}).eq("student_id", user_id).eq("problem_id", problem_id).execute()
         return {"status": "success", "hint_text": res.data[0]["hint_text"]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"Failed to fetch hint for problem {problem_id}: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/problems")
 async def get_all_problems(concept_tag: str = None, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
@@ -125,4 +137,6 @@ async def get_all_problems(concept_tag: str = None, user_id: str = Depends(get_c
                 
         return {"status": "success", "data": all_problems}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"Failed to fetch all problems: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")

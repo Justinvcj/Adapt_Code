@@ -19,4 +19,6 @@ async def get_history(page: int = 1, limit: int = 20, user_id: str = Depends(get
         
         return {"status": "success", "data": res.data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"History fetch failed for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")

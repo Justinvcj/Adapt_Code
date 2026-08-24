@@ -98,8 +98,9 @@ async def logout(authorization: str = Header(None)) -> Dict[str, Any]:
         token = authorization.split(" ")[1]
         try:
             supabase.auth.sign_out(token)
-        except:
-            pass
+        except Exception as e:
+            from app.core.config import logger
+            logger.error(f"Logout failed: {e}")
     return {"status": "success"}
 
 @router.get("/me")
@@ -110,4 +111,8 @@ async def get_me(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
             return {"status": "success", "user": res.data[0]}
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        if isinstance(e, HTTPException):
+            raise e
+        from app.core.config import logger
+        logger.error(f"get_me failed for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")

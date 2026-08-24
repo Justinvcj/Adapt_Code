@@ -19,10 +19,17 @@ class BKTDoctor:
         base = 1.0 if is_correct else 0.0
         
         # Penalties that reduce the weight of a correct answer
-        hint_penalty = 0.15 if hint_used else 0.0
-        attempt_penalty = min(0.05 * max(0, attempts - 1), 0.25)
-        compile_penalty = min(0.03 * compile_errors, 0.15)
-        time_penalty = 0.10 if time_on_task_sec > 1800 else 0.0  # Penalty for taking over 30 mins
+        hint_penalty = 0.2 if hint_used else 0.0
+        
+        # Non-linear decay for attempts
+        attempt_penalty = min(((attempts - 1) ** 1.5) * 0.03, 0.4)
+        
+        # Non-linear decay for time (starts penalizing heavily after 10 mins)
+        time_penalty = 0.0
+        if time_on_task_sec > 600:
+            time_penalty = min(0.3, ((time_on_task_sec - 600) / 3600.0) ** 1.5)
+            
+        compile_penalty = min(0.05 * compile_errors, 0.2)
         
         effective = base - hint_penalty - attempt_penalty - compile_penalty - time_penalty
         return max(effective, 0.0)

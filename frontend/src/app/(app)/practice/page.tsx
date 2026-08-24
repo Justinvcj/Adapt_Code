@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { fetchApi } from '@/lib/api';
 import Editor from '@monaco-editor/react';
-import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, RotateCcw, Lightbulb, ChevronRight, CheckCircle2, XCircle, Code2, Sparkles, X, ChevronDown, Clock, Loader2 } from 'lucide-react';
 import CodeEditor from '@/components/CodeEditor';

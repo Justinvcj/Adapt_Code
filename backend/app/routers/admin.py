@@ -1,30 +1,24 @@
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
 from app.core.database import get_supabase
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 supabase = get_supabase()
 
 @router.get("/users")
-async def get_all_users(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
-    # Check if the user is an admin
-    user_res = supabase.table("users").select("role").eq("user_id", user_id).execute()
-    if not user_res.data or user_res.data[0].get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Forbidden. Admin access required.")
+async def get_all_users(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
         
     try:
         users = supabase.table("users").select("user_id, email, display_name, created_at, role").execute()
         return {"status": "success", "data": users.data or []}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"Admin fetch users failed: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/stats")
-async def get_platform_stats(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
-    # Check if the user is an admin
-    user_res = supabase.table("users").select("role").eq("user_id", user_id).execute()
-    if not user_res.data or user_res.data[0].get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Forbidden. Admin access required.")
+async def get_platform_stats(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
         
     try:
         users = supabase.table("users").select("user_id", count="exact").execute()
@@ -40,4 +34,6 @@ async def get_platform_stats(user_id: str = Depends(get_current_user)) -> Dict[s
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"Admin fetch stats failed: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")

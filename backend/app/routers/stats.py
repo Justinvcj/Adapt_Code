@@ -61,4 +61,6 @@ async def get_stats(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"Stats fetch failed for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")

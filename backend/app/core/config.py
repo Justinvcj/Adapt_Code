@@ -10,7 +10,7 @@ class Settings(BaseModel):
     JUDGE0_URL: str = os.environ.get("JUDGE0_URL", "http://localhost:2358")
     FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
     TEST_MODE: bool = os.environ.get("TEST_MODE", "false").lower() == "true"
-    ZHIPU_API_KEY: str = os.environ.get("ZHIPU_API_KEY", "")
+    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
 
 import logging
 

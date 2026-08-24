@@ -7,7 +7,7 @@ from app.core.config import settings, logger
 from app.core.database import get_supabase
 from app.core.dependencies import get_current_user, bkt_doctor, linucb_agent
 from app.models.schemas import CodeSubmission, CodeCustomSubmission
-from app.services.ai_tutor import generate_explanation
+from app.services.ai_tutor import generate_explanation, analyze_complexity
 from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api", tags=["execution"])
@@ -81,9 +81,14 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             }).execute()
             if sess_res.data:
                 actual_session_id = sess_res.data[0]["session_id"]
+        else:
+            session_check = supabase.table("sessions").select("session_id").eq("session_id", actual_session_id).eq("student_id", user_id).execute()
+            if not session_check.data:
+                raise HTTPException(status_code=403, detail="Session does not belong to this user.")
     except Exception as e:
-        logger.info(f"Judge0 error: {e}")
-        pass
+        if isinstance(e, HTTPException):
+            raise e
+        logger.error(f"Session validation error: {e}")
 
     # Ensure hint penalty is applied if they used the hint API
     hint_flag = submission.hint_used or db_hint_used
@@ -100,6 +105,8 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
         raise HTTPException(status_code=500, detail="Failed to fetch problem data.")
     # 1. Judge0 Execution for ALL test cases
     judge0_down = False
+    failed_input = ""
+    failed_expected = ""
     async with httpx.AsyncClient() as client:
         try:
             for i, tc in enumerate(test_cases):
@@ -125,6 +132,8 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
                 if not is_correct:
                     # Failed on test case i
                     status_desc = f"Failed on Test Case {i+1}: {status_desc}"
+                    failed_input = expected_in
+                    failed_expected = expected_out
                     break
                     
         except httpx.ConnectError:
@@ -144,17 +153,28 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             "explanation": "Judge0 execution engine is currently unreachable."
         }
 
-    # 2. Reward & LinUCB
+    # 2. Reward & LinUCB (Zone of Proximal Development)
     reward = 0.0
     if is_correct:
-        base_reward = 1.0 if submission.difficulty_level == 'hard' else (0.8 if submission.difficulty_level == 'medium' else 0.5)
-        hint_penalty = 0.2 if hint_flag else 0.0
-        time_penalty = 0.1 if elapsed_seconds > 600 else 0.0
-        reward = max(0.1, base_reward - hint_penalty - time_penalty)
-    elif compile_errors == 0:
-        reward = 0.2
+        if elapsed_seconds < 60 and submission.attempt_count == 1 and not hint_flag:
+            reward = 0.2  # Trivial, no real learning
+        elif elapsed_seconds > 1200 or submission.attempt_count > 10:
+            reward = 0.4  # Exhausting, borderline frustration
+        else:
+            # Optimal struggle (ZPD)
+            reward = 1.0
+            if hint_flag:
+                reward -= 0.2
+            if submission.attempt_count > 3:
+                reward -= 0.1 * (submission.attempt_count - 3)
+            reward = max(0.5, reward)
     else:
-        reward = 0.0
+        if elapsed_seconds > 900 or submission.attempt_count > 5:
+            reward = -0.5  # Frustration zone
+        elif compile_errors == 0:
+            reward = 0.1   # Still trying, logical error
+        else:
+            reward = 0.0   # Syntax errors
     
     try:
         mastery_record = supabase.table("mastery_scores").select("*").eq("student_id", user_id).execute()
@@ -239,13 +259,22 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
     if not is_correct:
         try:
             error_verdict = result.get('compile_output') or result.get('stderr') or status_desc
+            actual_out = result.get('stdout') or ""
             explanation = generate_explanation(
                 code=submission.code,
                 problem_description=problem_data.get("description", ""),
-                error_verdict=error_verdict
+                error_verdict=error_verdict,
+                expected_output=failed_expected,
+                actual_output=actual_out,
+                input_case=failed_input
             )
         except Exception as e:
             explanation = "AI Tutor Error: The explanation service is currently unavailable."
+    else:
+        try:
+            explanation = analyze_complexity(submission.code)
+        except Exception as e:
+            explanation = "Complexity analysis unavailable."
 
     return {
         "status": "success",

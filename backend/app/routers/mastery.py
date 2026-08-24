@@ -38,4 +38,6 @@ async def get_mastery(user_id: str = Depends(get_current_user)) -> Dict[str, Any
             
         return {"status": "success", "data": result}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from app.core.config import logger
+        logger.error(f"Mastery fetch failed for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
