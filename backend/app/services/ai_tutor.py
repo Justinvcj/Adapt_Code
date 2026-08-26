@@ -2,6 +2,7 @@ import os
 import ast
 import google.generativeai as genai
 from dotenv import load_dotenv
+from app.core.config import logger
 
 load_dotenv()
 
@@ -9,9 +10,10 @@ from app.core.config import settings
 
 def _get_model():
     if not settings.GEMINI_API_KEY:
+        logger.warning("GEMINI_API_KEY not set. LLM tutoring will fail gracefully.")
         return None
     genai.configure(api_key=settings.GEMINI_API_KEY)
-    return genai.GenerativeModel('gemini-1.5-flash')
+    return genai.GenerativeModel('gemini-3.6-flash')
 
 def _get_ast_info(code: str) -> str:
     try:

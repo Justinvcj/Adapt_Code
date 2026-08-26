@@ -21,7 +21,7 @@ difficulty_level = None
 async def run_tests():
     print(f"--- Starting Integration Tests ---")
     
-    async with httpx.AsyncClient(base_url=BASE_URL) as client:
+    async with httpx.AsyncClient(base_url=BASE_URL, timeout=30.0) as client:
         # 1. Register
         print("1. Testing Registration...")
         res = await client.post("/auth/register", json={
@@ -31,9 +31,9 @@ async def run_tests():
         })
         assert res.status_code == 200, f"Registration failed: {res.text}"
         data = res.json()
-        assert "token" in data
-        assert "user" in data
-        token = data["token"]
+        assert "access_token" in data
+        assert "user_id" in data
+        token = data["access_token"]
         
         headers = {"Authorization": f"Bearer {token}"}
         
@@ -44,7 +44,7 @@ async def run_tests():
             "password": test_password
         })
         assert res.status_code == 200, f"Login failed: {res.text}"
-        assert res.json()["token"]
+        assert res.json()["access_token"]
         
         # 3. Session Start
         print("3. Testing Session Start...")
@@ -78,6 +78,7 @@ async def run_tests():
         })
         assert res.status_code == 200, f"Execute failed: {res.text}"
         exec_data = res.json()
+        print("Exec Data:", exec_data)
         assert exec_data["is_correct"] == False
         
         # 6. Execute Custom Code
@@ -107,4 +108,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(run_tests())
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Test failed with error: {e}")

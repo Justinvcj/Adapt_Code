@@ -7,8 +7,6 @@ load_dotenv()
 class Settings(BaseModel):
     SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
     SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY", "")
-    JUDGE0_URL: str = os.environ.get("JUDGE0_URL", "http://localhost:2358")
-    JUDGE0_API_KEY: str = os.environ.get("JUDGE0_API_KEY", "")
     FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
     DEBUG: bool = os.environ.get("DEBUG", "false").lower() == "true"
     TEST_MODE: bool = os.environ.get("TEST_MODE", "false").lower() == "true"

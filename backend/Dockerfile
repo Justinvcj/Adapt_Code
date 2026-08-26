@@ -2,10 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies including Java (creating man directory to fix Debian slim bug)
+# Install system dependencies including Java, Node.js, and C++ (creating man directory to fix Debian slim bug)
 RUN mkdir -p /usr/share/man/man1 && \
     apt-get update && apt-get install -y --no-install-recommends \
     default-jdk-headless \
+    nodejs \
+    npm \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies

@@ -8,7 +8,6 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Next.js 14](https://img.shields.io/badge/Next.js_14-App_Router-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![Judge0](https://img.shields.io/badge/Judge0-Docker_Sandbox-E44D26?logo=docker&logoColor=white)](https://judge0.com)
 
 [Report Bug](https://github.com/Justinvcj/Adapt_Code/issues) * [Request Feature](https://github.com/Justinvcj/Adapt_Code/issues)
 
@@ -28,7 +27,7 @@
 |             +--------------------------+------------------------+           |
 |                                        v                        v           |
 |  +-----------------------------------------------------------------------+  |
-|  |         Isolated Judge0 Sandbox: Secure Container Execution           |  |
+|  |        Local Subprocess Execution (Python, Java, C++, JavaScript)     |  |
 |  +-------------------------------------+---------------------------------+  |
 |                                        v                                    |
 |  +-----------------------------------------------------------------------+  |
@@ -50,9 +49,9 @@
 
 - **Dynamic Knowledge Tracing** -- Models concept mastery across 12 algorithmic topics in real time using Bayesian Knowledge Tracing (BKT).
 - **Contextual Bandit Selection** -- Recommends optimal practice problems dynamically via LinUCB multi-armed bandit algorithms with ridge regression.
-- **Isolated Code Sandbox** -- Executes and evaluates multi-language submissions securely inside Dockerized Judge0 containers.
+- **Local Sandbox** -- Executes and evaluates multi-language submissions securely inside local subprocesses with strict timeouts.
 - **Monaco In-Browser IDE** -- Delivers a complete in-browser coding environment with syntax highlighting, custom themes, and instant execution telemetry.
-- **AI Diagnostic Tutoring** -- Generates targeted explanations and remediation hints automatically upon test case failures using LLM integration.
+- **AI Diagnostic Tutoring** -- Generates targeted explanations and remediation hints automatically upon test case failures using Google Gemini integration.
 - **Curriculum Prerequisite Graph** -- Visualizes concept progression and dependencies across data structures and algorithms.
 
 ---
@@ -62,7 +61,7 @@
 ```mermaid
 graph TD
     A[Student Submits Code] --> B[FastAPI Backend Endpoint: /api/execute]
-    B --> C[Judge0 Docker Sandbox]
+    B --> C[Local Subprocess Sandbox]
     C -->|Execution Telemetry| D[BKT Engine Updates Mastery State]
     D --> E[LinUCB Contextual Bandit]
     E --> F[Next Optimal Problem Selected]
@@ -80,7 +79,6 @@ graph TD
 |---|---|---|
 | [Node.js](https://nodejs.org/) | 18+ | Frontend runtime |
 | [Python](https://www.python.org/) | 3.10+ | Backend runtime |
-| [Docker](https://www.docker.com/) | 20+ | Required for Judge0 sandbox container |
 | [Supabase](https://supabase.com/) | Cloud / Local | PostgreSQL database and authentication |
 
 ### Installation
@@ -124,9 +122,10 @@ Open `http://localhost:3000` in your browser, select a topic from the curriculum
 |---|---|---|---|
 | `SUPABASE_URL` | Yes | -- | Supabase project URL |
 | `SUPABASE_KEY` | Yes | -- | Supabase service role or anon API key |
-| `ZHIPU_API_KEY` | Yes | -- | API key for LLM tutoring explanations |
-| `JUDGE0_URL` | No | `http://localhost:2358` | Endpoint for Judge0 execution sandbox |
+| `GEMINI_API_KEY` | Yes | -- | API key for Google Gemini LLM tutoring explanations |
 | `FRONTEND_URL` | No | `http://localhost:3000` | Allowed CORS origin |
+| `DEBUG` | No | `false` | Enable verbose logging |
+| `TEST_MODE` | No | `false` | Enable test mode |
 
 ### Frontend (`frontend/.env.local`)
 
@@ -142,8 +141,8 @@ Open `http://localhost:3000` in your browser, select a topic from the curriculum
 |---|---|
 | Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS, Monaco Editor, Framer Motion, Lucide React |
 | Backend | FastAPI, Uvicorn, Pydantic, Supabase Python SDK, NumPy, SlowAPI |
-| Execution Sandbox | Judge0, Docker, Docker Compose |
-| AI & Adaptive Engine | ZhipuAI / OpenAI LLM, Bayesian Knowledge Tracing (BKT), LinUCB Bandit |
+| Execution Sandbox | Local subprocess, Docker |
+| AI & Adaptive Engine | Google Gemini LLM, Bayesian Knowledge Tracing (BKT), LinUCB Bandit |
 | Testing | Pytest, Jest |
 
 ---

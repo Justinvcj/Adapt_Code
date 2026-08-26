@@ -63,20 +63,12 @@ app.include_router(admin_router)
 def read_root():
     return {"message": "AdaptCode API is running."}
 
-import httpx
-
 @app.get("/health")
 async def health_check():
-    judge0_ok = False
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as c:
-            r = await c.get(f"{settings.JUDGE0_URL}/about")
-            judge0_ok = r.status_code == 200
-    except Exception:
-        pass
+    supabase_ok = bool(settings.SUPABASE_URL and settings.SUPABASE_KEY)
+    gemini_ok = bool(settings.GEMINI_API_KEY)
     return {
         "status": "ok",
-        "judge0": judge0_ok,
-        "zhipu_configured": bool(settings.ZHIPU_API_KEY),
-        "supabase_configured": bool(settings.SUPABASE_URL and settings.SUPABASE_KEY)
+        "supabase_configured": supabase_ok,
+        "gemini_configured": gemini_ok,
     }

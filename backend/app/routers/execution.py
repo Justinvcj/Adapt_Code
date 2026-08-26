@@ -1,5 +1,4 @@
 import time
-import httpx
 import numpy as np
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Request
@@ -16,45 +15,33 @@ supabase = get_supabase()
 @router.post("/execute_custom")
 @limiter.limit("10/minute")
 async def execute_custom(request: Request, submission: CodeCustomSubmission, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
-    async with httpx.AsyncClient() as client:
-        try:
-            req_data = {
-                "source_code": submission.code,
-                "language_id": submission.language_id,
-                "stdin": submission.custom_input,
-                "expected_output": ""
-            }
-            res = await client.post(f"{settings.JUDGE0_URL}/submissions?base64_encoded=false&wait=true", json=req_data)
-            res.raise_for_status()
-            result = res.json()
-            
-            status_id = result.get('status', {}).get('id', 0)
-            status_desc = result.get('status', {}).get('description', 'Unknown')
-            
-            # For custom execution, anything that compiles and runs is "successful" execution
-            # but we just return the output.
-            output = result.get('stdout') or result.get('compile_output') or result.get('stderr') or status_desc
-            
-            return {
-                "status": "success",
-                "verdict": output,
-                "is_correct": status_id == 3,
-                "execution_time_ms": float(result.get('time', 0)) * 1000 if result.get('time') else 0,
-                "memory_used_kb": result.get('memory', 0),
-                "explanation": None
-            }
-        except httpx.ConnectError:
-            return {
-                "status": "error",
-                "verdict": "Execution Service Down",
-                "is_correct": False,
-                "execution_time_ms": 0,
-                "memory_used_kb": 0,
-                "explanation": "Judge0 execution engine is currently unreachable."
-            }
-        except Exception as e:
-            logger.error(f"Judge0 error: {e}")
-            raise HTTPException(status_code=500, detail=f"Judge0 execution failed: {e}")
+    from app.core.executor import run_code_locally
+    
+    try:
+        stdout, stderr, retcode = run_code_locally(
+            submission.code, 
+            submission.language_id, 
+            submission.custom_input
+        )
+        
+        if retcode == 124:
+            verdict = "Time Limit Exceeded"
+        elif retcode != 0:
+            verdict = stderr or "Runtime Error"
+        else:
+            verdict = stdout or "(no output)"
+        
+        return {
+            "status": "success",
+            "verdict": verdict,
+            "is_correct": retcode == 0,
+            "execution_time_ms": 0,
+            "memory_used_kb": 0,
+            "explanation": None
+        }
+    except Exception as e:
+        logger.error(f"Custom execution error: {e}")
+        raise HTTPException(status_code=500, detail=f"Execution failed: {e}")
 
 @router.post("/execute")
 @limiter.limit("5/minute")
@@ -268,7 +255,7 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
             "time_on_task_seconds": elapsed_seconds,
             "hint_used": hint_flag,
             "attempt_count": submission.attempt_count,
-            "final_verdict": status_desc,
+            "final_verdict": "Accepted" if is_correct else ("Time Limit Exceeded" if "Time Limit" in status_desc else ("Wrong Answer" if "Wrong Answer" in status_desc else "Runtime Error")),
             "reward_signal": reward
         }).execute()
         
