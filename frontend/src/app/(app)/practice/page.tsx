@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { fetchApi } from '@/lib/api';
+import { Analytics } from '@/lib/analytics';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, RotateCcw, Lightbulb, ChevronRight, CheckCircle2, XCircle, Code2, Sparkles, X, ChevronDown, Clock, Loader2 } from 'lucide-react';
@@ -77,6 +78,10 @@ export default function PracticePage() {
       const res = await fetchApi(endpoint);
       if (res.problem) {
         setProblem(res.problem);
+        Analytics.trackEvent('Problem Started', { 
+            problem_id: res.problem.problem_id, 
+            difficulty: res.problem.difficulty_level 
+        });
         const savedCode = localStorage.getItem(`code_${res.problem.problem_id}`);
         setCode(savedCode || lang.defaultCode);
       }
@@ -118,6 +123,7 @@ export default function PracticePage() {
   const handleShowHint = async () => {
     if (!problem) return;
     setLoadingHint(true);
+    Analytics.trackEvent('Hint Requested', { problem_id: problem.problem_id });
     try {
       const res = await fetchApi(`/api/hint/${problem.problem_id}`, { method: 'POST' });
       setHint(res.hint_text);
@@ -153,7 +159,17 @@ export default function PracticePage() {
       setResult(res);
       setAttempts(prev => prev + 1);
       
-      if (res.is_correct) {
+      if (res.explanation === "PAYWALL_LIMIT_REACHED") {
+         Analytics.trackEvent('Paywall Hit', { reason: 'AI Tutor Daily Limit' });
+      } else {
+         Analytics.trackEvent('Code Executed', { 
+            problem_id: problem.problem_id, 
+            is_correct: res.is_correct,
+            attempt_number: attempts + 1
+         });
+      }
+      
+      if (res.is_correct && !res.explanation) {
         toast.success("Correct Answer!");
       } else {
         toast.error(`Failed: ${res.verdict}`);
@@ -269,10 +285,13 @@ export default function PracticePage() {
                 </div>
                 
                 {!result.is_correct && result.explanation && (
-                  <button 
-                    onClick={() => setAiTutorOpen(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors mt-2"
-                  >
+                    <button 
+                      onClick={() => {
+                          setAiTutorOpen(true);
+                          Analytics.trackEvent('AI Tutor Opened', { problem_id: problem.problem_id, is_correct: result.is_correct });
+                      }}
+                      className="mt-3 flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 font-medium px-4 py-2 rounded-lg bg-indigo-500/10 transition-colors"
+                    >
                     <Sparkles className="w-4 h-4" /> View AI Tutor Analysis
                   </button>
                 )}

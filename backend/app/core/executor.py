@@ -1,6 +1,10 @@
 import tempfile
 import subprocess
 import os
+import asyncio
+
+# Limit to 4 concurrent subprocesses to prevent CPU exhaustion on the free tier
+execution_semaphore = asyncio.Semaphore(4)
 
 def run_code_locally(code: str, language_id: int, stdin: str):
     """
@@ -105,3 +109,12 @@ def run_code_locally(code: str, language_id: int, stdin: str):
 
         else:
             return "", "Unsupported Language", 1
+
+async def async_run_code_locally(code: str, language_id: int, stdin: str):
+    """
+    Asynchronous wrapper for run_code_locally.
+    Uses a semaphore to limit concurrent executions and runs the blocking
+    subprocess call in a separate thread so the FastAPI event loop isn't blocked.
+    """
+    async with execution_semaphore:
+        return await asyncio.to_thread(run_code_locally, code, language_id, stdin)

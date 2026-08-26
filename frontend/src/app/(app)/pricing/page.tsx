@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { fetchApi } from '@/lib/api';
+import { Analytics } from '@/lib/analytics';
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Loader2, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -13,12 +14,15 @@ export default function PricingPage() {
 
   const handleSubscribe = async () => {
     setLoading(true);
+    Analytics.trackEvent('Upgrade Initiated');
     try {
       const res = await fetchApi('/api/checkout/mock-upgrade', { method: 'POST' });
+      Analytics.trackEvent('Upgrade Success', { plan: 'AdaptCode Pro' });
       toast.success(res.message || "Upgraded successfully!");
       // Reload to refresh auth context
       setTimeout(() => window.location.href = '/dashboard', 1500);
     } catch (e: any) {
+      Analytics.trackEvent('Upgrade Failed', { error: e.message });
       toast.error(e.message || "Upgrade failed");
       setLoading(false);
     }

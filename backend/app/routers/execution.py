@@ -15,10 +15,10 @@ supabase = get_supabase()
 @router.post("/execute_custom")
 @limiter.limit("10/minute")
 async def execute_custom(request: Request, submission: CodeCustomSubmission, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
-    from app.core.executor import run_code_locally
+    from app.core.executor import async_run_code_locally
     
     try:
-        stdout, stderr, retcode = run_code_locally(
+        stdout, stderr, retcode = await async_run_code_locally(
             submission.code, 
             submission.language_id, 
             submission.custom_input
@@ -103,14 +103,14 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
     status_desc = "No test cases"
     result = {}
     
-    from app.core.executor import run_code_locally
+    from app.core.executor import async_run_code_locally
     
     try:
         for i, tc in enumerate(test_cases):
             expected_in = tc.get("input", "")
             expected_out = tc.get("expected_output", "")
             
-            stdout, stderr, retcode = run_code_locally(submission.code, submission.language_id, expected_in)
+            stdout, stderr, retcode = await async_run_code_locally(submission.code, submission.language_id, expected_in)
             
             compile_errors = 1 if retcode != 0 else 0
             
