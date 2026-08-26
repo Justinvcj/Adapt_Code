@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { fetchApi } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { Trophy, Flame, Target, Activity, Lock, CheckCircle2, AlertCircle, ArrowRight, Code2 } from 'lucide-react';
+import Heatmap from '@/components/Heatmap';
+import Badges from '@/components/Badges';
 
 type Stats = {
   total_problems_solved: number;
@@ -34,6 +36,9 @@ const CONCEPT_ORDER = [
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [concepts, setConcepts] = useState<Concept[]>([]);
+  const [heatmapData, setHeatmapData] = useState<{date: string, count: number}[]>([]);
+  const [badgesData, setBadgesData] = useState<any[]>([]);
+  const [potd, setPotd] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,12 +46,18 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, masteryRes] = await Promise.all([
+      const [statsRes, masteryRes, heatmapRes, badgesRes, potdRes] = await Promise.all([
         fetchApi('/api/stats'),
-        fetchApi('/api/mastery')
+        fetchApi('/api/mastery'),
+        fetchApi('/api/stats/heatmap'),
+        fetchApi('/api/badges'),
+        fetchApi('/api/problem/potd')
       ]);
       setStats(statsRes.data);
       setConcepts(masteryRes.data);
+      setHeatmapData(heatmapRes.data);
+      setBadgesData(badgesRes.data);
+      setPotd(potdRes.data);
     } catch (e: any) {
       console.error(e);
       setError(e.message || "Failed to load dashboard data");
@@ -108,6 +119,43 @@ export default function DashboardPage() {
       >
         <h1 className="text-3xl font-light text-slate-100 mb-8">Mastery Dashboard</h1>
 
+        {/* POTD Banner */}
+        {potd && (
+          <div className="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+              <Trophy className="w-32 h-32" />
+            </div>
+            <div className="z-10 relative">
+              <div className="flex items-center gap-2 text-indigo-300 font-medium text-sm tracking-widest uppercase mb-2">
+                <Flame className="w-4 h-4 text-orange-400" />
+                Problem of the Day
+              </div>
+              <h2 className="text-2xl font-bold text-slate-100 mb-2">{potd.title}</h2>
+              <div className="flex gap-3 text-xs font-medium">
+                <span className="px-2 py-1 bg-slate-800 rounded text-slate-300">{potd.concept_tag.replaceAll('_', ' ')}</span>
+                <span className={`px-2 py-1 rounded ${
+                  potd.difficulty_level === 'easy' ? 'bg-green-500/20 text-green-400' :
+                  potd.difficulty_level === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                  'bg-red-500/20 text-red-400'
+                }`}>{potd.difficulty_level}</span>
+              </div>
+            </div>
+            <div className="z-10 relative shrink-0 w-full md:w-auto">
+              {potd.is_solved ? (
+                <div className="flex items-center justify-center gap-2 px-6 py-3 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl font-medium w-full">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Completed
+                </div>
+              ) : (
+                <a href={`/practice?problem_id=${potd.problem_id}`} className="flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 transition-colors text-white rounded-xl font-medium shadow-lg shadow-indigo-900/20 w-full">
+                  Solve Now
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-center">
@@ -140,6 +188,16 @@ export default function DashboardPage() {
               <span className="font-medium">Total Sessions</span>
             </div>
             <div className="text-4xl font-light text-slate-100">{stats?.total_sessions || 0}</div>
+          </div>
+        </div>
+
+        {/* Heatmap and Badges Row */}
+        <div className="flex flex-col lg:flex-row gap-6 mb-10">
+          <div className="flex-1">
+             {heatmapData && <Heatmap data={heatmapData} />}
+          </div>
+          <div className="w-full lg:w-1/3">
+             {badgesData && <Badges data={badgesData} />}
           </div>
         </div>
 

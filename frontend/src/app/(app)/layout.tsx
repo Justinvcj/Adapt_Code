@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Code2, BarChart2, Clock, LogOut, Loader2, Menu, X, Flame } from 'lucide-react';
+import { Code2, BarChart2, Clock, LogOut, Loader2, Menu, X, Flame, Trophy } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -43,6 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { name: 'Practice', href: '/practice', icon: Code2 },
     { name: 'Dashboard', href: '/dashboard', icon: BarChart2 },
+    { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
     { name: 'History', href: '/history', icon: Clock },
   ];
 

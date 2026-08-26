@@ -101,6 +101,20 @@ async def run_tests():
         assert res.status_code == 200, f"Mastery failed: {res.text}"
         mastery = res.json()
         
+        # 8. Phase 4 Gamification Endpoints
+        print("8. Testing Gamification Endpoints...")
+        res = await client.get("/stats/heatmap", headers=headers)
+        assert res.status_code == 200, f"Heatmap failed: {res.text}"
+        
+        res = await client.get("/badges", headers=headers)
+        assert res.status_code == 200, f"Badges failed: {res.text}"
+        
+        res = await client.get("/leaderboard", headers=headers)
+        assert res.status_code == 200, f"Leaderboard failed: {res.text}"
+        
+        res = await client.get("/problem/potd", headers=headers)
+        assert res.status_code == 200, f"POTD failed: {res.text}"
+
         print("All Tests Passed! 🎉")
 
 if __name__ == "__main__":

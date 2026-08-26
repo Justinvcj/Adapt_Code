@@ -71,7 +71,10 @@ export default function PracticePage() {
         setSessionId(sessionRes.session_id);
       }
       
-      const res = await fetchApi('/api/problem/next');
+      const urlParams = new URLSearchParams(window.location.search);
+      const forcedProblemId = urlParams.get('problem_id');
+      const endpoint = forcedProblemId ? `/api/problem/next?problem_id=${forcedProblemId}` : '/api/problem/next';
+      const res = await fetchApi(endpoint);
       if (res.problem) {
         setProblem(res.problem);
         const savedCode = localStorage.getItem(`code_${res.problem.problem_id}`);

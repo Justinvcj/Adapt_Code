@@ -12,6 +12,8 @@ from app.routers.session import router as session_router
 from app.routers.stats import router as stats_router
 from app.routers.history import router as history_router
 from app.routers.admin import router as admin_router
+from app.routers.leaderboard import router as leaderboard_router
+from app.routers.potd import router as potd_router
 from app.core.rate_limit import setup_rate_limiting
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -57,6 +59,8 @@ app.include_router(mastery_router)
 app.include_router(session_router)
 app.include_router(stats_router)
 app.include_router(history_router)
+app.include_router(leaderboard_router)
+app.include_router(potd_router)
 app.include_router(admin_router)
 
 @app.get("/")

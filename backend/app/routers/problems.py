@@ -13,8 +13,15 @@ supabase = get_supabase()
 
 @router.get("/problem/next")
 @limiter.limit("30/minute")
-async def get_next_problem(request: Request, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def get_next_problem(request: Request, problem_id: int = None, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
+        if problem_id is not None:
+            res = supabase.table("problems").select(
+                "problem_id, title, description, concept_tag, difficulty_level, test_cases, hint_text"
+            ).eq("problem_id", problem_id).execute()
+            if res.data:
+                return {"status": "success", "problem": res.data[0]}
+
         res = supabase.table("problems").select(
             "problem_id, title, description, concept_tag, difficulty_level, test_cases, hint_text"
         ).execute()
