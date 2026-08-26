@@ -284,11 +284,47 @@ export default function PracticePage() {
 
       {/* AI Tutor Side Sheet */}
       <AITutorPanel 
-        isOpen={aiTutorOpen && !!result?.explanation} 
+        isOpen={aiTutorOpen && !!result?.explanation && result.explanation !== "PAYWALL_LIMIT_REACHED"} 
         explanation={result?.explanation || ''} 
         onClose={() => setAiTutorOpen(false)} 
         onTrySimilar={() => { setAiTutorOpen(false); startNewSessionAndProblem(); }} 
       />
+
+      {/* Paywall Modal */}
+      <AnimatePresence>
+        {result?.explanation === "PAYWALL_LIMIT_REACHED" && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-slate-900 border border-indigo-500/30 p-8 rounded-2xl max-w-md w-full shadow-2xl flex flex-col items-center text-center"
+            >
+              <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mb-6">
+                <Sparkles className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Daily Limit Reached</h2>
+              <p className="text-slate-400 mb-8 text-sm">
+                You've hit the limit of 5 AI Tutor explanations for today on the Free tier. Upgrade to Pro for unlimited guidance!
+              </p>
+              <div className="flex gap-4 w-full">
+                <button 
+                  onClick={() => setResult(null)} 
+                  className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition-colors"
+                >
+                  Close
+                </button>
+                <a 
+                  href="/pricing" 
+                  className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition-colors"
+                >
+                  View Plans
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

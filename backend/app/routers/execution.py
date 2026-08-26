@@ -272,6 +272,31 @@ async def execute_code(request: Request, submission: CodeSubmission, user_id: st
 
     # 5. AI Explanation
     explanation = None
+    
+    # Check Pro status and limit
+    is_pro = False
+    try:
+        user_res = supabase.table("users").select("is_pro").eq("user_id", user_id).execute()
+        if user_res.data:
+            is_pro = user_res.data[0].get("is_pro", False)
+            
+        if not is_pro:
+            # Check today's usage (rough estimate via session_events count)
+            from datetime import datetime
+            today_str = datetime.utcnow().strftime('%Y-%m-%d')
+            usage_res = supabase.table("session_events").select("id", count="exact").eq("student_id", user_id).gte("timestamp", today_str).execute()
+            if usage_res.count and usage_res.count >= 5:
+                return {
+                    "status": "success",
+                    "verdict": status_desc,
+                    "is_correct": is_correct,
+                    "execution_time_ms": float(result.get('time', 0)) * 1000 if result.get('time') else 0,
+                    "memory_used_kb": result.get('memory', 0),
+                    "explanation": "PAYWALL_LIMIT_REACHED"
+                }
+    except Exception as e:
+        logger.error(f"Paywall check error: {e}")
+
     if not is_correct:
         try:
             error_verdict = result.get('compile_output') or result.get('stderr') or status_desc

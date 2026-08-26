@@ -29,6 +29,7 @@ export default function RegisterPage() {
           email: email,
           display_name: res.display_name,
           role: 'student',
+          is_pro: false,
           created_at: new Date().toISOString()
         });
         window.location.href = '/practice';

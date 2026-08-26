@@ -27,7 +27,8 @@ async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
                 "status": "success",
                 "user_id": user_id,
                 "access_token": f"DEV_TOKEN_{req.email}",
-                "display_name": req.display_name
+                "display_name": req.display_name,
+                "is_pro": False
             }
             
         res = supabase.auth.sign_up({
@@ -63,14 +64,15 @@ async def login(request: Request, req: LoginRequest) -> Dict[str, Any]:
     try:
         # Dev bypass for e2e tests
         if settings.TEST_MODE and "testuser_" in req.email:
-            user_record = supabase.table("users").select("user_id, display_name").eq("email", req.email).execute()
+            user_record = supabase.table("users").select("user_id, display_name, is_pro").eq("email", req.email).execute()
             if not user_record.data:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
             return {
                 "status": "success",
                 "user_id": user_record.data[0]["user_id"],
                 "access_token": f"DEV_TOKEN_{req.email}",
-                "display_name": user_record.data[0]["display_name"]
+                "display_name": user_record.data[0]["display_name"],
+                "is_pro": user_record.data[0].get("is_pro", False)
             }
             
         res = supabase.auth.sign_in_with_password({
@@ -81,14 +83,16 @@ async def login(request: Request, req: LoginRequest) -> Dict[str, Any]:
             raise HTTPException(status_code=401, detail="Invalid credentials or Email not confirmed. Please check your email or disable 'Confirm Email' in Supabase.")
             
         user_id = res.user.id
-        user_record = supabase.table("users").select("display_name").eq("user_id", user_id).execute()
+        user_record = supabase.table("users").select("display_name, is_pro").eq("user_id", user_id).execute()
         display_name = user_record.data[0]["display_name"] if user_record.data else "User"
+        is_pro = user_record.data[0].get("is_pro", False) if user_record.data else False
         
         return {
             "status": "success",
             "user_id": user_id,
             "access_token": res.session.access_token,
-            "display_name": display_name
+            "display_name": display_name,
+            "is_pro": is_pro
         }
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
@@ -107,7 +111,7 @@ async def logout(authorization: str = Header(None)) -> Dict[str, Any]:
 @router.get("/me")
 async def get_me(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
-        res = supabase.table("users").select("user_id, email, display_name, role, created_at").eq("user_id", user_id).execute()
+        res = supabase.table("users").select("user_id, email, display_name, role, is_pro, created_at").eq("user_id", user_id).execute()
         if res.data:
             return {"status": "success", "user": res.data[0]}
         raise HTTPException(status_code=404, detail="User not found")

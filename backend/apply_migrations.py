@@ -16,3 +16,4 @@ def run_sql(filepath):
 run_sql("migrations/002_testcases_not_empty.sql")
 run_sql("migrations/003_system_failures.sql")
 run_sql("migrations/004_drop_hashed_password.sql")
+run_sql("migrations/005_add_is_pro.sql")

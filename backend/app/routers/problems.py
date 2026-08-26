@@ -74,6 +74,17 @@ async def get_next_problem(request: Request, problem_id: int = None, user_id: st
         reverse_map = {0: 'easy', 1: 'medium', 2: 'hard'}
         target_diff = reverse_map.get(best_diff_idx, 'easy')
         
+        # Check Pro Status
+        is_pro = False
+        user_res = supabase.table("users").select("is_pro").eq("user_id", user_id).execute()
+        if user_res.data:
+            is_pro = user_res.data[0].get("is_pro", False)
+
+        if not is_pro:
+            valid_problems = [p for p in valid_problems if p["difficulty_level"] != "hard"]
+            if target_diff == "hard":
+                target_diff = "medium"
+
         target_problems = [p for p in valid_problems if p['difficulty_level'] == target_diff]
         if not target_problems:
             target_problems = valid_problems

@@ -8,6 +8,7 @@ type User = {
   email: string;
   display_name: string;
   role: string;
+  is_pro: boolean;
   created_at: string;
 };
 
