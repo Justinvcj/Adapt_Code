@@ -60,13 +60,13 @@ export default function Navbar() {
               
               <div className={`dd ${dropdownOpen ? 'open' : ''}`} id="userDD">
                 <button className="nav-avatar" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                  {user.username.substring(0,2).toUpperCase()}
+                  {(user.display_name || user.email || 'U').substring(0,2).toUpperCase()}
                 </button>
                 <div className="dd-menu" style={{minWidth: '280px'}}>
                   <div className="dd-head">
-                    <div className="dd-avatar">{user.username.substring(0,2).toUpperCase()}</div>
+                    <div className="dd-avatar">{(user.display_name || user.email || 'U').substring(0,2).toUpperCase()}</div>
                     <div>
-                      <div className="dd-name">{user.username}</div>
+                      <div className="dd-name">{user.display_name || user.email}</div>
                       {!user.is_pro && <div className="dd-upsell">Access all features with our<br/>Premium subscription!</div>}
                       {user.is_pro && <div className="dd-upsell" style={{color: 'var(--solved)'}}>Pro Member</div>}
                     </div>
