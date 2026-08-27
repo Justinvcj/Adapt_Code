@@ -1,281 +1,142 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { fetchApi } from '@/lib/api';
-import { motion } from 'framer-motion';
-import { Trophy, Flame, Target, Activity, Lock, CheckCircle2, AlertCircle, ArrowRight, Code2 } from 'lucide-react';
-import Heatmap from '@/components/Heatmap';
-import Badges from '@/components/Badges';
-
-type Stats = {
-  total_problems_solved: number;
-  total_sessions: number;
-  current_streak: number;
-  strongest_concept: string | null;
-  weakest_concept: string | null;
-  avg_mastery: number;
-};
-
-type Concept = {
-  concept_tag: string;
-  mastery_probability: number;
-  is_unlocked: boolean;
-  prerequisites: string[];
-  problems_attempted: number;
-  problems_solved: number;
-};
-
-const CONCEPT_ORDER = [
-  ['basic_syntax'],
-  ['loops'],
-  ['arrays', 'recursion'],
-  ['strings', 'hashing', 'two_pointers', 'binary_search', 'backtracking', 'trees', 'dynamic_programming'],
-  ['sliding_window']
-];
+import Link from 'next/link';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [concepts, setConcepts] = useState<Concept[]>([]);
-  const [heatmapData, setHeatmapData] = useState<{date: string, count: number}[]>([]);
-  const [badgesData, setBadgesData] = useState<any[]>([]);
-  const [potd, setPotd] = useState<any>(null);
+  const [problems, setProblems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [statsRes, masteryRes, heatmapRes, badgesRes, potdRes] = await Promise.all([
-        fetchApi('/api/stats'),
-        fetchApi('/api/mastery'),
-        fetchApi('/api/stats/heatmap'),
-        fetchApi('/api/badges'),
-        fetchApi('/api/problem/potd')
-      ]);
-      setStats(statsRes.data);
-      setConcepts(masteryRes.data);
-      setHeatmapData(heatmapRes.data);
-      setBadgesData(badgesRes.data);
-      setPotd(potdRes.data);
-    } catch (e: any) {
-      console.error(e);
-      setError(e.message || "Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    loadData();
+    fetchApi('/api/problems')
+      .then(res => setProblems(res.data || []))
+      .catch(e => console.error(e))
+      .finally(() => setLoading(false));
   }, []);
 
-  const getMasteryColor = (prob: number) => {
-    if (prob < 0.4) return 'bg-red-500';
-    if (prob < 0.7) return 'bg-yellow-500';
-    return 'bg-green-500';
+  const IC = {
+    search: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+    sort: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/></svg>,
+    filter: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+    shuffle: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
   };
 
-  const getMasteryTextClass = (prob: number) => {
-    if (prob < 0.4) return 'text-red-400';
-    if (prob < 0.7) return 'text-yellow-400';
-    return 'text-green-400';
-  };
+  const filteredProblems = problems.filter(p => {
+    if (filter !== 'all' && p.difficulty_level.toLowerCase() !== filter) return false;
+    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
-  if (loading) {
-    return (
-      <div className="p-8 max-w-6xl mx-auto space-y-8 animate-pulse">
-        <div className="h-10 bg-slate-800 rounded w-1/4" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-800 rounded-xl" />)}
-        </div>
-        <div className="h-64 bg-slate-800 rounded-xl" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8 max-w-7xl mx-auto h-full flex flex-col items-center justify-center">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-medium text-slate-200 mb-2">Error Loading Dashboard</h2>
-        <p className="text-slate-400 mb-6">{error}</p>
-        <button 
-          onClick={loadData}
-          className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white rounded-lg text-sm font-medium shadow-md"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+  const solved = problems.filter(p => p.is_solved).length;
+  const total = problems.length || 1; // avoid / 0
 
   return (
-    <div className="p-8 max-w-7xl mx-auto h-full overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-light text-slate-100 mb-8">Mastery Dashboard</h1>
-
-        {/* POTD Banner */}
-        {potd && (
-          <div className="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-              <Trophy className="w-32 h-32" />
-            </div>
-            <div className="z-10 relative">
-              <div className="flex items-center gap-2 text-indigo-300 font-medium text-sm tracking-widest uppercase mb-2">
-                <Flame className="w-4 h-4 text-orange-400" />
-                Problem of the Day
-              </div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-2">{potd.title}</h2>
-              <div className="flex gap-3 text-xs font-medium">
-                <span className="px-2 py-1 bg-slate-800 rounded text-slate-300">{potd.concept_tag.replaceAll('_', ' ')}</span>
-                <span className={`px-2 py-1 rounded ${
-                  potd.difficulty_level === 'easy' ? 'bg-green-500/20 text-green-400' :
-                  potd.difficulty_level === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-red-500/20 text-red-400'
-                }`}>{potd.difficulty_level}</span>
-              </div>
-            </div>
-            <div className="z-10 relative shrink-0 w-full md:w-auto">
-              {potd.is_solved ? (
-                <div className="flex items-center justify-center gap-2 px-6 py-3 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl font-medium w-full">
-                  <CheckCircle2 className="w-5 h-5" />
-                  Completed
-                </div>
-              ) : (
-                <a href={`/practice?problem_id=${potd.problem_id}`} className="flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 transition-colors text-white rounded-xl font-medium shadow-lg shadow-indigo-900/20 w-full">
-                  Solve Now
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-              )}
-            </div>
+    <div className="main-inner" style={{maxWidth: 'none', padding: '12px 20px', display: 'flex', gap: '20px'}}>
+      
+      <div style={{flex: 1}}>
+        <div className="tags-row">
+          <span className="tag-pill">Array <span className="tc">2238</span></span>
+          <span className="tag-pill">String <span className="tc">893</span></span>
+          <span className="tag-pill">Hash Table <span className="tc">832</span></span>
+          <span className="tag-pill">Math <span className="tc">702</span></span>
+          <span className="tag-pill" style={{color: 'var(--blue)'}}>Expand ▾</span>
+        </div>
+        
+        <div className="cat-tabs">
+          <span className="cat-tab act">All Topics</span>
+          <span className="cat-tab">Algorithms</span>
+          <span className="cat-tab">Database</span>
+        </div>
+        
+        <div className="ps-toolbar">
+          <div className="ps-search">
+            {IC.search}
+            <input 
+              type="text" 
+              placeholder="Search questions" 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+            />
           </div>
-        )}
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-center">
-            <div className="flex items-center gap-3 text-slate-400 mb-2">
-              <CheckCircle2 className="w-5 h-5 text-green-400" />
-              <span className="font-medium">Problems Solved</span>
-            </div>
-            <div className="text-4xl font-light text-slate-100">{stats?.total_problems_solved || 0}</div>
+          <div className="ps-icons">
+            <button className="ps-icon" title="Sort">{IC.sort}</button>
+            <button className="ps-icon" title="Filter">{IC.filter}</button>
           </div>
-          
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-center">
-            <div className="flex items-center gap-3 text-slate-400 mb-2">
-              <Flame className="w-5 h-5 text-orange-400" />
-              <span className="font-medium">Current Streak</span>
-            </div>
-            <div className="text-4xl font-light text-slate-100">{stats?.current_streak || 0} <span className="text-xl text-slate-500">days</span></div>
+          <div className="ps-solved">
+            <svg viewBox="0 0 20 20" width="16" height="16">
+              <circle cx="10" cy="10" r="8" fill="none" stroke="var(--border)" strokeWidth="2"/>
+              <circle cx="10" cy="10" r="8" fill="none" stroke="var(--solved)" strokeWidth="2" strokeDasharray={`${(solved/total*50.3).toFixed(1)} 50.3`} transform="rotate(-90 10 10)"/>
+            </svg> 
+            {solved}/{total} Solved
           </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-center">
-            <div className="flex items-center gap-3 text-slate-400 mb-2">
-              <Target className="w-5 h-5 text-indigo-400" />
-              <span className="font-medium">Avg. Mastery</span>
-            </div>
-            <div className="text-4xl font-light text-slate-100">{Math.round((stats?.avg_mastery || 0) * 100)}%</div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-center">
-            <div className="flex items-center gap-3 text-slate-400 mb-2">
-              <Activity className="w-5 h-5 text-purple-400" />
-              <span className="font-medium">Total Sessions</span>
-            </div>
-            <div className="text-4xl font-light text-slate-100">{stats?.total_sessions || 0}</div>
-          </div>
+          <button className="ps-icon" title="Random">{IC.shuffle}</button>
         </div>
 
-        {/* Heatmap and Badges Row */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-10">
-          <div className="flex-1">
-             {heatmapData && <Heatmap data={heatmapData} />}
-          </div>
-          <div className="w-full lg:w-1/3">
-             {badgesData && <Badges data={badgesData} />}
-          </div>
-        </div>
-
-        {/* Highlight Insights */}
-        {stats?.total_problems_solved === 0 ? (
-          <div className="bg-indigo-950/30 border border-indigo-900/50 rounded-2xl p-8 mb-10 text-center">
-            <h3 className="text-xl text-indigo-400 font-medium mb-2">Welcome to AdaptCode!</h3>
-            <p className="text-slate-300 mb-6 max-w-md mx-auto">You haven't solved any problems yet. Start your first practice session to generate your knowledge map and insights.</p>
-            <a href="/practice" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
-              <Code2 className="w-5 h-5" />
-              Start Practice
-            </a>
-          </div>
+        {loading ? (
+          <div style={{padding: '40px', textAlign: 'center', color: 'var(--tx-2)'}}>Loading problems...</div>
         ) : (
-          (stats?.strongest_concept || stats?.weakest_concept) && (
-            <div className="bg-indigo-950/30 border border-indigo-900/50 rounded-2xl p-6 mb-10 flex flex-col md:flex-row gap-6">
-              {stats.strongest_concept && (
-                <div className="flex-1">
-                  <h3 className="text-indigo-400 font-medium mb-1 text-sm uppercase tracking-wider">Strongest Concept</h3>
-                  <p className="text-xl text-slate-200 capitalize">{stats.strongest_concept.replaceAll('_', ' ')}</p>
-                </div>
-              )}
-              {stats.weakest_concept && (
-                <div className="flex-1">
-                  <h3 className="text-orange-400 font-medium mb-1 text-sm uppercase tracking-wider">Needs Work</h3>
-                  <p className="text-xl text-slate-200 capitalize">{stats.weakest_concept.replaceAll('_', ' ')}</p>
-                  <p className="text-sm text-slate-400 mt-1">Focus your next practice session here.</p>
-                </div>
-              )}
-            </div>
-          )
-        )}
-
-        {/* Knowledge Graph UI */}
-        <h2 className="text-xl font-medium text-slate-200 mb-6">Knowledge Map</h2>
-        <div className="space-y-6">
-          {CONCEPT_ORDER.map((tier, idx) => (
-            <div key={idx} className="flex flex-wrap gap-4">
-              {tier.map(tag => {
-                const c = concepts.find(x => x.concept_tag === tag);
-                if (!c) return null;
-                const pct = Math.round(c.mastery_probability * 100);
-                
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{width: '36px'}}></th>
+                <th style={{width: '48px'}}>#</th>
+                <th>Title</th>
+                <th style={{width: '90px'}}>Acceptance</th>
+                <th style={{width: '80px'}}>Difficulty</th>
+                <th style={{width: '70px'}}>Frequency</th>
+                <th style={{width: '36px'}}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProblems.map((p, i) => {
+                const dc = p.difficulty_level === 'easy' ? 'e' : p.difficulty_level === 'medium' ? 'm' : 'h';
+                const freq = Math.random() * 0.8 + 0.1;
                 return (
-                  <div 
-                    key={c.concept_tag} 
-                    className={`relative p-5 rounded-xl border ${c.is_unlocked ? 'bg-slate-900 border-slate-700' : 'bg-slate-900/50 border-slate-800 opacity-60'} w-64 flex flex-col`}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="font-medium text-slate-200 capitalize">{c.concept_tag.replaceAll('_', ' ')}</h3>
-                      {!c.is_unlocked ? (
-                        <Lock className="w-4 h-4 text-slate-500" />
-                      ) : (
-                        <span className={`text-sm font-bold ${getMasteryTextClass(c.mastery_probability)}`}>{pct}%</span>
-                      )}
-                    </div>
-                    
-                    <div className="mt-auto">
-                      <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden mb-3">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 1, type: "spring" }}
-                          className={`h-full rounded-full ${getMasteryColor(c.mastery_probability)}`}
-                        />
+                  <tr key={p.problem_id}>
+                    <td>
+                      {p.is_solved ? <span className="solved-icon">✓</span> : p.is_attempted ? <span className="attempted-icon">○</span> : ''}
+                    </td>
+                    <td style={{color: 'var(--tx-2)'}}>{p.problem_id}.</td>
+                    <td className="t-link">
+                      <Link href={`/practice?problem_id=${p.problem_id}`}>{p.title}</Link>
+                    </td>
+                    <td>{Math.floor(Math.random() * 40 + 30)}%</td>
+                    <td><span className={`diff diff-${dc}`}>{p.difficulty_level.charAt(0).toUpperCase() + p.difficulty_level.slice(1)}</span></td>
+                    <td>
+                      <div className="freq-bar">
+                        <div className="freq-fill" style={{width: `${(freq * 100).toFixed(0)}%`}}></div>
                       </div>
-                      <div className="flex justify-between text-xs text-slate-400">
-                        <span>{c.problems_attempted} attempted</span>
-                        <span>{c.problems_solved} solved</span>
-                      </div>
-                    </div>
-                  </div>
+                    </td>
+                    <td style={{color: 'var(--tx-3)', cursor: 'pointer'}}>☆</td>
+                  </tr>
                 );
               })}
-            </div>
-          ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="right-sb">
+        <div className="weekly-card">
+          <div className="weekly-head">
+            <h5>Weekly Premium ⓘ</h5>
+            <span>2 days left</span>
+          </div>
+          <div className="weekly-boxes">
+            {['W1','W2','W3','W4','W5'].map((w, i) => (
+              <div key={w} className={`weekly-box ${i === 3 ? 'act' : ''}`}>{w}</div>
+            ))}
+          </div>
+          <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px'}}>
+            <span style={{color: 'var(--solved)'}}>● 0 Redeem</span>
+            <a href="#" style={{color: 'var(--tx-2)'}}>Rules</a>
+          </div>
         </div>
-      </motion.div>
+      </div>
+      
     </div>
   );
 }
