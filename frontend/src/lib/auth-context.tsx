@@ -30,6 +30,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('access_token');
+      
+      const mockUser = {
+        user_id: 'guest-123',
+        email: 'guest@adaptcode.com',
+        display_name: 'Guest User',
+        role: 'student',
+        is_pro: false,
+        created_at: new Date().toISOString()
+      };
+
       if (storedToken) {
         setToken(storedToken);
         try {
@@ -38,9 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.error("Failed to fetch user", error);
           localStorage.removeItem('access_token');
-          setToken(null);
-          setUser(null);
+          setToken('mock-token');
+          setUser(mockUser);
         }
+      } else {
+        // Automatically log in as guest for local development
+        setToken('mock-token');
+        setUser(mockUser);
       }
       setIsLoading(false);
     };

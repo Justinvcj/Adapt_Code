@@ -12,14 +12,8 @@ export default function LandingPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading || user) {
-    return null; // Will redirect
+  if (isLoading) {
+    return null;
   }
 
   const navItems = [
@@ -65,7 +59,7 @@ export default function LandingPage() {
             AdaptCode brings you the best coding practice experience with our beautiful dark mode layout, personalized problem recommendations, and an integrated AI Tutor.
           </p>
           
-          <div onClick={() => router.push('/register')}>
+          <div onClick={() => router.push('/dashboard')}>
             <SpecularButton
               size="lg"
               radius={12}
