@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -457,4 +458,4 @@ ul,ol{list-style:none}
   .set-nav{width:100%;border-right:none;border-bottom:1px solid var(--border);padding:12px}
   .set-nav h2{margin-bottom:8px}
 }
-</style>
+

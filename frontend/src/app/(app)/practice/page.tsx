@@ -8,6 +8,7 @@ import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Counter from '@/components/reactbits/Counter';
 
 const LANGUAGES = [
   { id: 71, name: 'python3', label: 'Python 3', defaultCode: '# Write your solution here\n' },
@@ -19,6 +20,7 @@ const LANGUAGES = [
 export default function PracticePage() {
   const [problem, setProblem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [likes, setLikes] = useState(0);
   
   const [lang, setLang] = useState(LANGUAGES[0]);
   const [code, setCode] = useState(LANGUAGES[0].defaultCode);
@@ -246,7 +248,15 @@ export default function PracticePage() {
           <span className="pn-sep"></span>
           <button className="pn-icon" title="Layout">{IC.grid}</button>
           <button className="pn-icon" title="Settings">{IC.settings}</button>
-          <button className="pn-icon" title="Like" style={{display: 'flex', gap: '4px', width: 'auto', padding: '0 8px'}}>{IC.thumbUp} <span style={{fontSize: '12px'}}>0</span></button>
+          <button className="pn-icon" title="Like" onClick={() => setLikes(likes + 1)} style={{display: 'flex', gap: '4px', width: 'auto', padding: '0 8px'}}>
+            {IC.thumbUp} 
+            <Counter 
+               value={likes}
+               fontSize={12}
+               textColor="inherit"
+               gap={0}
+            />
+          </button>
           <span className="pn-sep"></span>
           <button className="pn-icon" title="Fullscreen">{IC.expand}</button>
         </div>
