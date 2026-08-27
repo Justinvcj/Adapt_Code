@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import PixelSwap from '@/components/reactbits/PixelSwap';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -15,6 +16,16 @@ export default function Sidebar() {
 
   return (
     <div className="sidebar">
+      <div style={{padding: '8px 12px', marginBottom: '12px'}}>
+        <PixelSwap 
+          firstContent={<div style={{fontWeight: 800, fontSize: '18px', color: 'var(--tx)', display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{color: 'var(--premium)'}}>&lt;/&gt;</span> AdaptCode</div>}
+          secondContent={<div style={{fontWeight: 800, fontSize: '18px', color: 'var(--tx)', display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{color: 'var(--blue)'}}>&lt;AI&gt;</span> TutorPro</div>}
+          pixelSize={12}
+          duration={1200}
+          pixelDuration={300}
+          style={{height: '30px', width: '100%'}}
+        />
+      </div>
       <Link className={`si ${pathname === '/dashboard' ? 'act' : ''}`} href="/dashboard">
         {IC.library} Library
       </Link>
