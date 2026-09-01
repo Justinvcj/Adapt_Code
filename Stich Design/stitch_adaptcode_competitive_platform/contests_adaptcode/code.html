@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contests - AdaptCode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#37374d",
+                      "surface-secondary": "#303240",
+                      "tertiary-fixed-dim": "#71d2ff",
+                      "border-default": "rgba(255, 255, 255, 0.08)",
+                      "surface-elevated": "#282A36",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-lowest": "#0c0c1f",
+                      "on-primary-container": "#683e00",
+                      "on-background": "#e2e0fc",
+                      "inverse-on-surface": "#2f2e43",
+                      "on-primary-fixed": "#2b1700",
+                      "outline-variant": "#544434",
+                      "secondary-fixed-dim": "#aec6ff",
+                      "secondary": "#aec6ff",
+                      "secondary-container": "#024ead",
+                      "surface-variant": "#333348",
+                      "text-primary": "#EFF1F6",
+                      "success": "#2CBB5D",
+                      "tertiary": "#94dbff",
+                      "hard": "#FF375F",
+                      "outline": "#a18d7a",
+                      "background": "#111125",
+                      "surface-container": "#1e1e32",
+                      "surface": "#111125",
+                      "medium": "#FFC01E",
+                      "tertiary-fixed": "#c0e8ff",
+                      "surface-dim": "#111125",
+                      "on-secondary": "#002e6b",
+                      "on-error": "#690005",
+                      "inverse-primary": "#875200",
+                      "surface-container-highest": "#333348",
+                      "on-surface": "#e2e0fc",
+                      "on-tertiary-fixed-variant": "#004d66",
+                      "on-secondary-fixed-variant": "#004397",
+                      "tertiary-container": "#02c4ff",
+                      "primary-container": "#ffa116",
+                      "secondary-fixed": "#d8e2ff",
+                      "error": "#ffb4ab",
+                      "primary": "#ffc78b",
+                      "primary-fixed": "#ffddba",
+                      "on-primary-fixed-variant": "#673d00",
+                      "surface-container-high": "#28283d",
+                      "error-container": "#93000a",
+                      "on-secondary-container": "#aec6ff",
+                      "easy": "#00B8A3",
+                      "surface-tint": "#ffb867",
+                      "on-tertiary-fixed": "#001e2b",
+                      "on-primary": "#482900",
+                      "on-secondary-fixed": "#001a43",
+                      "primary-fixed-dim": "#ffb867",
+                      "on-surface-variant": "#d9c3ad",
+                      "inverse-surface": "#e2e0fc",
+                      "surface-container-low": "#1a1a2e",
+                      "border-hover": "rgba(255, 255, 255, 0.16)",
+                      "on-tertiary-container": "#004d67",
+                      "on-tertiary": "#003547"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "base": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "margin-desktop": "32px",
+                      "gutter": "16px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "label-bold": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "label-bold": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.text-primary'); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen font-body-md text-body-md antialiased overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full h-[50px] z-50 bg-surface/80 backdrop-blur-md border-b border-border-default flex justify-between items-center px-margin-desktop max-w-7xl mx-auto left-0 right-0">
+<div class="flex items-center gap-xl">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">AdaptCode</span>
+<div class="hidden md:flex items-center gap-md">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 opacity-80 hover:text-primary transition-colors duration-200" href="#">Contest</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Store</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="monetization_on">monetization_on</span>
+<div class="w-8 h-8 rounded-full bg-surface-elevated overflow-hidden border border-border-default">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A small, circular avatar portrait of a modern developer, neutral expression, subtle neon lighting in a dark room environment, high quality, digital illustration, cyberpunk coding aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0xllRAHjAyzyMBQ3wW-iNPQidigVHtbFoXNSMKNeNbFpyMN_0E0vkP7yDa5bMZZZ1LPi6DLgs_ozkV15jTgs8jU5dvocYXXw-Fo75oCayThmhUDM1dXVYdpl4RCfjMCXL22dplMwhJCB-pX2c9h30oEpc6tN115lN1Cv9nrJWy9739t8s05R4qyKKjw1dYjeFOjyg65CgZ3KD-8D6Zt03nWiuEE86o1pJ7qIGp0AjvC7Is8qkJRN7"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile, Visible on Desktop) -->
+<aside class="hidden md:flex flex-col py-md bg-surface-container-low fixed left-0 top-[50px] h-[calc(100vh-50px)] w-[220px] border-r border-border-default">
+<div class="px-md mb-lg">
+<h2 class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider mb-xs">Navigation</h2>
+<p class="font-code-sm text-code-sm text-on-surface-variant opacity-70">Workspace</p>
+</div>
+<nav class="flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-bold text-label-bold">Library</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="ads_click">ads_click</span>
+<span class="font-label-bold text-label-bold">Quest</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-bold text-label-bold">Explore</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span class="font-label-bold text-label-bold">Study Plan</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="list">list</span>
+<span class="font-label-bold text-label-bold">My Lists</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+<span class="font-label-bold text-label-bold">Saved by me</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="pt-[50px] md:pl-[220px] w-full min-h-screen">
+<div class="max-w-[1220px] mx-auto p-margin-mobile md:p-margin-desktop space-y-xl">
+<!-- Header Section with Illustration -->
+<section class="relative w-full rounded-xl overflow-hidden bg-surface-elevated border border-border-default h-64 md:h-80 flex items-center p-lg">
+<div class="absolute inset-0 z-0">
+<img alt="Contest Arena Banner" class="w-full h-full object-cover opacity-40" data-alt="A wide, sweeping digital illustration representing competitive programming. Dark mode aesthetic with glowing orange and blue geometric shapes resembling a digital arena or futuristic coliseum. Code snippets subtly integrated into the background. High contrast, cinematic lighting, sleek modern developer tool aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtPZ0A5uBm3wAWNdBoCfJrxYofIpYGJCoZDHhZl5n-z6HdilebFRklqJXntPLlnPz_098ZzHTufAb_xHeLG7IKYq7FFQA9RsDqCma-GmQJK415IdlS9TIGUmQTH1jaYXv0Z9ZdMaWQbjavKH6SIXpjlcBfcr8o0jdOf8LOc03_07o-lYwci3H-VIi4jP3L_ke-mHgfVC9eRc1KQKh9ZC5PzD_1ZvZO9D5_t2VXxrYMauUJjeZd5H2s"/>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-elevated via-surface-elevated/80 to-transparent"></div>
+</div>
+<div class="relative z-10 max-w-2xl">
+<h1 class="font-headline-lg text-headline-lg text-text-primary mb-sm">AdaptCode Contests</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-lg max-w-lg">Compete with top developers worldwide. Solve algorithmic challenges, climb the leaderboard, and showcase your skills.</p>
+<button class="bg-primary-container text-black font-label-bold text-label-bold px-lg py-sm rounded hover:bg-primary-container/90 transition-colors">
+                        View Global Ranking
+                    </button>
+</div>
+</section>
+<!-- Upcoming Contests -->
+<section>
+<h2 class="font-headline-md text-headline-md text-text-primary mb-md border-b border-border-default pb-xs">Upcoming Contests</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Contest Card 1 -->
+<div class="bg-surface-elevated border border-border-default rounded-lg p-md hover:border-border-hover transition-colors flex flex-col justify-between h-full">
+<div class="flex items-start justify-between mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" data-icon="emoji_events">emoji_events</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Weekly Contest 384</h3>
+<p class="font-code-sm text-code-sm text-on-surface-variant">Sunday, Feb 11 2024</p>
+</div>
+</div>
+<span class="bg-surface-secondary text-on-surface-variant font-code-sm text-code-sm px-2 py-1 rounded">2h 30m</span>
+</div>
+<div class="flex items-center justify-between mt-auto pt-md border-t border-border-default">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="group">group</span>
+<span class="font-code-sm text-code-sm">12,450 Registered</span>
+</div>
+<button class="bg-primary-container text-black font-label-bold text-label-bold px-md py-sm rounded hover:bg-primary-container/90 transition-colors">
+                                Register
+                            </button>
+</div>
+</div>
+<!-- Contest Card 2 -->
+<div class="bg-surface-elevated border border-border-default rounded-lg p-md hover:border-border-hover transition-colors flex flex-col justify-between h-full">
+<div class="flex items-start justify-between mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded bg-secondary-container/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Biweekly Contest 124</h3>
+<p class="font-code-sm text-code-sm text-on-surface-variant">Saturday, Feb 17 2024</p>
+</div>
+</div>
+<span class="bg-surface-secondary text-on-surface-variant font-code-sm text-code-sm px-2 py-1 rounded">2h 00m</span>
+</div>
+<div class="flex items-center justify-between mt-auto pt-md border-t border-border-default">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="group">group</span>
+<span class="font-code-sm text-code-sm">8,102 Registered</span>
+</div>
+<button class="border border-border-default text-text-primary font-label-bold text-label-bold px-md py-sm rounded hover:bg-surface-secondary transition-colors">
+                                Virtual Participate
+                            </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-md bg-surface-dim border-t border-border-default flex justify-between items-center px-margin-desktop md:pl-[252px] z-40 relative">
+<span class="font-label-bold text-label-bold text-on-surface-variant">© 2024 AdaptCode. 1005 Online</span>
+<div class="flex gap-md">
+<a class="text-on-surface-variant font-body-md hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-body-md hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-body-md hover:text-on-surface transition-colors" href="#">Status</a>
+</div>
+</footer>
+</body></html>

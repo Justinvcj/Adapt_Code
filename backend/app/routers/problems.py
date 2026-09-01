@@ -1,160 +1,347 @@
-import time
-import random
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+import httpx
+import json
 import numpy as np
-from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Depends, Request
+
+from app.core.config import settings
 from app.core.database import get_supabase
-from app.core.dependencies import get_current_user, bkt_doctor, linucb_agent
-from app.services.prerequisites import can_access_concept
+from app.core.dependencies import get_current_user
+from app.services.bkt import compute_effective_weight, update_mastery, L0
+from app.services.linucb import LinUCBAgent, get_unlocked_concepts, get_weakest_unlocked, PREREQUISITE_GRAPH, MASTERY_THRESHOLD
+from app.services.gemini import generate_explanation
+from app.services.piston import run_test_cases
 from app.core.rate_limit import limiter
 
-router = APIRouter(prefix="/api", tags=["problems"])
-supabase = get_supabase()
+router = APIRouter(prefix="/api", tags=["core"])
 
-@router.get("/problem/next")
-@limiter.limit("30/minute")
-async def get_next_problem(request: Request, problem_id: int = None, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+# Initialize agent (assuming we load from DB in a real app or use pretrained)
+agent = LinUCBAgent(d=16, alpha=1.0)
+
+# Request Models
+class SubmitRequest(BaseModel):
+    problem_id: str
+    code: str
+    language: str = "python"
+    compile_error_count: int = 0
+    time_on_task_seconds: float = 0
+    hint_used: bool = False
+    hint_used_at_attempt: Optional[int] = None
+    attempt_count: int = 1
+
+class SubmitResponse(BaseModel):
+    verdict: str
+    test_cases_passed: int
+    test_cases_total: int
+    mastery: dict
+    next_problem: dict
+    effective_weight: float
+    explanation_status: str
+    event_id: Optional[str] = None
+
+class AbandonRequest(BaseModel):
+    problem_id: str
+    compile_error_count: int = 0
+    time_on_task_seconds: float = 0
+    attempt_count: int = 0
+
+async def get_problem(problem_id: str):
+    supabase = get_supabase()
+    res = supabase.table("problems").select("*").eq("id", problem_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    return res.data[0]
+
+async def get_mastery_vector(user_id: str):
+    supabase = get_supabase()
+    res = supabase.table("mastery_scores").select("concept, mastery_probability").eq("user_id", user_id).execute()
+    return {row["concept"]: float(row["mastery_probability"]) for row in res.data} if res.data else {}
+
+async def get_recent_events(user_id: str, limit: int = 5):
+    supabase = get_supabase()
+    res = supabase.table("session_events").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
+    return res.data or []
+
+async def save_mastery(user_id: str, concept: str, mastery: float):
+    supabase = get_supabase()
+    is_mastered = mastery >= MASTERY_THRESHOLD
+    supabase.table("mastery_scores").upsert({
+        "user_id": user_id,
+        "concept": concept,
+        "mastery_probability": mastery,
+        "is_mastered": is_mastered
+    }).execute()
+
+async def get_unsolved_problem(user_id: str, concept: str, difficulty: str):
+    supabase = get_supabase()
+    # Find all problems matching concept and difficulty
+    prob_res = supabase.table("problems").select("*").eq("concept", concept).eq("difficulty", difficulty).execute()
+    problems = prob_res.data or []
+    
+    if not problems:
+        # Fallback to any difficulty for this concept
+        prob_res = supabase.table("problems").select("*").eq("concept", concept).execute()
+        problems = prob_res.data or []
+        if not problems:
+            # Absolute fallback
+            prob_res = supabase.table("problems").select("*").limit(1).execute()
+            problems = prob_res.data or []
+            if not problems:
+                return {}
+    
+    # Try to find one not solved by user
+    solved_res = supabase.table("session_events").select("problem_id").eq("user_id", user_id).eq("verdict", "accepted").execute()
+    solved_ids = {row["problem_id"] for row in (solved_res.data or [])}
+    
+    unsolved = [p for p in problems if str(p["id"]) not in solved_ids]
+    selected = unsolved[0] if unsolved else problems[0]
+    
+    return {
+        "id": selected["id"],
+        "title": selected["title"],
+        "concept": selected["concept"],
+        "difficulty": selected["difficulty"]
+    }
+
+async def select_next_problem(action: str, current_concept: str, current_difficulty: str, mastery_vector: dict, user_id: str):
+    difficulty_order = ["easy", "medium", "hard"]
     try:
-        if problem_id is not None:
-            res = supabase.table("problems").select(
-                "problem_id, title, description, concept_tag, difficulty_level, test_cases, hint_text"
-            ).eq("problem_id", problem_id).execute()
-            if res.data:
-                return {"status": "success", "problem": res.data[0]}
+        current_idx = difficulty_order.index(current_difficulty)
+    except ValueError:
+        current_idx = 0
+        
+    target_difficulty = current_difficulty
+    target_concept = current_concept
+    
+    if action == "easier_problem":
+        target_difficulty = difficulty_order[max(0, current_idx - 1)]
+    elif action == "harder_problem":
+        target_difficulty = difficulty_order[min(2, current_idx + 1)]
+    elif action == "redirect_prerequisite":
+        prereqs = PREREQUISITE_GRAPH.get(current_concept, [])
+        unmastered_prereqs = [p for p in prereqs if mastery_vector.get(p, 0) < MASTERY_THRESHOLD]
+        if unmastered_prereqs:
+            target_concept = min(unmastered_prereqs, key=lambda p: mastery_vector.get(p, 0))
+        else:
+            target_concept = get_weakest_unlocked(mastery_vector)
+        target_difficulty = "medium"
+    
+    unlocked = get_unlocked_concepts(mastery_vector)
+    if target_concept not in unlocked:
+        target_concept = get_weakest_unlocked(mastery_vector)
+        
+    return await get_unsolved_problem(user_id, target_concept, target_difficulty)
 
-        res = supabase.table("problems").select(
-            "problem_id, title, description, concept_tag, difficulty_level, test_cases, hint_text"
-        ).execute()
-        all_problems = res.data
-        if not all_problems:
-            raise HTTPException(status_code=404, detail="No problems found.")
-            
-        mastery_res = supabase.table("mastery_scores").select("*").eq("student_id", user_id).execute()
-        mastery_dict = {row['concept_tag']: float(row['mastery_probability']) for row in mastery_res.data}
-        
-        valid_problems = [p for p in all_problems if can_access_concept(p['concept_tag'], mastery_dict)]
-        if not valid_problems:
-            valid_problems = all_problems
-            
-        context_vector = np.zeros(16)
-        concepts = ['basic_syntax', 'loops', 'arrays', 'strings', 'hashing', 'two_pointers', 
-                    'sliding_window', 'recursion', 'backtracking', 'binary_search', 'trees', 'dynamic_programming']
-        
-        for i, c in enumerate(concepts):
-            context_vector[i] = mastery_dict.get(c, bkt_doctor.p_prior)
-            
-        diff_map = {'easy': 0, 'medium': 1, 'hard': 2}
-        valid_mask = [False, False, False]
-        for p in valid_problems:
-            valid_mask[diff_map[p['difficulty_level']]] = True
-            
-        # Dynamic features from session_events
-        events_res = supabase.table("session_events").select("*").eq("student_id", user_id).order("timestamp", desc=True).limit(20).execute()
-        events = events_res.data or []
-        
-        avg_time = np.mean([e['time_on_task_seconds'] for e in events]) if events else 0.5 * 1800
-        hrate = np.mean([1.0 if e['hint_used'] else 0.0 for e in events]) if events else 0.2
-        srate = np.mean([1.0 if e['final_verdict'] == 'Accepted' else 0.0 for e in events]) if events else 0.9
-        avg_attempts = np.mean([e['attempt_count'] for e in events]) if events else 1.0
-        
-        session_duration_feat = min(1.0, avg_time / 1800.0)
-        hint_rate_feat = hrate
-        error_rate_feat = 1.0 - srate
-        idle_time_feat = min(1.0, avg_attempts / 10.0)
-            
-        best_diff_idx = linucb_agent.select_action(
-            student_id=user_id, 
-            context_vector=context_vector, 
-            valid_actions_mask=valid_mask,
-            session_duration=session_duration_feat,
-            hint_rate=hint_rate_feat,
-            error_rate=error_rate_feat,
-            idle_time=idle_time_feat
-        )
-        reverse_map = {0: 'easy', 1: 'medium', 2: 'hard'}
-        target_diff = reverse_map.get(best_diff_idx, 'easy')
-        
-        # Check Pro Status
-        is_pro = False
-        user_res = supabase.table("users").select("is_pro").eq("user_id", user_id).execute()
-        if user_res.data:
-            is_pro = user_res.data[0].get("is_pro", False)
-
-        if not is_pro:
-            valid_problems = [p for p in valid_problems if p["difficulty_level"] != "hard"]
-            if target_diff == "hard":
-                target_diff = "medium"
-
-        target_problems = [p for p in valid_problems if p['difficulty_level'] == target_diff]
-        if not target_problems:
-            target_problems = valid_problems
-            
-        selected_problem = random.choice(target_problems)
-        
-        supabase.table("active_problem_state").upsert({
-            "student_id": user_id,
-            "problem_id": selected_problem['problem_id'],
-            "start_time": time.time(),
-            "hint_used": False
-        }).execute()
-        
-        visible_cases = selected_problem.get("test_cases", [])[:2]
-        visible_examples = [{"input": tc.get("input", "")} for tc in visible_cases]
-        
-        problem_response = {k: v for k, v in selected_problem.items() if k not in ("solution_code", "solution_explanation", "test_cases")}
-        problem_response["examples"] = visible_examples
-        
-        return {
-            "status": "success",
-            "problem": problem_response,
-            "routing_info": {
-                "target_difficulty": target_diff,
-                "context_features": context_vector.tolist()
-            }
-        }
-    except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Failed to fetch next problem for user {user_id}: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
-
-@router.post("/hint/{problem_id}")
+@router.post("/submit", response_model=SubmitResponse)
 @limiter.limit("20/minute")
-async def get_hint(request: Request, problem_id: str, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
-    try:
-        res = supabase.table("problems").select("hint_text").eq("problem_id", problem_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Problem not found")
+async def submit_code(request: Request, req: SubmitRequest, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user)):
+    supabase = get_supabase()
+    problem = await get_problem(req.problem_id)
+    user_mastery = await get_mastery_vector(user_id)
+    recent_events = await get_recent_events(user_id, limit=5)
+    
+    # 1. Execute via Piston
+    test_cases = problem.get("test_cases", [])
+    execution = await run_test_cases(req.code, req.language, test_cases)
+    
+    # 2. Compute effective correctness
+    result_binary = 1 if execution["verdict"] == "accepted" else 0
+    w = compute_effective_weight(
+        result=result_binary,
+        hint_used=req.hint_used,
+        attempt_count=req.attempt_count,
+        compile_errors=req.compile_error_count,
+        time_seconds=req.time_on_task_seconds
+    )
+    
+    # 3. Update BKT mastery
+    concept = problem["concept"]
+    old_mastery = user_mastery.get(concept, L0)
+    new_mastery = update_mastery(old_mastery, w)
+    user_mastery[concept] = new_mastery
+    await save_mastery(user_id, concept, new_mastery)
+    
+    # 4. Save Session Event
+    event_res = supabase.table("session_events").insert({
+        "user_id": user_id,
+        "problem_id": req.problem_id,
+        "compile_error_count": req.compile_error_count,
+        "time_on_task_seconds": req.time_on_task_seconds,
+        "hint_used": req.hint_used,
+        "hint_used_at_attempt": req.hint_used_at_attempt,
+        "attempt_count": req.attempt_count,
+        "abandoned": False,
+        "code": req.code,
+        "language": req.language,
+        "verdict": execution["verdict"],
+        "test_cases_passed": execution["passed"],
+        "test_cases_total": execution["total"],
+        "effective_correctness_weight": w
+    }).execute()
+    event_id = event_res.data[0]["id"] if event_res.data else None
+    
+    # 5. LinUCB
+    x = agent.build_context(user_mastery, recent_events)
+    allowed = agent.get_allowed_actions(user_mastery, concept)
+    
+    # Load the student's a_matrix / b_vector from DB
+    res = supabase.table("agent_params").select("*").eq("student_id", user_id).execute()
+    db_data = res.data or []
+    agent.load_student(user_id, db_data)
+    
+    action_idx = agent.select_action(user_id, x, allowed)
+    
+    consecutive_same_diff = 0
+    curr_diff = problem.get("difficulty", "medium")
+    for event in recent_events:
+        if event.get("difficulty_level") == curr_diff:
+            consecutive_same_diff += 1
+        else:
+            break
+            
+    reward = agent.compute_reward(
+        verdict=execution["verdict"],
+        hint_used=req.hint_used,
+        w=w,
+        prev_difficulty=recent_events[0].get("difficulty_level", "medium") if recent_events else "medium",
+        curr_difficulty=curr_diff,
+        consecutive_same_diff=consecutive_same_diff
+    )
+    agent.update(user_id, action_idx, x, reward)
+    
+    # Save back to DB
+    action_name = agent.ACTIONS[action_idx]
+    supabase.table("agent_params").upsert({
+        "student_id": user_id,
+        "action_name": action_name,
+        "a_matrix": agent.A[user_id][action_idx].tolist(),
+        "b_vector": agent.b[user_id][action_idx].tolist()
+    }).execute()
+    
+    next_prob = await select_next_problem(
+        action=agent.ACTIONS[action_idx],
+        current_concept=concept,
+        current_difficulty=problem.get("difficulty", "medium"),
+        mastery_vector=user_mastery,
+        user_id=user_id
+    )
+    
+    # 6. Explanation
+    explanation_status = "not_needed"
+    if execution["verdict"] != "accepted" and event_id:
+        explanation_status = "pending"
+        background_tasks.add_task(
+            generate_explanation,
+            session_event_id=event_id,
+            user_id=user_id,
+            code=req.code,
+            error_output=execution.get("error_output", ""),
+            concept=concept,
+            verdict=execution["verdict"]
+        )
         
-        # Track hint used in db
-        supabase.table("active_problem_state").update({"hint_used": True}).eq("student_id", user_id).eq("problem_id", problem_id).execute()
-        return {"status": "success", "hint_text": res.data[0]["hint_text"]}
-    except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Failed to fetch hint for problem {problem_id}: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+    return SubmitResponse(
+        verdict=execution["verdict"],
+        test_cases_passed=execution["passed"],
+        test_cases_total=execution["total"],
+        mastery=user_mastery,
+        next_problem=next_prob,
+        effective_weight=w,
+        explanation_status=explanation_status,
+        event_id=event_id
+    )
 
-@router.get("/problems")
-async def get_all_problems(concept_tag: str = None, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
-    try:
-        query = supabase.table("problems").select("*")
-        if concept_tag:
-            query = query.eq("concept_tag", concept_tag)
-        res = query.execute()
-        
-        all_problems = res.data or []
-        
-        # Determine solved status from session_events
-        events_res = supabase.table("session_events").select("problem_id, final_verdict").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
-        solved_problem_ids = {event["problem_id"] for event in (events_res.data or [])}
-        
-        for p in all_problems:
-            p["is_solved"] = p["problem_id"] in solved_problem_ids
-            # Exclude full test_cases to keep payload small, just send basic info
-            if "test_cases" in p:
-                del p["test_cases"]
-                
-        return {"status": "success", "data": all_problems}
-    except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Failed to fetch all problems: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+@router.post("/abandon")
+async def abandon_problem(req: AbandonRequest, user_id: str = Depends(get_current_user)):
+    supabase = get_supabase()
+    problem = await get_problem(req.problem_id)
+    concept = problem["concept"]
+    user_mastery = await get_mastery_vector(user_id)
+    
+    old_mastery = user_mastery.get(concept, L0)
+    new_mastery = update_mastery(old_mastery, 0.0)
+    await save_mastery(user_id, concept, new_mastery)
+    
+    supabase.table("session_events").insert({
+        "user_id": user_id,
+        "problem_id": req.problem_id,
+        "compile_error_count": req.compile_error_count,
+        "time_on_task_seconds": req.time_on_task_seconds,
+        "hint_used": False,
+        "attempt_count": req.attempt_count,
+        "abandoned": True,
+        "code": "",
+        "language": "python",
+        "verdict": "abandoned",
+        "test_cases_passed": 0,
+        "test_cases_total": 0,
+        "effective_correctness_weight": 0.0
+    }).execute()
+    
+    return {"status": "recorded"}
+
+@router.get("/explanation/{event_id}")
+async def get_explanation_status(event_id: str, user_id: str = Depends(get_current_user)):
+    supabase = get_supabase()
+    res = supabase.table("explanations").select("*").eq("session_event_id", event_id).execute()
+    if not res.data:
+        return {"status": "pending"}
+    
+    explanation = res.data[0]
+    return {
+        "status": explanation["status"],
+        "what_went_wrong": explanation.get("what_went_wrong"),
+        "why_approach_fails": explanation.get("why_approach_fails"),
+        "concept_to_review": explanation.get("concept_to_review"),
+    }
+
+@router.get("/mastery/{user_id}")
+async def get_mastery(user_id: str = Depends(get_current_user)):
+    mastery = await get_mastery_vector(user_id)
+    unlocked = get_unlocked_concepts(mastery)
+    weakest = get_weakest_unlocked(mastery)
+    return {
+        "mastery": mastery,
+        "unlocked_concepts": unlocked,
+        "focus_concept": weakest,
+        "overall_progress": sum(1 for v in mastery.values() if v >= MASTERY_THRESHOLD) / 12
+    }
+
+@router.get("/next-problem/{user_id}")
+async def get_next_problem_endpoint(user_id: str = Depends(get_current_user)):
+    mastery = await get_mastery_vector(user_id)
+    recent_events = await get_recent_events(user_id, limit=5)
+    weakest = get_weakest_unlocked(mastery)
+    
+    x = agent.build_context(mastery, recent_events)
+    allowed = agent.get_allowed_actions(mastery, weakest)
+    
+    supabase = get_supabase()
+    res = supabase.table("agent_params").select("*").eq("student_id", user_id).execute()
+    db_data = res.data or []
+    agent.load_student(user_id, db_data)
+    
+    action = agent.select_action(user_id, x, allowed)
+    
+    next_problem = await select_next_problem(
+        action=agent.ACTIONS[action],
+        current_concept=weakest,
+        current_difficulty="medium",
+        mastery_vector=mastery,
+        user_id=user_id
+    )
+    return next_problem
+
+@router.get("/diagnostic")
+async def run_diagnostic(user_id: str = Depends(get_current_user)):
+    diagnostic_concepts = ["basic_syntax", "loops", "arrays", "strings", "hashing"]
+    problems = []
+    supabase = get_supabase()
+    
+    for concept in diagnostic_concepts:
+        res = supabase.table("problems").select("*").eq("concept", concept).eq("difficulty", "easy").limit(2).execute()
+        if res.data:
+            problems.extend(res.data)
+            
+    return {"diagnostic_problems": problems, "total": len(problems)}

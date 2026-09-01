@@ -1,84 +1,131 @@
 import numpy as np
-from typing import List, Dict, Any
-from app.core.database import get_supabase
+
+PREREQUISITE_GRAPH = {
+    "basic_syntax":         [],
+    "loops":                ["basic_syntax"],
+    "arrays":               ["loops"],
+    "strings":              ["arrays"],
+    "hashing":              ["arrays"],
+    "two_pointers":         ["arrays"],
+    "sliding_window":       ["two_pointers"],
+    "recursion":            ["loops"],
+    "backtracking":         ["recursion"],
+    "binary_search":        ["arrays"],
+    "trees":                ["recursion"],
+    "dynamic_programming":  ["recursion"],
+}
+
+MASTERY_THRESHOLD = 0.85
+
+def get_unlocked_concepts(mastery_vector: dict) -> list:
+    unlocked = []
+    for concept, prereqs in PREREQUISITE_GRAPH.items():
+        if all(mastery_vector.get(p, 0) >= MASTERY_THRESHOLD for p in prereqs):
+            unlocked.append(concept)
+    return unlocked
+
+def get_weakest_unlocked(mastery_vector: dict) -> str:
+    unlocked = get_unlocked_concepts(mastery_vector)
+    unmastered = [c for c in unlocked if mastery_vector.get(c, 0) < MASTERY_THRESHOLD]
+    if not unmastered:
+        return unlocked[-1] if unlocked else "basic_syntax"
+    return min(unmastered, key=lambda c: mastery_vector.get(c, 0))
 
 class LinUCBAgent:
-    """
-    Component 6: The Coach - LinUCB Contextual Bandit.
-    Takes context (16 features) and selects next problem action.
-    """
-    def __init__(self, n_actions: int = 3, context_dim: int = 16, alpha: float = 1.0):
-        self.n_actions = n_actions
-        self.context_dim = context_dim
+    ACTIONS = [
+        "easier_problem",
+        "same_difficulty", 
+        "harder_problem",
+        "redirect_prerequisite",
+        "hint_augmented"
+    ]
+    
+    def __init__(self, d: int = 16, alpha: float = 1.0):
+        self.d = d
         self.alpha = alpha
-        self.supabase = get_supabase()
+        self.n_actions = len(self.ACTIONS)
+        
+        # We'll store per-student parameters in dictionaries
+        self.A = {}
+        self.b = {}
+        
+    def _init_student(self, student_id: str):
+        if student_id not in self.A:
+            self.A[student_id] = {a: np.eye(self.d) for a in range(self.n_actions)}
+            self.b[student_id] = {a: np.zeros(self.d) for a in range(self.n_actions)}
+            
+    def load_student(self, student_id: str, db_data: list):
+        self._init_student(student_id)
+        if db_data:
+            for row in db_data:
+                a_idx = row['action_index']
+                if row.get('a_matrix'):
+                    self.A[student_id][a_idx] = np.array(row['a_matrix'])
+                if row.get('b_vector'):
+                    self.b[student_id][a_idx] = np.array(row['b_vector'])
 
-    def _get_student_state(self, student_id: str):
-        res = self.supabase.table("agent_state").select("*").eq("student_id", student_id).execute()
-        if res.data:
-            state = res.data[0]
-            A = [np.array(a) for a in state['a_matrices']]
-            b = [np.array(vec) for vec in state['b_vectors']]
-            return A, b
+    def build_context(self, mastery_vector: dict, recent_events: list) -> np.ndarray:
+        concepts = list(PREREQUISITE_GRAPH.keys())
+        x = np.zeros(self.d)
+        for i, c in enumerate(concepts):
+            x[i] = mastery_vector.get(c, 0.30)
+        unlocked = get_unlocked_concepts(mastery_vector)
+        unmastered = [c for c in unlocked if mastery_vector.get(c, 0) < MASTERY_THRESHOLD]
+        if unmastered:
+            x[12] = min(mastery_vector.get(c, 0) for c in unmastered)
         else:
-            A = [np.identity(self.context_dim) for _ in range(self.n_actions)]
-            b = [np.zeros(self.context_dim) for _ in range(self.n_actions)]
-            return A, b
-
-    def _save_student_state(self, student_id: str, A: List[np.ndarray], b: List[np.ndarray]):
-        state = {
-            'A': [a.tolist() for a in A],
-            'b': [vec.tolist() for vec in b]
-        }
-        self.supabase.table("agent_state").upsert({
-            "student_id": student_id,
-            "a_matrices": state['A'],
-            "b_vectors": state['b'],
-            "last_updated": "now()"
-        }).execute()
+            x[12] = 1.0
+        if recent_events:
+            last_5 = recent_events[-5:]
+            x[13] = np.mean([1 if e.get("hint_used") else 0 for e in last_5])
+            x[14] = np.mean([e.get("attempt_count", 1) for e in last_5]) / 10.0
+            x[15] = np.mean([e.get("time_on_task_seconds", 0) for e in last_5]) / 1200.0
+        return x
+    
+    def select_action(self, student_id: str, x: np.ndarray, allowed_actions: list) -> int:
+        self._init_student(student_id)
+        best_score = -np.inf
+        best_action = allowed_actions[0]
         
-    def select_action(self, student_id: str, context_vector: np.ndarray, valid_actions_mask: List[bool], session_duration: float = 0.5, hint_rate: float = 0.2, error_rate: float = 0.1, idle_time: float = 0.0) -> int:
-        """
-        Selects the best valid action using the UCB formula.
-        """
-        context_vector[12] = session_duration
-        context_vector[13] = hint_rate
-        context_vector[14] = error_rate
-        context_vector[15] = idle_time
-
-        A, b = self._get_student_state(student_id)
-        p_t = np.zeros(self.n_actions)
+        for a in allowed_actions:
+            A_inv = np.linalg.inv(self.A[student_id][a])
+            theta = A_inv @ self.b[student_id][a]
+            exploitation = theta @ x
+            exploration = self.alpha * np.sqrt(x @ A_inv @ x)
+            score = exploitation + exploration
+            if score > best_score:
+                best_score = score
+                best_action = a
+        return best_action
+    
+    def update(self, student_id: str, action: int, x: np.ndarray, reward: float):
+        self._init_student(student_id)
+        self.A[student_id][action] += np.outer(x, x)
+        self.b[student_id][action] += reward * x
+    
+    def get_allowed_actions(self, mastery_vector: dict, current_concept: str) -> list:
+        allowed = [0, 1, 4]
+        if mastery_vector.get(current_concept, 0) >= 0.6:
+            allowed.append(2)
+        prereqs = PREREQUISITE_GRAPH.get(current_concept, [])
+        if any(mastery_vector.get(p, 0) < MASTERY_THRESHOLD for p in prereqs):
+            allowed.append(3)
+        return allowed
+    
+    def compute_reward(self, verdict: str, hint_used: bool, 
+                       w: float, prev_difficulty: str, curr_difficulty: str,
+                       consecutive_same_diff: int) -> float:
+        if verdict == "abandoned":
+            return -0.5
+        if verdict == "accepted":
+            reward = 0.5 if hint_used else 1.0
+            if curr_difficulty == "hard" and prev_difficulty in ("easy", "medium"):
+                reward += 0.2
+            elif curr_difficulty == "medium" and prev_difficulty == "easy":
+                reward += 0.2
+        else:
+            reward = -0.3
         
-        for a in range(self.n_actions):
-            if not valid_actions_mask[a]:
-                p_t[a] = -float('inf') # Mask out invalid actions (e.g. graph constraints)
-                continue
-                
-            A_inv = np.linalg.inv(A[a])
-            theta_a = A_inv.dot(b[a])
-            
-            # Expected reward
-            expected_reward = theta_a.dot(context_vector)
-            
-            # Exploration bonus
-            exploration_bonus = self.alpha * np.sqrt(context_vector.dot(A_inv).dot(context_vector))
-            
-            p_t[a] = expected_reward + exploration_bonus
-            
-        return int(np.argmax(p_t))
-        
-    def update(self, student_id: str, action: int, context_vector: np.ndarray, reward: float, session_duration: float = 0.5, hint_rate: float = 0.2, error_rate: float = 0.1, idle_time: float = 0.0):
-        """
-        Updates the model parameters based on the observed reward.
-        """
-        context_vector[12] = session_duration
-        context_vector[13] = hint_rate
-        context_vector[14] = error_rate
-        context_vector[15] = idle_time
-
-        A, b = self._get_student_state(student_id)
-        
-        A[action] += np.outer(context_vector, context_vector)
-        b[action] += reward * context_vector
-        
-        self._save_student_state(student_id, A, b)
+        if consecutive_same_diff >= 3:
+            reward -= 0.1
+        return reward

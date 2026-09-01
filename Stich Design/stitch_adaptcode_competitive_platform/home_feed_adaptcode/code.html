@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AdaptCode - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#37374d",
+                      "surface-secondary": "#303240",
+                      "tertiary-fixed-dim": "#71d2ff",
+                      "border-default": "rgba(255, 255, 255, 0.08)",
+                      "surface-elevated": "#282A36",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-lowest": "#0c0c1f",
+                      "on-primary-container": "#683e00",
+                      "on-background": "#e2e0fc",
+                      "inverse-on-surface": "#2f2e43",
+                      "on-primary-fixed": "#2b1700",
+                      "outline-variant": "#544434",
+                      "secondary-fixed-dim": "#aec6ff",
+                      "secondary": "#aec6ff",
+                      "secondary-container": "#024ead",
+                      "surface-variant": "#333348",
+                      "text-primary": "#EFF1F6",
+                      "success": "#2CBB5D",
+                      "tertiary": "#94dbff",
+                      "hard": "#FF375F",
+                      "outline": "#a18d7a",
+                      "background": "#111125",
+                      "surface-container": "#1e1e32",
+                      "surface": "#111125",
+                      "medium": "#FFC01E",
+                      "tertiary-fixed": "#c0e8ff",
+                      "surface-dim": "#111125",
+                      "on-secondary": "#002e6b",
+                      "on-error": "#690005",
+                      "inverse-primary": "#875200",
+                      "surface-container-highest": "#333348",
+                      "on-surface": "#e2e0fc",
+                      "on-tertiary-fixed-variant": "#004d66",
+                      "on-secondary-fixed-variant": "#004397",
+                      "tertiary-container": "#02c4ff",
+                      "primary-container": "#ffa116",
+                      "secondary-fixed": "#d8e2ff",
+                      "error": "#ffb4ab",
+                      "primary": "#ffc78b",
+                      "primary-fixed": "#ffddba",
+                      "on-primary-fixed-variant": "#673d00",
+                      "surface-container-high": "#28283d",
+                      "error-container": "#93000a",
+                      "on-secondary-container": "#aec6ff",
+                      "easy": "#00B8A3",
+                      "surface-tint": "#ffb867",
+                      "on-tertiary-fixed": "#001e2b",
+                      "on-primary": "#482900",
+                      "on-secondary-fixed": "#001a43",
+                      "primary-fixed-dim": "#ffb867",
+                      "on-surface-variant": "#d9c3ad",
+                      "inverse-surface": "#e2e0fc",
+                      "surface-container-low": "#1a1a2e",
+                      "border-hover": "rgba(255, 255, 255, 0.16)",
+                      "on-tertiary-container": "#004d67",
+                      "on-tertiary": "#003547"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "base": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "margin-desktop": "32px",
+                      "gutter": "16px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "label-bold": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "label-bold": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #111125;
+            color: #EFF1F6;
+        }
+        /* Custom scrollbar for a sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111125; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333348; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #544434; 
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<nav class="bg-surface/80 backdrop-blur-md fixed top-0 w-full h-[50px] z-50 border-b border-border-default flat no shadows flex justify-between items-center w-full px-margin-desktop max-w-[1440px] mx-auto hidden md:flex">
+<div class="flex items-center gap-lg">
+<a class="font-headline-sm text-headline-sm font-bold text-primary mr-xl" href="#">AdaptCode</a>
+<div class="flex items-center gap-md">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Contest</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Store</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<!-- Search Placeholder -->
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="bg-surface-elevated border border-border-default rounded text-body-md text-text-primary pl-lg pr-sm py-xs focus:outline-none focus:border-secondary-container focus:ring-2 focus:ring-secondary-container/20 w-48" placeholder="Search..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="monetization_on">monetization_on</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-elevated overflow-hidden border border-border-default flex-shrink-0 cursor-pointer">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A small, circular avatar portrait of a user in a dark, high-tech coding environment. The user has a generic, futuristic digital appearance with subtle blue and orange ambient lighting reflecting off their features, signifying a competitive programming profile. High contrast, sharp details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkNQ_fsyKbJyQFW1HgAAXVBzj_ixqP2mWHcWL_fdBemYqHmxwMJl3vJ1OqaIVV6LzZNxBjIGWi8vaGpRXke6n5gDOl9Z4mAD5s8GDJVRLW7rWic4uXZKYcYm3E2pck5ZsKIaKaNL-zE7x6FeJUcFN-smN5vY-NMU7pPKnahPpC0DXI3-HCOnWAPIiiPkuyAGaxgLj_hjfwtu89XCnWmwiczqop2WJP3aRWL6gSE2GJQvdaO-yEt1nR"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Shared Component) - Rendered ONLY on Desktop as per logic, though the prompt asks for it, it fits the dashboard vibe -->
+<aside class="bg-surface-container-low fixed left-0 top-[50px] h-[calc(100vh-50px)] w-[220px] border-r border-border-default flat no shadows flex flex-col py-md hidden lg:flex z-40">
+<div class="px-md mb-lg">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider">Workspace</p>
+</div>
+<nav class="flex flex-col gap-xs w-full">
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all font-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="menu_book">menu_book</span>
+                Library
+            </a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all font-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="ads_click">ads_click</span>
+                Quest
+            </a>
+<!-- Active State for Explore as Home/Feed usually maps here if Home isn't present -->
+<a class="flex items-center gap-sm px-md py-sm bg-surface-bright text-primary border-r-4 border-primary font-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="explore" style="font-variation-settings: 'FILL' 1;">explore</span>
+                Explore
+            </a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all font-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="event_note">event_note</span>
+                Study Plan
+            </a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all font-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="list">list</span>
+                My Lists
+            </a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high transition-all font-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="bookmark">bookmark</span>
+                Saved by me
+            </a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 mt-[50px] lg:ml-[220px] p-margin-mobile md:p-margin-desktop max-w-[1440px] w-full mx-auto grid grid-cols-1 xl:grid-cols-12 gap-lg relative">
+<!-- Center Column (Feed & Banners) - 8 cols on XL -->
+<div class="xl:col-span-8 flex flex-col gap-lg">
+<!-- Top Banners Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Banner 1 -->
+<div class="bg-surface-elevated border border-border-default rounded-lg p-md flex items-center justify-between hover:border-hover transition-colors duration-200 group cursor-pointer relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-primary-container/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center gap-md relative z-10">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary-container border border-border-default">
+<span class="material-symbols-outlined text-[24px]">emoji_events</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary mb-xs">Weekly Contest 389</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Starts in <span class="text-primary font-bold">4 days</span></p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors relative z-10">chevron_right</span>
+</div>
+<!-- Banner 2 -->
+<div class="bg-surface-elevated border border-border-default rounded-lg p-md flex items-center justify-between hover:border-hover transition-colors duration-200 group cursor-pointer relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-tertiary-container/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center gap-md relative z-10">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-tertiary-container border border-border-default">
+<span class="material-symbols-outlined text-[24px]">military_tech</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary mb-xs">Biweekly Contest 126</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Starts in <span class="text-tertiary font-bold">11 days</span></p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary transition-colors relative z-10">chevron_right</span>
+</div>
+</div>
+<!-- Feed Section -->
+<div class="flex flex-col gap-md mt-sm">
+<div class="flex justify-between items-center mb-xs">
+<h2 class="font-headline-md text-headline-md text-text-primary">Recent Updates</h2>
+<button class="text-on-surface-variant font-body-md hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">filter_list</span> Filter
+                    </button>
+</div>
+<!-- Feed Item 1 -->
+<article class="bg-surface-elevated border border-border-default rounded-lg p-lg hover:border-hover transition-colors duration-200">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-border-default flex-shrink-0 text-success">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-sm mb-xs">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase">Editorial</span>
+<span class="w-1 h-1 rounded-full bg-on-surface-variant"></span>
+<span class="font-body-md text-body-md text-on-surface-variant text-[12px]">2 hours ago</span>
+</div>
+<a class="font-headline-sm text-headline-sm text-text-primary hover:text-primary transition-colors inline-block mb-sm" href="#">O(N) Solution for "Maximum Subarray Sum" Explained</a>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-md">
+                                In this editorial, we break down Kadane's algorithm to solve the maximum subarray problem in linear time. We'll cover the intuition behind maintaining a running maximum and handling edge cases with all negative numbers...
+                            </p>
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">thumb_up</span>
+<span class="font-body-md text-body-md">1.2k</span>
+</button>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
+<span class="font-body-md text-body-md">124</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Feed Item 2 -->
+<article class="bg-surface-elevated border border-border-default rounded-lg p-lg hover:border-hover transition-colors duration-200">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-border-default flex-shrink-0 text-primary-container">
+<span class="material-symbols-outlined">campaign</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-sm mb-xs">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase">System Update</span>
+<span class="w-1 h-1 rounded-full bg-on-surface-variant"></span>
+<span class="font-body-md text-body-md text-on-surface-variant text-[12px]">5 hours ago</span>
+</div>
+<a class="font-headline-sm text-headline-sm text-text-primary hover:text-primary transition-colors inline-block mb-sm" href="#">New LeetCode 75 Study Plan Launched</a>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-md">
+                                We've revamped our core study plan. The new 75 essential questions cover patterns more comprehensively, ensuring you build a solid foundation before tackling hard problems. Check out the updated syllabus...
+                            </p>
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">thumb_up</span>
+<span class="font-body-md text-body-md">3.4k</span>
+</button>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
+<span class="font-body-md text-body-md">452</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+</div>
+<!-- Right Sidebar (Widgets) - 4 cols on XL -->
+<div class="xl:col-span-4 flex flex-col gap-lg hidden xl:flex">
+<!-- Contest Widget -->
+<div class="bg-surface-elevated border border-border-default rounded-lg p-lg">
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-primary-container">timer</span>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Upcoming Contest</h3>
+</div>
+<div class="mb-md">
+<p class="font-body-md text-body-md text-on-surface-variant mb-xs">Weekly Contest 389</p>
+<div class="flex gap-sm">
+<div class="bg-surface-container-high rounded p-sm flex flex-col items-center justify-center flex-1 border border-border-default">
+<span class="font-headline-md text-headline-md text-text-primary">04</span>
+<span class="font-label-bold text-label-bold text-on-surface-variant text-[10px] uppercase">Days</span>
+</div>
+<div class="bg-surface-container-high rounded p-sm flex flex-col items-center justify-center flex-1 border border-border-default">
+<span class="font-headline-md text-headline-md text-text-primary">12</span>
+<span class="font-label-bold text-label-bold text-on-surface-variant text-[10px] uppercase">Hours</span>
+</div>
+<div class="bg-surface-container-high rounded p-sm flex flex-col items-center justify-center flex-1 border border-border-default">
+<span class="font-headline-md text-headline-md text-text-primary">45</span>
+<span class="font-label-bold text-label-bold text-on-surface-variant text-[10px] uppercase">Mins</span>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container font-label-bold text-label-bold py-sm rounded hover:bg-primary transition-colors duration-200">
+                    Join Contest
+                </button>
+</div>
+<!-- Discuss Widget (Hot Topics) -->
+<div class="bg-surface-elevated border border-border-default rounded-lg p-lg">
+<div class="flex items-center justify-between mb-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-hard">local_fire_department</span>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Trending Discussions</h3>
+</div>
+<a class="text-primary font-body-md text-[12px] hover:underline" href="#">View All</a>
+</div>
+<ul class="flex flex-col gap-md">
+<li class="group">
+<a class="flex flex-col gap-xs" href="#">
+<h4 class="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors line-clamp-1">Google Interview Experience | L4 | London | Oct 2023 | Offer</h4>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant text-[12px]">Interview Questions</span>
+<div class="flex items-center gap-xs text-on-surface-variant text-[12px]">
+<span class="material-symbols-outlined text-[14px]">visibility</span> 12k
+                                </div>
+</div>
+</a>
+</li>
+<li class="w-full h-px bg-border-default"></li>
+<li class="group">
+<a class="flex flex-col gap-xs" href="#">
+<h4 class="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors line-clamp-1">Dynamic Programming Patterns you must know</h4>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant text-[12px]">Study Guide</span>
+<div class="flex items-center gap-xs text-on-surface-variant text-[12px]">
+<span class="material-symbols-outlined text-[14px]">visibility</span> 8.5k
+                                </div>
+</div>
+</a>
+</li>
+<li class="w-full h-px bg-border-default"></li>
+<li class="group">
+<a class="flex flex-col gap-xs" href="#">
+<h4 class="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors line-clamp-1">Is competitive programming still relevant in 2024?</h4>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant text-[12px]">General Discussion</span>
+<div class="flex items-center gap-xs text-on-surface-variant text-[12px]">
+<span class="material-symbols-outlined text-[14px]">visibility</span> 5.2k
+                                </div>
+</div>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</main>
+</body></html>

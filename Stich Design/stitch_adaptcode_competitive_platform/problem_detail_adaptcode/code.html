@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AdaptCode - Problem Solving</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-bright": "#37374d",
+                "surface-secondary": "#303240",
+                "tertiary-fixed-dim": "#71d2ff",
+                "border-default": "rgba(255, 255, 255, 0.08)",
+                "surface-elevated": "#282A36",
+                "on-error-container": "#ffdad6",
+                "surface-container-lowest": "#0c0c1f",
+                "on-primary-container": "#683e00",
+                "on-background": "#e2e0fc",
+                "inverse-on-surface": "#2f2e43",
+                "on-primary-fixed": "#2b1700",
+                "outline-variant": "#544434",
+                "secondary-fixed-dim": "#aec6ff",
+                "secondary": "#aec6ff",
+                "secondary-container": "#024ead",
+                "surface-variant": "#333348",
+                "text-primary": "#EFF1F6",
+                "success": "#2CBB5D",
+                "tertiary": "#94dbff",
+                "hard": "#FF375F",
+                "outline": "#a18d7a",
+                "background": "#111125",
+                "surface-container": "#1e1e32",
+                "surface": "#111125",
+                "medium": "#FFC01E",
+                "tertiary-fixed": "#c0e8ff",
+                "surface-dim": "#111125",
+                "on-secondary": "#002e6b",
+                "on-error": "#690005",
+                "inverse-primary": "#875200",
+                "surface-container-highest": "#333348",
+                "on-surface": "#e2e0fc",
+                "on-tertiary-fixed-variant": "#004d66",
+                "on-secondary-fixed-variant": "#004397",
+                "tertiary-container": "#02c4ff",
+                "primary-container": "#ffa116",
+                "secondary-fixed": "#d8e2ff",
+                "error": "#ffb4ab",
+                "primary": "#ffc78b",
+                "primary-fixed": "#ffddba",
+                "on-primary-fixed-variant": "#673d00",
+                "surface-container-high": "#28283d",
+                "error-container": "#93000a",
+                "on-secondary-container": "#aec6ff",
+                "easy": "#00B8A3",
+                "surface-tint": "#ffb867",
+                "on-tertiary-fixed": "#001e2b",
+                "on-primary": "#482900",
+                "on-secondary-fixed": "#001a43",
+                "primary-fixed-dim": "#ffb867",
+                "on-surface-variant": "#d9c3ad",
+                "inverse-surface": "#e2e0fc",
+                "surface-container-low": "#1a1a2e",
+                "border-hover": "rgba(255, 255, 255, 0.16)",
+                "on-tertiary-container": "#004d67",
+                "on-tertiary": "#003547"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "margin-desktop": "32px",
+                    "gutter": "16px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "label-bold": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "code-sm": ["JetBrains Mono"],
+                    "headline-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "code-md": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "code-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "code-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .split-pane { display: flex; height: calc(100vh - 50px); }
+        .pane-left { flex: 0 0 50%; min-width: 300px; display: flex; flex-direction: column; border-right: 1px solid rgba(255, 255, 255, 0.08); }
+        .pane-right { flex: 1; display: flex; flex-direction: column; min-width: 300px; }
+        .resizer { width: 8px; background-color: transparent; cursor: col-resize; z-index: 10; margin-left: -4px; margin-right: -4px; }
+        .resizer:hover { background-color: rgba(255, 255, 255, 0.08); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Syntax Highlighting */
+        .sh-keyword { color: #ff7b72; }
+        .sh-function { color: #d2a8ff; }
+        .sh-string { color: #a5d6ff; }
+        .sh-comment { color: #8b949e; }
+        .sh-operator { color: #79c0ff; }
+        .sh-number { color: #79c0ff; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex flex-col">
+<!-- Top Navigation (Shared Component Integration) -->
+<header class="fixed top-0 w-full h-[50px] z-50 bg-surface/80 backdrop-blur-md border-b border-border-default flex justify-between items-center px-margin-desktop max-w-7xl mx-auto">
+<div class="flex items-center gap-md h-full">
+<div class="font-headline-sm text-headline-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined" data-weight="fill">code</span>
+                AdaptCode
+            </div>
+<nav class="hidden md:flex h-full ml-lg items-center gap-md">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 h-full flex items-center hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-on-surface-variant font-body-md h-full flex items-center hover:text-primary transition-colors duration-200" href="#">Contest</a>
+<a class="text-on-surface-variant font-body-md h-full flex items-center hover:text-primary transition-colors duration-200" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md h-full flex items-center hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md h-full flex items-center hover:text-primary transition-colors duration-200" href="#">Store</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">monetization_on</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-elevated border border-border-default overflow-hidden ml-2 cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A small circular avatar placeholder image showing a minimalistic abstract geometric shape in cool blues and teals on a dark background, evoking a modern developer profile picture in a sleek digital environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFmtP3WNT3e8kOa9GeEIDwYUbXKIEWV1-d4bcsgOFaKAAapptzmOndFzzWl8_DJYrKIJJIdfgNA7kE-gXDe3GXGo-DvXf3x5cLkL_Tyy8e_qkx9aWDfI5OsjnqRGryP0qLyqLL6QW4syMqHmG_LXM1pVx3wYB_jSqL_6M1_Qjwd3vqsugasva4km2_CdT9A9GE0lyjfRynfNi3JnGe0IF9kGqiACvDrkpEhMQPOxK15owU5ndNmfo-"/>
+</div>
+</div>
+</header>
+<!-- Toolbar -->
+<div class="h-[40px] mt-[50px] bg-surface-elevated border-b border-border-default flex items-center justify-between px-md flex-shrink-0">
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-2 py-1 rounded hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[18px]">list</span> Problem List
+            </button>
+<div class="h-4 w-px bg-border-default mx-1"></div>
+<button class="text-on-surface-variant hover:text-text-primary p-1 rounded hover:bg-surface-secondary transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="text-on-surface-variant hover:text-text-primary p-1 rounded hover:bg-surface-secondary transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<div class="flex items-center gap-sm">
+<button class="text-primary-container hover:text-primary p-1 rounded hover:bg-surface-secondary transition-colors" title="AI Assistant">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</button>
+<button class="flex items-center gap-1 bg-surface-secondary text-text-primary px-3 py-1 rounded border border-border-default hover:border-border-hover transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span> Run
+            </button>
+<button class="flex items-center gap-1 bg-success/10 text-success px-3 py-1 rounded border border-success/20 hover:bg-success/20 transition-colors font-label-bold text-label-bold">
+                Submit
+            </button>
+</div>
+</div>
+<!-- Main Workspace -->
+<div class="split-pane bg-background overflow-hidden">
+<!-- Left Pane: Problem Description -->
+<div class="pane-left bg-surface overflow-hidden">
+<!-- Tabs -->
+<div class="flex items-center border-b border-border-default bg-surface-elevated px-2 gap-1 overflow-x-auto scrollbar-hide flex-shrink-0 h-[40px]">
+<button class="flex items-center gap-1 text-text-primary px-3 py-1.5 rounded-md bg-surface-secondary font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[16px]">description</span> Description
+                </button>
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-3 py-1.5 rounded-md hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[16px]">menu_book</span> Editorial
+                </button>
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-3 py-1.5 rounded-md hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[16px]">science</span> Solutions
+                </button>
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-3 py-1.5 rounded-md hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[16px]">history</span> Submissions
+                </button>
+</div>
+<!-- Content -->
+<div class="p-lg overflow-y-auto flex-1">
+<div class="flex items-center justify-between mb-md">
+<h1 class="font-headline-md text-headline-md text-text-primary">1. Two Sum</h1>
+</div>
+<div class="flex items-center gap-md mb-lg">
+<span class="px-2 py-0.5 rounded-full bg-easy/10 text-easy font-label-bold text-label-bold">Easy</span>
+<button class="text-on-surface-variant hover:text-text-primary transition-colors flex items-center">
+<span class="material-symbols-outlined text-[18px]">thumb_up</span> <span class="ml-1 text-xs">49.2K</span>
+</button>
+<button class="text-on-surface-variant hover:text-text-primary transition-colors flex items-center">
+<span class="material-symbols-outlined text-[18px]">thumb_down</span> <span class="ml-1 text-xs">1.6K</span>
+</button>
+<button class="text-on-surface-variant hover:text-text-primary transition-colors flex items-center ml-auto">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<button class="text-on-surface-variant hover:text-text-primary transition-colors flex items-center">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+</div>
+<div class="text-on-surface-variant font-body-md text-body-md space-y-md">
+<p>Given an array of integers <code class="font-code-sm text-code-sm bg-surface-secondary px-1 py-0.5 rounded text-text-primary">nums</code> and an integer <code class="font-code-sm text-code-sm bg-surface-secondary px-1 py-0.5 rounded text-text-primary">target</code>, return <em>indices of the two numbers such that they add up to <code class="font-code-sm text-code-sm bg-surface-secondary px-1 py-0.5 rounded text-text-primary">target</code></em>.</p>
+<p>You may assume that each input would have <strong><em>exactly</em> one solution</strong>, and you may not use the <em>same</em> element twice.</p>
+<p>You can return the answer in any order.</p>
+</div>
+<div class="mt-xl space-y-lg">
+<!-- Example 1 -->
+<div>
+<h3 class="font-label-bold text-label-bold text-text-primary mb-2">Example 1:</h3>
+<div class="bg-surface-elevated border border-border-default rounded-md p-sm font-code-md text-code-md text-on-surface-variant">
+<div><span class="text-text-primary font-semibold">Input:</span> nums = [2,7,11,15], target = 9</div>
+<div><span class="text-text-primary font-semibold">Output:</span> [0,1]</div>
+<div><span class="text-text-primary font-semibold">Explanation:</span> Because nums[0] + nums[1] == 9, we return [0, 1].</div>
+</div>
+</div>
+<!-- Example 2 -->
+<div>
+<h3 class="font-label-bold text-label-bold text-text-primary mb-2">Example 2:</h3>
+<div class="bg-surface-elevated border border-border-default rounded-md p-sm font-code-md text-code-md text-on-surface-variant">
+<div><span class="text-text-primary font-semibold">Input:</span> nums = [3,2,4], target = 6</div>
+<div><span class="text-text-primary font-semibold">Output:</span> [1,2]</div>
+</div>
+</div>
+</div>
+<div class="mt-xl">
+<h3 class="font-label-bold text-label-bold text-text-primary mb-2">Constraints:</h3>
+<ul class="list-disc list-inside text-on-surface-variant font-code-sm text-code-sm space-y-1">
+<li><code class="bg-surface-secondary px-1 rounded">2 &lt;= nums.length &lt;= 10<sup>4</sup></code></li>
+<li><code class="bg-surface-secondary px-1 rounded">-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></code></li>
+<li><code class="bg-surface-secondary px-1 rounded">-10<sup>9</sup> &lt;= target &lt;= 10<sup>9</sup></code></li>
+<li><strong>Only one valid answer exists.</strong></li>
+</ul>
+</div>
+</div>
+<!-- Bottom Nav inside left pane -->
+<div class="h-[40px] border-t border-border-default bg-surface-elevated flex items-center justify-between px-md flex-shrink-0">
+<div class="flex items-center gap-md text-xs text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">comment</span> 12.4K</span>
+</div>
+<div class="text-xs text-on-surface-variant">
+                    © 2024 AdaptCode. 1005 Online
+                </div>
+</div>
+</div>
+<div class="resizer" id="resizer"></div>
+<!-- Right Pane: Code Editor -->
+<div class="pane-right bg-[#1E1E2E] overflow-hidden flex flex-col">
+<!-- Editor Header -->
+<div class="h-[40px] border-b border-border-default bg-surface-elevated flex items-center justify-between px-md flex-shrink-0">
+<div class="flex items-center gap-sm">
+<div class="relative">
+<button class="flex items-center gap-1 text-text-primary bg-surface-secondary px-2 py-1 rounded hover:bg-surface-variant transition-colors font-label-bold text-label-bold border border-border-default">
+                            Java <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+</div>
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-2 py-1 rounded hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[16px]">sync</span> Auto
+                    </button>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+</div>
+<!-- Editor Content -->
+<div class="flex-1 overflow-auto p-4 font-code-md text-code-md leading-relaxed relative">
+<!-- Line Numbers -->
+<div class="absolute left-0 top-0 bottom-0 w-10 bg-[#1E1E2E] border-r border-border-default flex flex-col items-end py-4 pr-2 text-[#5c6370] select-none">
+<div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div>
+</div>
+<!-- Code -->
+<div class="ml-10 text-[#a6accd]">
+<pre><code><span class="sh-keyword">class</span> <span class="sh-function">Solution</span> {
+    <span class="sh-keyword">public</span> <span class="sh-keyword">int</span>[] <span class="sh-function">twoSum</span>(<span class="sh-keyword">int</span>[] nums, <span class="sh-keyword">int</span> target) {
+        <span class="sh-comment">// Write your logic here</span>
+        <span class="sh-keyword">return</span> <span class="sh-keyword">new</span> <span class="sh-keyword">int</span>[]{};
+    }
+}</code></pre>
+</div>
+<!-- Active Line Highlight -->
+<div class="absolute top-[34px] left-0 right-0 h-[22px] bg-white/5 pointer-events-none"></div>
+</div>
+<!-- Console -->
+<div class="h-[200px] border-t border-border-default bg-surface-elevated flex flex-col flex-shrink-0">
+<div class="flex items-center border-b border-border-default px-2 gap-1 h-[36px]">
+<button class="flex items-center gap-1 text-text-primary px-3 py-1 rounded-md bg-surface-secondary font-label-bold text-label-bold">
+                        Testcase
+                    </button>
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-3 py-1 rounded-md hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[16px]">terminal</span> Result
+                    </button>
+</div>
+<div class="flex-1 p-sm overflow-auto">
+<div class="flex gap-2 mb-2">
+<button class="px-3 py-1 bg-surface-secondary text-text-primary rounded text-xs border border-border-hover">Case 1</button>
+<button class="px-3 py-1 text-on-surface-variant hover:bg-surface-secondary rounded text-xs">Case 2</button>
+<button class="px-3 py-1 text-on-surface-variant hover:bg-surface-secondary rounded text-xs">Case 3</button>
+<button class="px-2 py-1 text-on-surface-variant hover:bg-surface-secondary rounded text-xs flex items-center justify-center"><span class="material-symbols-outlined text-[14px]">add</span></button>
+</div>
+<div class="space-y-2">
+<div>
+<div class="text-xs text-on-surface-variant mb-1">nums =</div>
+<div class="bg-surface border border-border-default rounded p-2 font-code-sm text-code-sm text-text-primary">[2,7,11,15]</div>
+</div>
+<div>
+<div class="text-xs text-on-surface-variant mb-1">target =</div>
+<div class="bg-surface border border-border-default rounded p-2 font-code-sm text-code-sm text-text-primary">9</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+        // Simple Resizer Logic
+        const resizer = document.getElementById('resizer');
+        const leftPane = document.querySelector('.pane-left');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            // Prevent text selection while resizing
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            // Calculate new width, constrained by min/max
+            const newWidth = Math.max(300, Math.min(e.clientX, window.innerWidth - 300));
+            leftPane.style.flex = `0 0 ${newWidth}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
+    </script>
+</body></html>

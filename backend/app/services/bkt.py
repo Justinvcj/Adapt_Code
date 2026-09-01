@@ -1,66 +1,75 @@
 import numpy as np
 
-class BKTDoctor:
-    """
-    Component 5: The Doctor - Bayesian Knowledge Tracing.
-    Updates mastery probability based on execution signals.
-    """
-    def __init__(self, p_prior=0.3, p_learn=0.1, p_guess=0.2, p_slip=0.1):
-        # Default BKT parameters
-        self.p_prior = p_prior
-        self.p_learn = p_learn
-        self.p_guess = p_guess
-        self.p_slip = p_slip
+# BKT Parameters (fixed, not learned)
+L0 = 0.30     # Prior probability of mastery
+P_T = 0.12    # Probability of learning (transition)
+P_G = 0.20    # Probability of guessing correctly
+P_S = 0.10    # Probability of slipping (knowing but failing)
 
-    def calculate_effective_correctness(self, is_correct: bool, compile_errors: int, time_on_task_sec: int, hint_used: bool, attempts: int) -> float:
-        """
-        Calculates a soft continuous 'correctness' score (0.0 to 1.0) incorporating all 5 Observer signals.
-        """
-        base = 1.0 if is_correct else 0.0
-        
-        # Penalties that reduce the weight of a correct answer
-        hint_penalty = 0.2 if hint_used else 0.0
-        
-        # Non-linear decay for attempts
-        attempt_penalty = min(((attempts - 1) ** 1.5) * 0.03, 0.4)
-        
-        # Non-linear decay for time (starts penalizing heavily after 10 mins)
-        time_penalty = 0.0
-        if time_on_task_sec > 600:
-            time_penalty = min(0.3, ((time_on_task_sec - 600) / 3600.0) ** 1.5)
-            
-        compile_penalty = min(0.05 * compile_errors, 0.2)
-        
-        effective = base - hint_penalty - attempt_penalty - compile_penalty - time_penalty
-        return max(effective, 0.0)
+# Behavioral penalty weights
+LAMBDA_H = 0.15   # Hint usage — strongest indicator
+LAMBDA_TAU = 0.10  # Time-on-task
+LAMBDA_K = 0.05    # Attempt count
+LAMBDA_C = 0.03    # Compile errors — weakest
 
-    def update_mastery(self, current_mastery: float, effective_correctness: float, concept_tag: str) -> float:
-        """
-        Updates the mastery probability using the BKT formulas modified for continuous evidence.
-        """
-        from app.core.config import BKT_PARAMS_BY_TIER
-        from app.services.prerequisites import CONCEPT_TIERS
-        
-        tier = CONCEPT_TIERS.get(concept_tag, 1)
-        params = BKT_PARAMS_BY_TIER.get(tier)
-        p_learn = params["p_learn"]
-        p_guess = params["p_guess"]
-        p_slip = params["p_slip"]
-        
-        # Calculate P(L | evidence) using a weighted combination of the correct and incorrect updates
-        
-        # Standard update if fully correct (effective == 1.0)
-        p_l_given_correct = (current_mastery * (1 - p_slip)) / \
-                            (current_mastery * (1 - p_slip) + (1 - current_mastery) * p_guess)
-                            
-        # Standard update if fully incorrect (effective == 0.0)
-        p_l_given_incorrect = (current_mastery * p_slip) / \
-                              (current_mastery * p_slip + (1 - current_mastery) * (1 - p_guess))
-                              
-        # Interpolate based on effective correctness
-        p_l_given_evidence = (effective_correctness * p_l_given_correct) + ((1.0 - effective_correctness) * p_l_given_incorrect)
-        
-        # Apply learning step (transition probability)
-        new_mastery = p_l_given_evidence + (1 - p_l_given_evidence) * p_learn
-        
-        return new_mastery
+# Penalty caps
+K_MAX = 5          # Cap attempt penalty at 5 extra attempts
+C_MAX = 10         # Cap compile error penalty at 10
+TAU_MAX = 1200     # 20 minutes — beyond this, time penalty kicks in
+
+def compute_effective_weight(
+    result: int,        # r: 1 if correct, 0 if incorrect
+    hint_used: bool,    # h: whether hint was used
+    attempt_count: int, # k: total attempts
+    compile_errors: int,# c: compile error count
+    time_seconds: float # τ: time on task
+) -> float:
+    """
+    Compute effective-correctness weight w = r × (1 - ρ)
+    where ρ is the behavioral penalty.
+    """
+    if result == 0:
+        return 0.0
+    
+    rho = (
+        LAMBDA_H * (1 if hint_used else 0) +
+        LAMBDA_K * min(max(0, attempt_count - 1), K_MAX) +
+        LAMBDA_C * min(compile_errors, C_MAX) +
+        LAMBDA_TAU * (1 if time_seconds > TAU_MAX else 0)
+    )
+    
+    rho = min(rho, 1.0)  # Cap at 1.0
+    w = result * (1 - rho)
+    return w
+
+def update_mastery(
+    prior_mastery: float,  # P(L) before this observation
+    w: float               # effective-correctness weight
+) -> float:
+    """
+    Update mastery probability using BKT with graded evidence.
+    """
+    L = prior_mastery
+    
+    # Blend between correct-update and incorrect-update using w
+    p_correct_given_L = (1 - P_S)
+    p_correct_given_not_L = P_G
+    
+    p_incorrect_given_L = P_S
+    p_incorrect_given_not_L = (1 - P_G)
+    
+    # Weighted observation likelihood
+    p_obs_given_L = w * p_correct_given_L + (1 - w) * p_incorrect_given_L
+    p_obs_given_not_L = w * p_correct_given_not_L + (1 - w) * p_incorrect_given_not_L
+    
+    # Posterior via Bayes
+    denominator = (p_obs_given_L * L + p_obs_given_not_L * (1 - L))
+    if denominator == 0:
+        p_L_given_obs = L
+    else:
+        p_L_given_obs = (p_obs_given_L * L) / denominator
+    
+    # Apply learning transition
+    updated = p_L_given_obs + (1 - p_L_given_obs) * P_T
+    
+    return float(np.clip(updated, 0.0, 1.0))

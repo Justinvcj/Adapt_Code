@@ -1,181 +1,188 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { fetchApi } from '@/lib/api';
 import Link from 'next/link';
 
-import Counter from '@/components/reactbits/Counter';
-import GlareHover from '@/components/reactbits/GlareHover';
-import PixelCard from '@/components/reactbits/PixelCard';
-import StarBorder from '@/components/reactbits/StarBorder';
-
-export default function DashboardPage() {
-  const [problems, setProblems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
-
-  useEffect(() => {
-    fetchApi('/api/problems')
-      .then(res => setProblems(res.data || []))
-      .catch(e => console.error(e))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const IC = {
-    search: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-    sort: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/></svg>,
-    filter: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
-    shuffle: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>,
-    flame: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
-  };
-
-  const filteredProblems = problems.filter(p => {
-    if (filter !== 'all' && p.difficulty_level.toLowerCase() !== filter) return false;
-    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
-
-  const solved = problems.filter(p => p.is_solved).length;
-  const total = problems.length || 1; // avoid / 0
-
+export default function HomeFeed() {
   return (
-    <div className="main-inner" style={{maxWidth: 'none', padding: '12px 20px', display: 'flex', gap: '20px'}}>
+    <>
       
-      <div style={{flex: 1}}>
-        <div style={{display: 'flex', gap: '16px', marginBottom: '24px'}}>
-          <PixelCard variant="blue" className="rounded-[16px] overflow-hidden" style={{height: '140px', width: '100%', maxWidth: '350px'}}>
-            <div style={{position: 'absolute', inset: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
-              <h3 style={{fontSize: '14px', fontWeight: 600, color: '#7dd3fc', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px'}}>{IC.flame} Problem of the Day</h3>
-              <p style={{fontSize: '20px', fontWeight: 700, color: 'white', marginBottom: '12px'}}>Two Sum IV - Input is a BST</p>
-              <Link href="/practice" style={{fontSize: '14px', color: '#e0f2fe', textDecoration: 'underline'}}>Solve Now →</Link>
-            </div>
-          </PixelCard>
-          
-          <PixelCard variant="yellow" className="rounded-[16px] overflow-hidden" style={{height: '140px', width: '100%', maxWidth: '350px'}}>
-            <div style={{position: 'absolute', inset: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
-               <h3 style={{fontSize: '14px', fontWeight: 600, color: '#fde047', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px'}}>Study Plan</h3>
-               <p style={{fontSize: '20px', fontWeight: 700, color: 'white', marginBottom: '12px'}}>Top Interview 150</p>
-               <Link href="#" style={{fontSize: '14px', color: '#fef08a', textDecoration: 'underline'}}>Continue Practice →</Link>
-            </div>
-          </PixelCard>
-        </div>
-        
-        <div className="tags-row">
-          <span className="tag-pill">Array <span className="tc">2238</span></span>
-          <span className="tag-pill">String <span className="tc">893</span></span>
-          <span className="tag-pill">Hash Table <span className="tc">832</span></span>
-          <span className="tag-pill">Math <span className="tc">702</span></span>
-          <span className="tag-pill" style={{color: 'var(--blue)'}}>Expand ▾</span>
-        </div>
-        
-        <div className="cat-tabs">
-          <span className="cat-tab act">All Topics</span>
-          <span className="cat-tab">Algorithms</span>
-          <span className="cat-tab">Database</span>
-        </div>
-        
-        <div className="ps-toolbar">
-          <div className="ps-search">
-            {IC.search}
-            <input 
-              type="text" 
-              placeholder="Search questions" 
-              value={search} 
-              onChange={e => setSearch(e.target.value)} 
-            />
-          </div>
-          <div className="ps-icons">
-            <button className="ps-icon" title="Sort">{IC.sort}</button>
-            <button className="ps-icon" title="Filter">{IC.filter}</button>
-          </div>
-          <div className="ps-solved" style={{display: 'flex', alignItems: 'center'}}>
-            <svg viewBox="0 0 20 20" width="16" height="16" style={{marginRight: '6px'}}>
-              <circle cx="10" cy="10" r="8" fill="none" stroke="var(--border)" strokeWidth="2"/>
-              <circle cx="10" cy="10" r="8" fill="none" stroke="var(--solved)" strokeWidth="2" strokeDasharray={`${(solved/total*50.3).toFixed(1)} 50.3`} transform="rotate(-90 10 10)"/>
-            </svg> 
-            <Counter 
-               value={solved}
-               fontSize={13}
-               fontWeight={600}
-               textColor="var(--tx)"
-               gap={0}
-            /> 
-            <span style={{marginLeft: '4px'}}> / {total} Solved</span>
-          </div>
-          <button className="ps-icon" title="Random">{IC.shuffle}</button>
-        </div>
 
-        {loading ? (
-          <div style={{padding: '40px', textAlign: 'center', color: 'var(--tx-2)'}}>Loading problems...</div>
-        ) : (
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th style={{width: '36px'}}></th>
-                <th style={{width: '48px'}}>#</th>
-                <th>Title</th>
-                <th style={{width: '90px'}}>Acceptance</th>
-                <th style={{width: '80px'}}>Difficulty</th>
-                <th style={{width: '70px'}}>Frequency</th>
-                <th style={{width: '36px'}}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProblems.map((p, i) => {
-                const dc = p.difficulty_level === 'easy' ? 'e' : p.difficulty_level === 'medium' ? 'm' : 'h';
-                const freq = Math.random() * 0.8 + 0.1;
-                return (
-                  <tr key={p.problem_id}>
-                    <td>
-                      {p.is_solved ? <span className="solved-icon">✓</span> : p.is_attempted ? <span className="attempted-icon">○</span> : ''}
-                    </td>
-                    <td style={{color: 'var(--tx-2)'}}>{p.problem_id}.</td>
-                    <td className="t-link">
-                      <Link href={`/practice?problem_id=${p.problem_id}`}>{p.title}</Link>
-                    </td>
-                    <td>{Math.floor(Math.random() * 40 + 30)}%</td>
-                    <td><span className={`diff diff-${dc}`}>{p.difficulty_level.charAt(0).toUpperCase() + p.difficulty_level.slice(1)}</span></td>
-                    <td>
-                      <div className="freq-bar">
-                        <div className="freq-fill" style={{width: `${(freq * 100).toFixed(0)}%`}}></div>
-                      </div>
-                    </td>
-                    <td style={{color: 'var(--tx-3)', cursor: 'pointer'}}>☆</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+<div className="xl:col-span-8 flex flex-col gap-lg">
 
-      <div className="right-sb">
-        <GlareHover width="100%" height="auto" borderRadius="12px" glareColor="#ffffff" glareOpacity={0.1}>
-          <div className="weekly-card" style={{width: '100%', margin: 0, border: 'none', background: 'transparent', boxShadow: 'inset 0 0 0 1px rgba(255,161,22,0.3)'}}>
-            <div className="weekly-head">
-              <h5 style={{color: 'var(--premium)'}}>Weekly Premium ⓘ</h5>
-              <span>2 days left</span>
-            </div>
-            <div className="weekly-boxes">
-              {['W1','W2','W3','W4','W5'].map((w, i) => (
-                <div key={w} className={`weekly-box ${i === 3 ? 'act' : ''}`} style={i === 3 ? {background: 'rgba(255,161,22,0.2)', color: 'var(--premium)', borderColor: 'var(--premium)'} : {}}>{w}</div>
-              ))}
-            </div>
-            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px'}}>
-              <span style={{color: 'var(--solved)'}}>● 0 Redeem</span>
-              <a href="#" style={{color: 'var(--tx-2)'}}>Rules</a>
-            </div>
-          </div>
-        </GlareHover>
-        
-        <div style={{marginTop: '16px', display: 'flex', justifyContent: 'center'}}>
-          <StarBorder as="button" color="#ffa116" speed="4s" thickness={2} style={{width: '100%'}}>
-             <span style={{fontWeight: 700, color: 'white'}}>Upgrade to Premium</span>
-          </StarBorder>
-        </div>
-      </div>
-      
-    </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+
+<div className="bg-surface-elevated border border-border-default rounded-lg p-md flex items-center justify-between hover:border-hover transition-colors duration-200 group cursor-pointer relative overflow-hidden">
+<div className="absolute inset-0 bg-gradient-to-r from-primary-container/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div className="flex items-center gap-md relative z-10">
+<div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary-container border border-border-default">
+<span className="material-symbols-outlined text-[24px]">emoji_events</span>
+</div>
+<div>
+<h3 className="font-headline-sm text-headline-sm text-text-primary mb-xs">Weekly Contest 389</h3>
+<p className="font-body-md text-body-md text-on-surface-variant">Starts in <span className="text-primary font-bold">4 days</span></p>
+</div>
+</div>
+<span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors relative z-10">chevron_right</span>
+</div>
+
+<div className="bg-surface-elevated border border-border-default rounded-lg p-md flex items-center justify-between hover:border-hover transition-colors duration-200 group cursor-pointer relative overflow-hidden">
+<div className="absolute inset-0 bg-gradient-to-r from-tertiary-container/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div className="flex items-center gap-md relative z-10">
+<div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-tertiary-container border border-border-default">
+<span className="material-symbols-outlined text-[24px]">military_tech</span>
+</div>
+<div>
+<h3 className="font-headline-sm text-headline-sm text-text-primary mb-xs">Biweekly Contest 126</h3>
+<p className="font-body-md text-body-md text-on-surface-variant">Starts in <span className="text-tertiary font-bold">11 days</span></p>
+</div>
+</div>
+<span className="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary transition-colors relative z-10">chevron_right</span>
+</div>
+</div>
+
+<div className="flex flex-col gap-md mt-sm">
+<div className="flex justify-between items-center mb-xs">
+<h2 className="font-headline-md text-headline-md text-text-primary">Recent Updates</h2>
+<button className="text-on-surface-variant font-body-md hover:text-primary transition-colors flex items-center gap-xs">
+<span className="material-symbols-outlined text-[18px]">filter_list</span> Filter
+                    </button>
+</div>
+
+<article className="bg-surface-elevated border border-border-default rounded-lg p-lg hover:border-hover transition-colors duration-200">
+<div className="flex items-start gap-md">
+<div className="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-border-default flex-shrink-0 text-success">
+<span className="material-symbols-outlined">check_circle</span>
+</div>
+<div className="flex-1">
+<div className="flex items-center gap-sm mb-xs">
+<span className="font-label-bold text-label-bold text-on-surface-variant uppercase">Editorial</span>
+<span className="w-1 h-1 rounded-full bg-on-surface-variant"></span>
+<span className="font-body-md text-body-md text-on-surface-variant text-[12px]">2 hours ago</span>
+</div>
+<a className="font-headline-sm text-headline-sm text-text-primary hover:text-primary transition-colors inline-block mb-sm" href="#">O(N) Solution for "Maximum Subarray Sum" Explained</a>
+<p className="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-md">
+                                In this editorial, we break down Kadane's algorithm to solve the maximum subarray problem in linear time. We'll cover the intuition behind maintaining a running maximum and handling edge cases with all negative numbers...
+                            </p>
+<div className="flex items-center gap-md">
+<button className="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span className="material-symbols-outlined text-[18px]">thumb_up</span>
+<span className="font-body-md text-body-md">1.2k</span>
+</button>
+<button className="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span className="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
+<span className="font-body-md text-body-md">124</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+
+<article className="bg-surface-elevated border border-border-default rounded-lg p-lg hover:border-hover transition-colors duration-200">
+<div className="flex items-start gap-md">
+<div className="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-border-default flex-shrink-0 text-primary-container">
+<span className="material-symbols-outlined">campaign</span>
+</div>
+<div className="flex-1">
+<div className="flex items-center gap-sm mb-xs">
+<span className="font-label-bold text-label-bold text-on-surface-variant uppercase">System Update</span>
+<span className="w-1 h-1 rounded-full bg-on-surface-variant"></span>
+<span className="font-body-md text-body-md text-on-surface-variant text-[12px]">5 hours ago</span>
+</div>
+<a className="font-headline-sm text-headline-sm text-text-primary hover:text-primary transition-colors inline-block mb-sm" href="#">New LeetCode 75 Study Plan Launched</a>
+<p className="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-md">
+                                We've revamped our core study plan. The new 75 essential questions cover patterns more comprehensively, ensuring you build a solid foundation before tackling hard problems. Check out the updated syllabus...
+                            </p>
+<div className="flex items-center gap-md">
+<button className="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span className="material-symbols-outlined text-[18px]">thumb_up</span>
+<span className="font-body-md text-body-md">3.4k</span>
+</button>
+<button className="flex items-center gap-xs text-on-surface-variant hover:text-text-primary transition-colors">
+<span className="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
+<span className="font-body-md text-body-md">452</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+</div>
+
+<div className="xl:col-span-4 flex flex-col gap-lg hidden xl:flex">
+
+<div className="bg-surface-elevated border border-border-default rounded-lg p-lg">
+<div className="flex items-center gap-sm mb-md">
+<span className="material-symbols-outlined text-primary-container">timer</span>
+<h3 className="font-headline-sm text-headline-sm text-text-primary">Upcoming Contest</h3>
+</div>
+<div className="mb-md">
+<p className="font-body-md text-body-md text-on-surface-variant mb-xs">Weekly Contest 389</p>
+<div className="flex gap-sm">
+<div className="bg-surface-container-high rounded p-sm flex flex-col items-center justify-center flex-1 border border-border-default">
+<span className="font-headline-md text-headline-md text-text-primary">04</span>
+<span className="font-label-bold text-label-bold text-on-surface-variant text-[10px] uppercase">Days</span>
+</div>
+<div className="bg-surface-container-high rounded p-sm flex flex-col items-center justify-center flex-1 border border-border-default">
+<span className="font-headline-md text-headline-md text-text-primary">12</span>
+<span className="font-label-bold text-label-bold text-on-surface-variant text-[10px] uppercase">Hours</span>
+</div>
+<div className="bg-surface-container-high rounded p-sm flex flex-col items-center justify-center flex-1 border border-border-default">
+<span className="font-headline-md text-headline-md text-text-primary">45</span>
+<span className="font-label-bold text-label-bold text-on-surface-variant text-[10px] uppercase">Mins</span>
+</div>
+</div>
+</div>
+<button className="w-full bg-primary-container text-on-primary-container font-label-bold text-label-bold py-sm rounded hover:bg-primary transition-colors duration-200">
+                    Join Contest
+                </button>
+</div>
+
+<div className="bg-surface-elevated border border-border-default rounded-lg p-lg">
+<div className="flex items-center justify-between mb-md">
+<div className="flex items-center gap-sm">
+<span className="material-symbols-outlined text-hard">local_fire_department</span>
+<h3 className="font-headline-sm text-headline-sm text-text-primary">Trending Discussions</h3>
+</div>
+<a className="text-primary font-body-md text-[12px] hover:underline" href="#">View All</a>
+</div>
+<ul className="flex flex-col gap-md">
+<li className="group">
+<a className="flex flex-col gap-xs" href="#">
+<h4 className="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors line-clamp-1">Google Interview Experience | L4 | London | Oct 2023 | Offer</h4>
+<div className="flex items-center justify-between">
+<span className="font-body-md text-body-md text-on-surface-variant text-[12px]">Interview Questions</span>
+<div className="flex items-center gap-xs text-on-surface-variant text-[12px]">
+<span className="material-symbols-outlined text-[14px]">visibility</span> 12k
+                                </div>
+</div>
+</a>
+</li>
+<li className="w-full h-px bg-border-default"></li>
+<li className="group">
+<a className="flex flex-col gap-xs" href="#">
+<h4 className="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors line-clamp-1">Dynamic Programming Patterns you must know</h4>
+<div className="flex items-center justify-between">
+<span className="font-body-md text-body-md text-on-surface-variant text-[12px]">Study Guide</span>
+<div className="flex items-center gap-xs text-on-surface-variant text-[12px]">
+<span className="material-symbols-outlined text-[14px]">visibility</span> 8.5k
+                                </div>
+</div>
+</a>
+</li>
+<li className="w-full h-px bg-border-default"></li>
+<li className="group">
+<a className="flex flex-col gap-xs" href="#">
+<h4 className="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors line-clamp-1">Is competitive programming still relevant in 2024?</h4>
+<div className="flex items-center justify-between">
+<span className="font-body-md text-body-md text-on-surface-variant text-[12px]">General Discussion</span>
+<div className="flex items-center gap-xs text-on-surface-variant text-[12px]">
+<span className="material-symbols-outlined text-[14px]">visibility</span> 5.2k
+                                </div>
+</div>
+</a>
+</li>
+</ul>
+</div>
+</div>
+
+    </>
   );
 }

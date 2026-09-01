@@ -41,14 +41,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <div className="app-wrap">
-        <Sidebar />
-        <div className="main">
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </div>
-      </div>
+      <Sidebar />
+      <main className="flex-1 mt-[50px] md:ml-[220px] p-margin-mobile md:p-margin-desktop bg-background overflow-y-auto min-h-[calc(100vh-50px)]">
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      </main>
     </>
   );
 }

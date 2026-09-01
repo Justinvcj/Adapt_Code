@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Playground - AdaptCode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#37374d",
+                      "surface-secondary": "#303240",
+                      "tertiary-fixed-dim": "#71d2ff",
+                      "border-default": "rgba(255, 255, 255, 0.08)",
+                      "surface-elevated": "#282A36",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-lowest": "#0c0c1f",
+                      "on-primary-container": "#683e00",
+                      "on-background": "#e2e0fc",
+                      "inverse-on-surface": "#2f2e43",
+                      "on-primary-fixed": "#2b1700",
+                      "outline-variant": "#544434",
+                      "secondary-fixed-dim": "#aec6ff",
+                      "secondary": "#aec6ff",
+                      "secondary-container": "#024ead",
+                      "surface-variant": "#333348",
+                      "text-primary": "#EFF1F6",
+                      "success": "#2CBB5D",
+                      "tertiary": "#94dbff",
+                      "hard": "#FF375F",
+                      "outline": "#a18d7a",
+                      "background": "#111125",
+                      "surface-container": "#1e1e32",
+                      "surface": "#111125",
+                      "medium": "#FFC01E",
+                      "tertiary-fixed": "#c0e8ff",
+                      "surface-dim": "#111125",
+                      "on-secondary": "#002e6b",
+                      "on-error": "#690005",
+                      "inverse-primary": "#875200",
+                      "surface-container-highest": "#333348",
+                      "on-surface": "#e2e0fc",
+                      "on-tertiary-fixed-variant": "#004d66",
+                      "on-secondary-fixed-variant": "#004397",
+                      "tertiary-container": "#02c4ff",
+                      "primary-container": "#ffa116",
+                      "secondary-fixed": "#d8e2ff",
+                      "error": "#ffb4ab",
+                      "primary": "#ffc78b",
+                      "primary-fixed": "#ffddba",
+                      "on-primary-fixed-variant": "#673d00",
+                      "surface-container-high": "#28283d",
+                      "error-container": "#93000a",
+                      "on-secondary-container": "#aec6ff",
+                      "easy": "#00B8A3",
+                      "surface-tint": "#ffb867",
+                      "on-tertiary-fixed": "#001e2b",
+                      "on-primary": "#482900",
+                      "on-secondary-fixed": "#001a43",
+                      "primary-fixed-dim": "#ffb867",
+                      "on-surface-variant": "#d9c3ad",
+                      "inverse-surface": "#e2e0fc",
+                      "surface-container-low": "#1a1a2e",
+                      "border-hover": "rgba(255, 255, 255, 0.16)",
+                      "on-tertiary-container": "#004d67",
+                      "on-tertiary": "#003547"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "base": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "margin-desktop": "32px",
+                      "gutter": "16px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "label-bold": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "label-bold": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #111125;
+            color: #EFF1F6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .code-line {
+            display: flex;
+            padding: 0 16px;
+        }
+        .code-line:hover {
+            background-color: rgba(255,255,255,0.04);
+        }
+        .line-number {
+            color: #544434;
+            min-width: 40px;
+            text-align: right;
+            margin-right: 16px;
+            user-select: none;
+        }
+        .keyword { color: #FF375F; }
+        .string { color: #00B8A3; }
+        .function { color: #5B8DEF; }
+        .comment { color: #a18d7a; font-style: italic; }
+        
+        /* Split pane dragging */
+        .resizer {
+            width: 8px;
+            background: #111125;
+            cursor: col-resize;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 10;
+        }
+        .resizer-h {
+            height: 8px;
+            background: #111125;
+            cursor: row-resize;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-background text-text-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full h-[50px] z-50 bg-surface/80 backdrop-blur-md border-b border-border-default flex justify-between items-center px-margin-desktop max-w-7xl mx-auto">
+<div class="flex items-center gap-xl">
+<a class="font-headline-sm text-headline-sm font-bold text-primary" href="#">AdaptCode</a>
+<div class="hidden md:flex gap-md">
+<!-- Highlight 'Problems' as fallback or generic if no exact match, though this is playground -->
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Contest</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Store</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined text-headline-sm">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined text-headline-sm">monetization_on</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-border-default object-cover" data-alt="A sleek, futuristic user profile avatar representing a competitive programmer. High contrast, dark mode aesthetic with glowing neon orange accents on a deep navy background. The subject is abstract, perhaps a geometric representation of a human head or a stylized helmet." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnlPLg86M8aP99aJ2SkmkhB8ZmuC0i7AzmiAiYXImHMdQbx_fqbDDrYNlrlviEuyoi4BvlT4ot_c3N69flt6f5ZR9aKWJqI45aCHaXOdPeHuZzvySUIaYTqeZxiSAWvTHqLm2CXq_fu6Tjv9SKyAwQ-MRI8xCgaoRNj-Tj10ZXfeyRc-W8_1RhpLn8BiIX0Ykvob_lIVG2uYltl3zCLaVPRKZFM55SFEeDBT-oajn4Q6KKTv15tj7S"/>
+</div>
+</nav>
+<!-- Main Workspace -->
+<main class="flex-1 mt-[50px] flex flex-col h-[calc(100vh-50px)]">
+<!-- Toolbar -->
+<div class="h-12 bg-surface-elevated border-b border-border-default flex items-center justify-between px-md shrink-0">
+<div class="flex items-center gap-sm">
+<!-- Language Selector -->
+<div class="relative">
+<button class="flex items-center gap-xs px-sm py-xs bg-surface-container rounded border border-border-default hover:border-border-hover transition-colors text-body-md font-body-md">
+<span>Python 3</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-xs px-md py-xs bg-surface-container rounded border border-border-default hover:border-border-hover transition-colors text-body-md font-body-md">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Save</span>
+</button>
+<button class="flex items-center gap-xs px-md py-xs bg-surface-container rounded border border-border-default hover:border-border-hover transition-colors text-body-md font-body-md">
+<span class="material-symbols-outlined text-[16px]">share</span>
+<span>Share</span>
+</button>
+<button class="flex items-center gap-xs px-md py-xs bg-primary-container text-on-primary-container rounded font-label-bold text-label-bold hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+<span>Run</span>
+</button>
+</div>
+</div>
+<!-- Editor and Console Split -->
+<div class="flex-1 flex flex-col min-h-0">
+<!-- Editor Area -->
+<div class="flex-1 flex flex-col bg-surface-elevated min-h-0 overflow-auto py-md">
+<div class="font-code-md text-code-md">
+<div class="code-line"><span class="line-number">1</span><span class="comment"># Welcome to the AdaptCode Playground</span></div>
+<div class="code-line"><span class="line-number">2</span></div>
+<div class="code-line"><span class="line-number">3</span><span class="keyword">def</span> <span class="function">solve</span>(nums):</div>
+<div class="code-line"><span class="line-number">4</span> <span class="comment"># Your logic here</span></div>
+<div class="code-line"><span class="line-number">5</span> <span class="keyword">return</span> nums</div>
+<div class="code-line"><span class="line-number">6</span></div>
+<div class="code-line"><span class="line-number">7</span><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</div>
+<div class="code-line"><span class="line-number">8</span> <span class="function">print</span>(<span class="string">"Hello, World!"</span>)</div>
+<div class="code-line"><span class="line-number">9</span> <span class="keyword">pass</span></div>
+</div>
+</div>
+<!-- Resizer -->
+<div class="resizer-h"></div>
+<!-- Console Area -->
+<div class="h-64 bg-surface-container-lowest flex flex-col shrink-0">
+<div class="h-10 bg-surface-elevated border-b border-border-default flex items-center px-md gap-md">
+<button class="text-primary font-label-bold text-label-bold border-b-2 border-primary h-full px-sm flex items-center">Output</button>
+<button class="text-on-surface-variant font-label-bold text-label-bold h-full px-sm flex items-center hover:text-text-primary transition-colors">Terminal</button>
+</div>
+<div class="flex-1 p-md font-code-sm text-code-sm text-on-surface-variant overflow-auto">
+<p class="text-success">Compilation successful.</p>
+<p class="mt-sm">&gt; Hello, World!</p>
+<p class="mt-sm opacity-50">Program exited with code 0.</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

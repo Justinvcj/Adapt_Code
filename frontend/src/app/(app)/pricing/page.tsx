@@ -42,7 +42,7 @@ export default function PricingPage() {
       </motion.div>
 
       <div className="flex flex-col md:flex-row gap-8 max-w-5xl w-full justify-center items-stretch">
-        {/* Free Tier */}
+        
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -71,7 +71,7 @@ export default function PricingPage() {
           </button>
         </motion.div>
 
-        {/* Pro Tier */}
+        
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}

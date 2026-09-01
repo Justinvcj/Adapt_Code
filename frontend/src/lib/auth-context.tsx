@@ -47,13 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(res.user);
         } catch (error) {
           console.error("Failed to fetch user", error);
-          localStorage.removeItem('access_token');
-          setToken('mock-token');
+          localStorage.setItem('access_token', 'DEV_TOKEN_dev@adaptcode.com');
+          setToken('DEV_TOKEN_dev@adaptcode.com');
           setUser(mockUser);
         }
       } else {
         // Automatically log in as guest for local development
-        setToken('mock-token');
+        localStorage.setItem('access_token', 'DEV_TOKEN_dev@adaptcode.com');
+        setToken('DEV_TOKEN_dev@adaptcode.com');
         setUser(mockUser);
       }
       setIsLoading(false);

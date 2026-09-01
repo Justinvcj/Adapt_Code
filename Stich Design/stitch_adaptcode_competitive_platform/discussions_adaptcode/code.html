@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Discuss - AdaptCode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#37374d",
+                        "surface-secondary": "#303240",
+                        "tertiary-fixed-dim": "#71d2ff",
+                        "border-default": "rgba(255, 255, 255, 0.08)",
+                        "surface-elevated": "#282A36",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0c0c1f",
+                        "on-primary-container": "#683e00",
+                        "on-background": "#e2e0fc",
+                        "inverse-on-surface": "#2f2e43",
+                        "on-primary-fixed": "#2b1700",
+                        "outline-variant": "#544434",
+                        "secondary-fixed-dim": "#aec6ff",
+                        "secondary": "#aec6ff",
+                        "secondary-container": "#024ead",
+                        "surface-variant": "#333348",
+                        "text-primary": "#EFF1F6",
+                        "success": "#2CBB5D",
+                        "tertiary": "#94dbff",
+                        "hard": "#FF375F",
+                        "outline": "#a18d7a",
+                        "background": "#111125",
+                        "surface-container": "#1e1e32",
+                        "surface": "#111125",
+                        "medium": "#FFC01E",
+                        "tertiary-fixed": "#c0e8ff",
+                        "surface-dim": "#111125",
+                        "on-secondary": "#002e6b",
+                        "on-error": "#690005",
+                        "inverse-primary": "#875200",
+                        "surface-container-highest": "#333348",
+                        "on-surface": "#e2e0fc",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "on-secondary-fixed-variant": "#004397",
+                        "tertiary-container": "#02c4ff",
+                        "primary-container": "#ffa116",
+                        "secondary-fixed": "#d8e2ff",
+                        "error": "#ffb4ab",
+                        "primary": "#ffc78b",
+                        "primary-fixed": "#ffddba",
+                        "on-primary-fixed-variant": "#673d00",
+                        "surface-container-high": "#28283d",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#aec6ff",
+                        "easy": "#00B8A3",
+                        "surface-tint": "#ffb867",
+                        "on-tertiary-fixed": "#001e2b",
+                        "on-primary": "#482900",
+                        "on-secondary-fixed": "#001a43",
+                        "primary-fixed-dim": "#ffb867",
+                        "on-surface-variant": "#d9c3ad",
+                        "inverse-surface": "#e2e0fc",
+                        "surface-container-low": "#1a1a2e",
+                        "border-hover": "rgba(255, 255, 255, 0.16)",
+                        "on-tertiary-container": "#004d67",
+                        "on-tertiary": "#003547"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-desktop": "32px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "code-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "code-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-text-primary font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface/80 backdrop-blur-md fixed top-0 w-full h-[50px] z-50 border-b border-border-default">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-7xl mx-auto h-full">
+<div class="flex items-center gap-xl">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">AdaptCode</span>
+<nav class="hidden md:flex gap-lg h-full items-center">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Contest</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 flex items-center h-full pt-1" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Store</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden md:flex items-center">
+<span class="material-symbols-outlined absolute left-sm text-on-surface-variant pointer-events-none" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="bg-surface-elevated border border-border-default rounded text-body-md pl-xl py-xs text-text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all w-64 placeholder-on-surface-variant/50" placeholder="Search..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 flex items-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 flex items-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">monetization_on</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-border-default object-cover" data-alt="A small, circular avatar portrait of a modern developer with subtle neon lighting in a dark, tech-focused environment. High contrast, professional framing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2et5ugYHyUWWKfCAVbUNl7b7CvnDK20X7GXNgXf6bLgQFDx7uhgn9xwXEVaaMRohPlujdB00t-tSBTSmNXw0ZAhhxLRGUGDQ1v_NISnUB4MXwuc0ujMaqMaDpq6hmo04PZrNVErzfFdJtQ7I5CVV3bLdJEpjCOeHQ6t4FvXSG_AQs7u_iZK2Ip5wPEBpC1wvQ-X9jYsulVNdV-XFB3DlXc8l5W7oqgY26tv3pXyBAUhCPxPuwSR7J"/>
+</div>
+</div>
+</header>
+<!-- Main Layout -->
+<div class="flex flex-1 pt-[50px]">
+<!-- SideNavBar -->
+<aside class="bg-surface-container-low fixed left-0 top-[50px] h-[calc(100vh-50px)] w-[220px] border-r border-border-default flex flex-col py-md hidden lg:flex">
+<div class="px-md mb-lg">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider">Navigation</span>
+</div>
+<nav class="flex flex-col gap-xs">
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-all px-md py-sm flex items-center gap-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu_book</span>
+<span class="font-label-bold text-label-bold">Library</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-all px-md py-sm flex items-center gap-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">ads_click</span>
+<span class="font-label-bold text-label-bold">Quest</span>
+</a>
+<a class="bg-surface-bright text-primary border-r-4 border-primary px-md py-sm flex items-center gap-sm scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-bold text-label-bold">Explore</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-all px-md py-sm flex items-center gap-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">event_note</span>
+<span class="font-label-bold text-label-bold">Study Plan</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-all px-md py-sm flex items-center gap-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">list</span>
+<span class="font-label-bold text-label-bold">My Lists</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-all px-md py-sm flex items-center gap-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">bookmark</span>
+<span class="font-label-bold text-label-bold">Saved by me</span>
+</a>
+</nav>
+</aside>
+<!-- Content Area -->
+<main class="flex-1 lg:ml-[220px] p-margin-desktop lg:p-margin-desktop w-full max-w-7xl mx-auto flex gap-xl flex-col lg:flex-row">
+<!-- Left Column: Discuss Feed -->
+<div class="flex-1 flex flex-col gap-lg">
+<!-- Header & Actions -->
+<div class="flex justify-between items-center pb-md border-b border-border-default">
+<h1 class="font-headline-lg text-headline-lg">Discuss</h1>
+<button class="bg-primary-container text-black font-label-bold text-label-bold px-md py-sm rounded hover:opacity-90 transition-opacity flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">add</span>
+                        New Discussion
+                    </button>
+</div>
+<!-- Tabs & Filters -->
+<div class="flex justify-between items-center flex-wrap gap-md">
+<div class="flex gap-md bg-surface-elevated p-xs rounded border border-border-default">
+<button class="px-md py-xs rounded bg-surface-secondary text-text-primary font-body-md text-body-md transition-colors">All</button>
+<button class="px-md py-xs rounded text-on-surface-variant hover:text-text-primary font-body-md text-body-md transition-colors">Interview Questions</button>
+<button class="px-md py-xs rounded text-on-surface-variant hover:text-text-primary font-body-md text-body-md transition-colors">Compensation</button>
+<button class="px-md py-xs rounded text-on-surface-variant hover:text-text-primary font-body-md text-body-md transition-colors">General</button>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-on-surface-variant font-label-bold text-label-bold uppercase">Sort by:</span>
+<select class="bg-surface-elevated border border-border-default rounded text-body-md py-xs pl-sm pr-xl text-text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 appearance-none">
+<option>Hot</option>
+<option>Most Votes</option>
+<option>Most Recent</option>
+</select>
+</div>
+</div>
+<!-- Post List -->
+<div class="flex flex-col gap-sm">
+<!-- Post 1 -->
+<div class="bg-surface-elevated border border-border-default rounded p-md flex gap-md hover:border-border-hover transition-colors group">
+<!-- Voting -->
+<div class="flex flex-col items-center gap-xs text-on-surface-variant w-12 shrink-0">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">keyboard_arrow_up</span></button>
+<span class="font-code-md text-code-md text-text-primary">1.2k</span>
+<button class="hover:text-error transition-colors"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">keyboard_arrow_down</span></button>
+</div>
+<!-- Content -->
+<div class="flex-1 flex flex-col gap-sm justify-center">
+<h2 class="font-headline-sm text-headline-sm text-text-primary group-hover:text-primary transition-colors cursor-pointer">Google L4 Onsite Interview Experience - London (Offer)</h2>
+<div class="flex gap-sm items-center flex-wrap">
+<span class="bg-primary/10 text-primary font-code-sm text-code-sm px-2 py-0.5 rounded-full">Google</span>
+<span class="bg-surface-variant text-on-surface-variant font-code-sm text-code-sm px-2 py-0.5 rounded-full">Onsite</span>
+<span class="bg-surface-variant text-on-surface-variant font-code-sm text-code-sm px-2 py-0.5 rounded-full">System Design</span>
+</div>
+<div class="flex items-center gap-md text-on-surface-variant font-code-sm text-code-sm mt-xs">
+<div class="flex items-center gap-xs">
+<img class="w-4 h-4 rounded-full object-cover" data-alt="Small round avatar of a confident software engineer looking at camera in a dark studio setting, blue rim light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwmdq6RW2JJreAWzQUzZI8cYDmE8mz8uuviwHC9VpeBmy4N-KZGUuYUNtzQ658KxrIkYaqzcJt49wJtO-pbpqXlHIt4HVPDZQzTowfH-xH4Cu4YK-5Jw8GpShA-fmgNPQuH674PMDASOYQTSwifiBgThamB7o0PXvB_xt6gA_vmqYGX8Vc9wXFDl3BoeArokUhIbRCy5V_5mX3chsAcpOWr28w9ULau42bBsXiMxpPYH0HMProXil4"/>
+<span>algo_master</span>
+</div>
+<span>•</span>
+<span>2 hours ago</span>
+<span>•</span>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">visibility</span> 4.5k</div>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chat_bubble</span> 128</div>
+</div>
+</div>
+</div>
+<!-- Post 2 -->
+<div class="bg-surface-elevated border border-border-default rounded p-md flex gap-md hover:border-border-hover transition-colors group">
+<div class="flex flex-col items-center gap-xs text-on-surface-variant w-12 shrink-0">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">keyboard_arrow_up</span></button>
+<span class="font-code-md text-code-md text-text-primary">856</span>
+<button class="hover:text-error transition-colors"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">keyboard_arrow_down</span></button>
+</div>
+<div class="flex-1 flex flex-col gap-sm justify-center">
+<h2 class="font-headline-sm text-headline-sm text-text-primary group-hover:text-primary transition-colors cursor-pointer">Meta E5 Full Stack Comp Negotiation (NYC) - Need Advice</h2>
+<div class="flex gap-sm items-center flex-wrap">
+<span class="bg-secondary/10 text-secondary font-code-sm text-code-sm px-2 py-0.5 rounded-full">Meta</span>
+<span class="bg-surface-variant text-on-surface-variant font-code-sm text-code-sm px-2 py-0.5 rounded-full">Compensation</span>
+</div>
+<div class="flex items-center gap-md text-on-surface-variant font-code-sm text-code-sm mt-xs">
+<div class="flex items-center gap-xs">
+<img class="w-4 h-4 rounded-full object-cover" data-alt="Small avatar icon featuring a minimalist abstract geometric logo in shades of neon blue and orange on a dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2csPEFxMh_oKQBJIFoFlYFL0drvaKj7asaZxQu6KNq6sU2oW3WX8KQcXNHJep5hEuk5MQ2ZxKMszjdS92wbyz1nM3mNNEpX_I19S9OWAzIbECr9YWcRRS5-r1_MuGEofhD8rF302E3cRKKs7nqEFVgpePOWHBDzAF74rILluz2qAeG3muOTx3uOhyKfa2p0L-co_1a4bSi9evs9XAuZpS1AhGWrDAA1XnCqPabH9bM78zpQFqsika"/>
+<span>dev_ninja</span>
+</div>
+<span>•</span>
+<span>5 hours ago</span>
+<span>•</span>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">visibility</span> 2.1k</div>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chat_bubble</span> 42</div>
+</div>
+</div>
+</div>
+<!-- Post 3 -->
+<div class="bg-surface-elevated border border-border-default rounded p-md flex gap-md hover:border-border-hover transition-colors group">
+<div class="flex flex-col items-center gap-xs text-on-surface-variant w-12 shrink-0">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">keyboard_arrow_up</span></button>
+<span class="font-code-md text-code-md text-text-primary">432</span>
+<button class="hover:text-error transition-colors"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">keyboard_arrow_down</span></button>
+</div>
+<div class="flex-1 flex flex-col gap-sm justify-center">
+<h2 class="font-headline-sm text-headline-sm text-text-primary group-hover:text-primary transition-colors cursor-pointer">Amazon SDE2 OA - Passed all test cases but no response?</h2>
+<div class="flex gap-sm items-center flex-wrap">
+<span class="bg-primary/10 text-primary font-code-sm text-code-sm px-2 py-0.5 rounded-full">Amazon</span>
+<span class="bg-surface-variant text-on-surface-variant font-code-sm text-code-sm px-2 py-0.5 rounded-full">Online Assessment</span>
+</div>
+<div class="flex items-center gap-md text-on-surface-variant font-code-sm text-code-sm mt-xs">
+<div class="flex items-center gap-xs">
+<img class="w-4 h-4 rounded-full object-cover" data-alt="Minimalist dark mode generic user silhouette avatar with subtle purple gradient background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0u0CRSbZYvHUl9X40p32DGoPZ8PA5LLenYr6YCkHWGUHFhcLqKwAT7vqd_PrUkyOYQRs5TVDLaKX_ZwH2XzznfOvNLMPrJ_UhlJa--i2Frlrwg-tpvdwyCB4G5IKlG0QsVk4cTtxl_uDhUDdADsh3VltqFe-fdqvD2bbh5pghQ6vl0nvl7aZSYlEa-Cqme5oigsnnIFXgdI6PfiCJ46STdbFvGflDYXTk5dQzImbRM9_d254H22vD"/>
+<span>coding_bee</span>
+</div>
+<span>•</span>
+<span>12 hours ago</span>
+<span>•</span>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">visibility</span> 1.8k</div>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chat_bubble</span> 89</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Sidebar -->
+<div class="w-full lg:w-80 flex flex-col gap-lg shrink-0">
+<!-- Trending Tags Widget -->
+<div class="bg-surface-elevated border border-border-default rounded p-md">
+<h3 class="font-headline-sm text-headline-sm mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+                        Trending Tags
+                    </h3>
+<div class="flex flex-wrap gap-xs">
+<a class="bg-surface-variant hover:bg-surface-bright text-on-surface-variant hover:text-text-primary font-code-sm text-code-sm px-sm py-1 rounded transition-colors border border-transparent hover:border-border-default" href="#">Google (3.2k)</a>
+<a class="bg-surface-variant hover:bg-surface-bright text-on-surface-variant hover:text-text-primary font-code-sm text-code-sm px-sm py-1 rounded transition-colors border border-transparent hover:border-border-default" href="#">Amazon (2.8k)</a>
+<a class="bg-surface-variant hover:bg-surface-bright text-on-surface-variant hover:text-text-primary font-code-sm text-code-sm px-sm py-1 rounded transition-colors border border-transparent hover:border-border-default" href="#">Meta (1.9k)</a>
+<a class="bg-surface-variant hover:bg-surface-bright text-on-surface-variant hover:text-text-primary font-code-sm text-code-sm px-sm py-1 rounded transition-colors border border-transparent hover:border-border-default" href="#">System Design (1.5k)</a>
+<a class="bg-surface-variant hover:bg-surface-bright text-on-surface-variant hover:text-text-primary font-code-sm text-code-sm px-sm py-1 rounded transition-colors border border-transparent hover:border-border-default" href="#">Dynamic Programming (900)</a>
+<a class="bg-surface-variant hover:bg-surface-bright text-on-surface-variant hover:text-text-primary font-code-sm text-code-sm px-sm py-1 rounded transition-colors border border-transparent hover:border-border-default" href="#">Compensation (850)</a>
+</div>
+</div>
+<!-- Guidelines Widget -->
+<div class="bg-surface-elevated border border-border-default rounded p-md">
+<h3 class="font-headline-sm text-headline-sm mb-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">info</span>
+                        Community Guidelines
+                    </h3>
+<ul class="text-on-surface-variant font-body-md text-body-md list-disc pl-lg space-y-sm">
+<li>Be respectful and constructive in your feedback.</li>
+<li>Do not share exact interview questions if under NDA.</li>
+<li>Search before posting to avoid duplicates.</li>
+<li>Format code snippets properly using markdown.</li>
+</ul>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-dim border-t border-border-default w-full py-md mt-auto">
+<div class="flex justify-between items-center px-margin-desktop w-full max-w-7xl mx-auto flex-wrap gap-md">
+<span class="font-label-bold text-label-bold text-on-surface-variant">© 2024 AdaptCode. 1005 Online</span>
+<div class="flex gap-md">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Status</a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Discuss Post Detail - AdaptCode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-bright": "#37374d",
+                        "surface-secondary": "#303240",
+                        "tertiary-fixed-dim": "#71d2ff",
+                        "border-default": "rgba(255, 255, 255, 0.08)",
+                        "surface-elevated": "#282A36",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0c0c1f",
+                        "on-primary-container": "#683e00",
+                        "on-background": "#e2e0fc",
+                        "inverse-on-surface": "#2f2e43",
+                        "on-primary-fixed": "#2b1700",
+                        "outline-variant": "#544434",
+                        "secondary-fixed-dim": "#aec6ff",
+                        "secondary": "#aec6ff",
+                        "secondary-container": "#024ead",
+                        "surface-variant": "#333348",
+                        "text-primary": "#EFF1F6",
+                        "success": "#2CBB5D",
+                        "tertiary": "#94dbff",
+                        "hard": "#FF375F",
+                        "outline": "#a18d7a",
+                        "background": "#111125",
+                        "surface-container": "#1e1e32",
+                        "surface": "#111125",
+                        "medium": "#FFC01E",
+                        "tertiary-fixed": "#c0e8ff",
+                        "surface-dim": "#111125",
+                        "on-secondary": "#002e6b",
+                        "on-error": "#690005",
+                        "inverse-primary": "#875200",
+                        "surface-container-highest": "#333348",
+                        "on-surface": "#e2e0fc",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "on-secondary-fixed-variant": "#004397",
+                        "tertiary-container": "#02c4ff",
+                        "primary-container": "#ffa116",
+                        "secondary-fixed": "#d8e2ff",
+                        "error": "#ffb4ab",
+                        "primary": "#ffc78b",
+                        "primary-fixed": "#ffddba",
+                        "on-primary-fixed-variant": "#673d00",
+                        "surface-container-high": "#28283d",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#aec6ff",
+                        "easy": "#00B8A3",
+                        "surface-tint": "#ffb867",
+                        "on-tertiary-fixed": "#001e2b",
+                        "on-primary": "#482900",
+                        "on-secondary-fixed": "#001a43",
+                        "primary-fixed-dim": "#ffb867",
+                        "on-surface-variant": "#d9c3ad",
+                        "inverse-surface": "#e2e0fc",
+                        "surface-container-low": "#1a1a2e",
+                        "border-hover": "rgba(255, 255, 255, 0.16)",
+                        "on-tertiary-container": "#004d67",
+                        "on-tertiary": "#003547"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-desktop": "32px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    fontFamily: {
+                        "label-bold": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "code-md": ["JetBrains Mono"]
+                    },
+                    fontSize: {
+                        "label-bold": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "code-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "code-md": ["14px", { lineHeight: "22px", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #111125;
+            color: #EFF1F6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .code-block {
+            background-color: #1a1a2e;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0.25rem;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: auto;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-text-primary antialiased font-body-md flex h-screen">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-[50px] h-[calc(100vh-50px)] w-[220px] bg-surface-container-low border-r border-border-default flex flex-col py-md z-40 hidden md:flex">
+<div class="px-md mb-lg">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase">Workspace</p>
+<p class="font-headline-sm text-primary">Navigation</p>
+</div>
+<ul class="flex-1 space-y-sm px-sm">
+<li>
+<a class="flex items-center px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined mr-md text-on-surface-variant group-hover:text-primary transition-colors" data-icon="menu_book">menu_book</span>
+<span class="font-label-bold text-label-bold group-hover:text-primary transition-colors">Library</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined mr-md text-on-surface-variant group-hover:text-primary transition-colors" data-icon="ads_click">ads_click</span>
+<span class="font-label-bold text-label-bold group-hover:text-primary transition-colors">Quest</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined mr-md text-on-surface-variant group-hover:text-primary transition-colors" data-icon="explore">explore</span>
+<span class="font-label-bold text-label-bold group-hover:text-primary transition-colors">Explore</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined mr-md text-on-surface-variant group-hover:text-primary transition-colors" data-icon="event_note">event_note</span>
+<span class="font-label-bold text-label-bold group-hover:text-primary transition-colors">Study Plan</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined mr-md text-on-surface-variant group-hover:text-primary transition-colors" data-icon="list">list</span>
+<span class="font-label-bold text-label-bold group-hover:text-primary transition-colors">My Lists</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined mr-md text-on-surface-variant group-hover:text-primary transition-colors" data-icon="bookmark">bookmark</span>
+<span class="font-label-bold text-label-bold group-hover:text-primary transition-colors">Saved by me</span>
+</a>
+</li>
+</ul>
+</nav>
+<div class="flex-1 flex flex-col md:ml-[220px]">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full h-[50px] z-50 bg-surface/80 backdrop-blur-md border-b border-border-default flex justify-between items-center px-margin-desktop max-w-7xl mx-auto md:w-[calc(100%-220px)] md:right-0">
+<div class="flex items-center">
+<a class="font-headline-sm text-headline-sm font-bold text-primary mr-xl" href="#">AdaptCode</a>
+<nav class="hidden lg:flex space-x-md">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Contest</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 active:opacity-80" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Store</a>
+</nav>
+</div>
+<div class="flex items-center space-x-md">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="bg-surface-elevated border border-border-default rounded-DEFAULT pl-xl pr-sm py-xs text-body-md font-body-md text-text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all w-64 placeholder-on-surface-variant/50" placeholder="Search..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="monetization_on">monetization_on</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border-default">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A detailed headshot of a software engineer, wearing round glasses, soft studio lighting against a dark grey background, professional tech aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATyYxHN0lRRVzCKTci7knn8F9APPOAxKCWRzqJ73uH83PGQMRNjvzI4k9dEQFrfSSZtuejuyKkZYCZqmpdbHzE4fqq8xtRXMRVYzbHGQx2tljhVHNw4euk3cbEWdzpWvPksn6-PVRJR6xsAqfelQORHNBf6fnNSedJoiLb6iysrcQ_Unb8lkkYY32Ds8EbUcbzedffuUx2hUHRQ5kMn4S4wiiJI7-6V7jlL6SZnt84eDRccY73O7JQ"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 mt-[50px] p-margin-mobile md:p-margin-desktop overflow-y-auto">
+<div class="max-w-4xl mx-auto">
+<!-- Breadcrumb -->
+<div class="flex items-center space-x-xs text-on-surface-variant text-label-bold font-label-bold mb-md">
+<a class="hover:text-primary transition-colors" href="#">Discuss</a>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Algorithms</a>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-text-primary">Graph Theory</span>
+</div>
+<!-- Post Detail Card -->
+<article class="bg-surface-elevated border border-border-default rounded-lg p-lg mb-lg">
+<!-- Post Header -->
+<header class="mb-lg border-b border-border-default pb-md">
+<h1 class="font-headline-lg text-headline-lg text-text-primary mb-md leading-tight">Optimizing Dijkstra's Algorithm for Dense Graphs in C++</h1>
+<div class="flex items-center justify-between flex-wrap gap-sm">
+<div class="flex items-center space-x-sm">
+<img alt="Author Avatar" class="w-10 h-10 rounded-full border border-border-default" data-alt="Avatar of a male developer with short dark hair, wearing a dark blue hoodie, lit by screen glow in a low-light environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1OP9JUiBvYJyb6izDTfj9kPDcFNKQwFA-nULwrvjw5HRu2TwErQ9XyherKXUYocfaNG2JS3PYKGDQes9xF4XWOB3QS8ICLkjbS8StvTCFDQOUhTc4zcm-D_nd2q8hshmkY4bKL1MR576m7vozHbAcBwC9KvtTGkLMiExxdO6vwpmdmS51TdmiYevdbsccXz9UtA_WsephLZOP5hCVtQr4kD-JLEPfEweiJgSaAvh9A0Ch_859u6WM"/>
+<div>
+<div class="font-label-bold text-label-bold text-text-primary">AlgoMaster99</div>
+<div class="text-on-surface-variant text-label-bold font-label-bold flex items-center space-x-xs">
+<span>2 hours ago</span>
+<span>•</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="visibility">visibility</span>
+<span>1.2k views</span>
+</div>
+</div>
+</div>
+<div class="flex space-x-xs">
+<span class="bg-hard/10 text-hard border border-hard/20 px-sm py-xs rounded-full font-label-bold text-label-bold">Hard</span>
+<span class="bg-surface-bright text-on-surface px-sm py-xs rounded-full font-label-bold text-label-bold border border-border-default">C++</span>
+</div>
+</div>
+</header>
+<!-- Post Body (Markdown style) -->
+<div class="prose prose-invert max-w-none font-body-lg text-body-lg text-on-background space-y-md">
+<p>I've been working on problem <strong>#2394 (Minimum Cost to Reach Destination)</strong> which involves a very dense graph (V up to 1000, E up to V^2). The standard implementation using <code>std::priority_queue</code> is giving me TLE on the last 3 test cases.</p>
+<p>Here is my current approach:</p>
+<div class="code-block font-code-md text-code-md text-text-primary mb-md">
+<pre><code>void dijkstra(int start) {
+    priority_queue&lt;pair&lt;int, int&gt;, vector&lt;pair&lt;int, int&gt;&gt;, greater&lt;pair&lt;int, int&gt;&gt;&gt; pq;
+    dist[start] = 0;
+    pq.push({0, start});
+
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        int d = pq.top().first;
+        pq.pop();
+
+        if (d &gt; dist[u]) continue;
+
+        for (auto edge : adj[u]) {
+            int v = edge.first;
+            int weight = edge.second;
+
+            if (dist[u] + weight &lt; dist[v]) {
+                dist[v] = dist[u] + weight;
+                pq.push({dist[v], v});
+            }
+        }
+    }
+}</code></pre>
+</div>
+<p>Since the graph is dense, \(E \approx V^2\), the priority queue approach takes \(O(E \log V)\) which is effectively \(O(V^2 \log V)\).</p>
+<h3 class="font-headline-sm text-headline-sm text-text-primary mt-lg mb-sm">Questions:</h3>
+<ul class="list-disc list-inside space-y-xs ml-sm">
+<li>Is a simple \(O(V^2)\) array-based Dijkstra better here than the binary heap?</li>
+<li>Are there specific compiler optimizations in C++ I should be leveraging?</li>
+<li>Should I consider switching to Fibonacci heaps for this specific problem context?</li>
+</ul>
+</div>
+<!-- Post Footer -->
+<footer class="mt-xl pt-md border-t border-border-default flex items-center justify-between">
+<div class="flex items-center space-x-md">
+<!-- Votes -->
+<div class="flex items-center bg-surface-container-high rounded-DEFAULT border border-border-default overflow-hidden">
+<button class="p-xs hover:bg-surface-bright transition-colors text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined" data-icon="thumb_up">thumb_up</span>
+</button>
+<span class="font-label-bold text-label-bold px-xs text-text-primary">142</span>
+<button class="p-xs hover:bg-surface-bright transition-colors text-on-surface-variant hover:text-error">
+<span class="material-symbols-outlined" data-icon="thumb_down">thumb_down</span>
+</button>
+</div>
+<!-- Actions -->
+<button class="flex items-center space-x-xs text-on-surface-variant hover:text-primary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="bookmark_border">bookmark_border</span>
+<span>Save</span>
+</button>
+<button class="flex items-center space-x-xs text-on-surface-variant hover:text-primary transition-colors font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="share">share</span>
+<span>Share</span>
+</button>
+</div>
+</footer>
+</article>
+<!-- Comments Section -->
+<section class="mt-xl">
+<h2 class="font-headline-sm text-headline-sm text-text-primary mb-md flex items-center">
+<span class="material-symbols-outlined mr-xs" data-icon="forum">forum</span>
+                        Comments (24)
+                    </h2>
+<!-- Thread 1 -->
+<div class="mb-md">
+<div class="bg-surface-container-low border border-border-default rounded-lg p-md">
+<div class="flex items-start space-x-sm mb-sm">
+<img alt="Commenter Avatar" class="w-8 h-8 rounded-full border border-border-default mt-1" data-alt="Avatar of a female engineer with glasses, smiling slightly, dark background with subtle neon blue highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGANA4X1waN5a1am_mVRn2ia3cd-9Wo_85S19Kl0UCgOJHEeGGMNtwwfD3BIXQGpX-04XXbpZ49UXt1dHLZozU5fXNbQHP3RDwLfaU_EY6mZxtZsYfCRxPfz-Do9PZoos2LqNN7WN3x9IA9ZD__a8gulZD470fPsz_hW5kO96FgZmiOze2u9qR-95qz0goIpY2SCl8S0mj1JiSvEafFa46IbAEZjZpQjelFyld8al8_JRF-aZ5TvMs"/>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-xs">
+<div class="flex items-center space-x-xs">
+<span class="font-label-bold text-label-bold text-text-primary">ByteNinja</span>
+<span class="bg-primary/20 text-primary text-[10px] px-1 rounded uppercase font-bold">Top Contributor</span>
+<span class="text-on-surface-variant font-label-bold text-label-bold">1 hour ago</span>
+</div>
+</div>
+<div class="font-body-md text-body-md text-on-background">
+<p>Yes, for dense graphs where \(E \approx V^2\), the basic \(O(V^2)\) Dijkstra without a priority queue is usually faster in practice because of smaller constant factors and better cache locality. The overhead of maintaining the binary heap isn't worth it when almost every vertex is connected to every other vertex.</p>
+</div>
+<div class="mt-sm flex items-center space-x-md">
+<div class="flex items-center space-x-xs text-on-surface-variant">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-[16px]" data-icon="thumb_up">thumb_up</span></button>
+<span class="font-label-bold text-label-bold">56</span>
+</div>
+<button class="text-on-surface-variant font-label-bold text-label-bold hover:text-primary transition-colors">Reply</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Nested Reply -->
+<div class="ml-lg border-l-2 border-border-default pl-md mt-sm">
+<div class="bg-surface-container-lowest border border-border-default rounded-lg p-md">
+<div class="flex items-start space-x-sm">
+<img alt="Author Avatar" class="w-6 h-6 rounded-full border border-border-default mt-1" data-alt="Avatar of a male developer with short dark hair, wearing a dark blue hoodie, lit by screen glow in a low-light environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdF3wzHZv4Xf1FlhH1SypUJyKacAadehtqMGu12H9I5VFwJN_61FxSuyf8GA-LNHZBJJjJ9xj0CMfowyz4TQLl19TY1X2cO9tWJK-8Mw8gnDyO4LZX-BzkbNzmzz_uArYeihT_e0m7KuedkBq70r_D8d3jkCBTElNBkeCgWJfNQGr57-YTbs-W62i1q5q07iZo5X5CiFFPUEr6iY1HxD6T1g2gS4YD2aQfbBu_OhB1cNJardli_KdC"/>
+<div class="flex-1">
+<div class="flex items-center space-x-xs mb-xs">
+<span class="font-label-bold text-label-bold text-text-primary">AlgoMaster99</span>
+<span class="bg-surface-bright text-on-surface text-[10px] px-1 rounded uppercase font-bold border border-border-default">Author</span>
+<span class="text-on-surface-variant font-label-bold text-label-bold">45 mins ago</span>
+</div>
+<div class="font-body-md text-body-md text-on-background">
+<p>Thanks! I swapped out the PQ for a simple \(O(V)\) array scan to find the minimum distance node, and it passed all cases. Time dropped from 2400ms to 450ms.</p>
+</div>
+<div class="mt-sm flex items-center space-x-md">
+<div class="flex items-center space-x-xs text-on-surface-variant">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-[16px]" data-icon="thumb_up">thumb_up</span></button>
+<span class="font-label-bold text-label-bold">12</span>
+</div>
+<button class="text-on-surface-variant font-label-bold text-label-bold hover:text-primary transition-colors">Reply</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Comment Editor -->
+<div class="mt-xl bg-surface-elevated border border-border-default rounded-lg p-md">
+<div class="flex items-center space-x-sm mb-md border-b border-border-default pb-sm">
+<button class="p-xs text-on-surface-variant hover:text-primary hover:bg-surface-bright rounded transition-colors" title="Bold"><span class="material-symbols-outlined text-[18px]" data-icon="format_bold">format_bold</span></button>
+<button class="p-xs text-on-surface-variant hover:text-primary hover:bg-surface-bright rounded transition-colors" title="Italic"><span class="material-symbols-outlined text-[18px]" data-icon="format_italic">format_italic</span></button>
+<button class="p-xs text-on-surface-variant hover:text-primary hover:bg-surface-bright rounded transition-colors" title="Code Block"><span class="material-symbols-outlined text-[18px]" data-icon="code">code</span></button>
+<button class="p-xs text-on-surface-variant hover:text-primary hover:bg-surface-bright rounded transition-colors" title="Link"><span class="material-symbols-outlined text-[18px]" data-icon="link">link</span></button>
+<button class="p-xs text-on-surface-variant hover:text-primary hover:bg-surface-bright rounded transition-colors" title="List"><span class="material-symbols-outlined text-[18px]" data-icon="format_list_bulleted">format_list_bulleted</span></button>
+</div>
+<textarea class="w-full bg-surface-container-low border border-border-default rounded-DEFAULT p-sm text-body-md font-body-md text-text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all min-h-[120px] placeholder-on-surface-variant/50 resize-y" placeholder="Write a reply... (Markdown supported)"></textarea>
+<div class="mt-md flex justify-end space-x-sm">
+<button class="px-md py-sm rounded-DEFAULT font-label-bold text-label-bold text-text-primary border border-border-default hover:bg-surface-bright transition-colors">Preview</button>
+<button class="px-md py-sm rounded-DEFAULT font-label-bold text-label-bold bg-primary-container text-on-primary-container hover:bg-primary transition-colors">Post Reply</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

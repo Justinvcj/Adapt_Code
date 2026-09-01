@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,11 +10,103 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        "surface-bright": "#37374d",
+        "surface-secondary": "#303240",
+        "tertiary-fixed-dim": "#71d2ff",
+        "border-default": "rgba(255, 255, 255, 0.08)",
+        "surface-elevated": "#282A36",
+        "on-error-container": "#ffdad6",
+        "surface-container-lowest": "#0c0c1f",
+        "on-primary-container": "#683e00",
+        "on-background": "#e2e0fc",
+        "inverse-on-surface": "#2f2e43",
+        "on-primary-fixed": "#2b1700",
+        "outline-variant": "#544434",
+        "secondary-fixed-dim": "#aec6ff",
+        "secondary": "#aec6ff",
+        "secondary-container": "#024ead",
+        "surface-variant": "#333348",
+        "text-primary": "#EFF1F6",
+        "success": "#2CBB5D",
+        "tertiary": "#94dbff",
+        "hard": "#FF375F",
+        "outline": "#a18d7a",
+        "background": "#111125",
+        "surface-container": "#1e1e32",
+        "surface": "#111125",
+        "medium": "#FFC01E",
+        "tertiary-fixed": "#c0e8ff",
+        "surface-dim": "#111125",
+        "on-secondary": "#002e6b",
+        "on-error": "#690005",
+        "inverse-primary": "#875200",
+        "surface-container-highest": "#333348",
+        "on-surface": "#e2e0fc",
+        "on-tertiary-fixed-variant": "#004d66",
+        "on-secondary-fixed-variant": "#004397",
+        "tertiary-container": "#02c4ff",
+        "primary-container": "#ffa116",
+        "secondary-fixed": "#d8e2ff",
+        "error": "#ffb4ab",
+        "primary": "#ffc78b",
+        "primary-fixed": "#ffddba",
+        "on-primary-fixed-variant": "#673d00",
+        "surface-container-high": "#28283d",
+        "error-container": "#93000a",
+        "on-secondary-container": "#aec6ff",
+        "easy": "#00B8A3",
+        "surface-tint": "#ffb867",
+        "on-tertiary-fixed": "#001e2b",
+        "on-primary": "#482900",
+        "on-secondary-fixed": "#001a43",
+        "primary-fixed-dim": "#ffb867",
+        "on-surface-variant": "#d9c3ad",
+        "inverse-surface": "#e2e0fc",
+        "surface-container-low": "#1a1a2e",
+        "border-hover": "rgba(255, 255, 255, 0.16)",
+        "on-tertiary-container": "#004d67",
+        "on-tertiary": "#003547"
       },
-    },
+      borderRadius: {
+        DEFAULT: "0.125rem",
+        lg: "0.25rem",
+        xl: "0.5rem",
+        full: "0.75rem"
+      },
+      spacing: {
+        sm: "8px",
+        xl: "32px",
+        xs: "4px",
+        base: "8px",
+        md: "16px",
+        lg: "24px",
+        "margin-desktop": "32px",
+        gutter: "16px",
+        "margin-mobile": "16px"
+      },
+      fontFamily: {
+        "label-bold": ["var(--font-inter)"],
+        "headline-md": ["var(--font-inter)"],
+        "body-md": ["var(--font-inter)"],
+        "headline-lg": ["var(--font-inter)"],
+        "code-sm": ["var(--font-jetbrains-mono)"],
+        "headline-sm": ["var(--font-inter)"],
+        "body-lg": ["var(--font-inter)"],
+        "code-md": ["var(--font-jetbrains-mono)"]
+      },
+      fontSize: {
+        "label-bold": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "code-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "code-md": ["14px", { lineHeight: "22px", fontWeight: "400" }]
+      }
+    }
   },
   plugins: [],
 };
+
 export default config;

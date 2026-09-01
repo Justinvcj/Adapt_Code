@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contest Detail - AdaptCode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#37374d",
+                        "surface-secondary": "#303240",
+                        "tertiary-fixed-dim": "#71d2ff",
+                        "border-default": "rgba(255, 255, 255, 0.08)",
+                        "surface-elevated": "#282A36",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0c0c1f",
+                        "on-primary-container": "#683e00",
+                        "on-background": "#e2e0fc",
+                        "inverse-on-surface": "#2f2e43",
+                        "on-primary-fixed": "#2b1700",
+                        "outline-variant": "#544434",
+                        "secondary-fixed-dim": "#aec6ff",
+                        "secondary": "#aec6ff",
+                        "secondary-container": "#024ead",
+                        "surface-variant": "#333348",
+                        "text-primary": "#EFF1F6",
+                        "success": "#2CBB5D",
+                        "tertiary": "#94dbff",
+                        "hard": "#FF375F",
+                        "outline": "#a18d7a",
+                        "background": "#111125",
+                        "surface-container": "#1e1e32",
+                        "surface": "#111125",
+                        "medium": "#FFC01E",
+                        "tertiary-fixed": "#c0e8ff",
+                        "surface-dim": "#111125",
+                        "on-secondary": "#002e6b",
+                        "on-error": "#690005",
+                        "inverse-primary": "#875200",
+                        "surface-container-highest": "#333348",
+                        "on-surface": "#e2e0fc",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "on-secondary-fixed-variant": "#004397",
+                        "tertiary-container": "#02c4ff",
+                        "primary-container": "#ffa116",
+                        "secondary-fixed": "#d8e2ff",
+                        "error": "#ffb4ab",
+                        "primary": "#ffc78b",
+                        "primary-fixed": "#ffddba",
+                        "on-primary-fixed-variant": "#673d00",
+                        "surface-container-high": "#28283d",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#aec6ff",
+                        "easy": "#00B8A3",
+                        "surface-tint": "#ffb867",
+                        "on-tertiary-fixed": "#001e2b",
+                        "on-primary": "#482900",
+                        "on-secondary-fixed": "#001a43",
+                        "primary-fixed-dim": "#ffb867",
+                        "on-surface-variant": "#d9c3ad",
+                        "inverse-surface": "#e2e0fc",
+                        "surface-container-low": "#1a1a2e",
+                        "border-hover": "rgba(255, 255, 255, 0.16)",
+                        "on-tertiary-container": "#004d67",
+                        "on-tertiary": "#003547"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-desktop": "32px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "code-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "code-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #111125; color: #EFF1F6; }
+        .split-pane { display: flex; height: calc(100vh - 50px); overflow: hidden; }
+        .pane { overflow-y: auto; }
+        .gutter { cursor: col-resize; background-color: rgba(255, 255, 255, 0.08); width: 4px; transition: background-color 0.2s; }
+        .gutter:hover { background-color: rgba(255, 255, 255, 0.16); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="font-body-md text-body-md bg-background text-text-primary antialiased h-screen overflow-hidden flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface/80 backdrop-blur-md fixed top-0 w-full h-[50px] z-50 border-b border-border-default flex justify-between items-center px-margin-desktop max-w-7xl mx-auto flat no shadows">
+<div class="flex items-center gap-xl">
+<div class="font-headline-sm text-headline-sm font-bold text-primary">AdaptCode</div>
+<nav class="hidden md:flex gap-lg">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 hover:text-primary transition-colors duration-200 opacity-80" href="#">Contest</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Store</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<!-- Timer Countdown (Contest Specific) -->
+<div class="flex items-center gap-sm bg-surface-elevated px-md py-xs rounded border border-border-default">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">timer</span>
+<span class="font-code-md text-code-md text-primary-container font-bold" id="contest-timer">01:45:22</span>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">monetization_on</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-border-default" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJUqnEN_QV4-RdTL-DNQHuX6OftDIa30GRJdON4CEgyqkroxhgDfH-vy_dZq1Zdf8sxCLMqxE_DdJgMUuCYFsDke50ZFgEsksllZqL2AFLBv3ZbimCVFh1C_GkuVjROdQdSYHFi_lxt2YL9YszqI6s4Y2rTViuHrgYah8NS_0T0xtOVawD3ZWBUxkD-k1NXQ3YLyKfaBNmeiRos6FY_UaFV29JmAYN4z_tlE77OdFa53LfKsd0TeKX"/>
+</div>
+</header>
+<!-- Main Content Area -->
+<div class="flex-1 mt-[50px] flex overflow-hidden">
+<!-- Sidebar: Contest Problems -->
+<aside class="w-[300px] flex-shrink-0 bg-surface-container-low border-r border-border-default flex flex-col">
+<div class="p-md border-b border-border-default">
+<h2 class="font-headline-sm text-headline-sm font-semibold mb-xs">Weekly Contest 384</h2>
+<div class="flex justify-between items-center text-on-surface-variant text-sm">
+<span>Rank: 124 / 5,200</span>
+<span class="text-success flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> 12</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-md flex flex-col gap-sm">
+<!-- Q1 -->
+<a class="block p-md rounded bg-surface-bright border border-primary transition-all duration-200 cursor-pointer group" href="#">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-bold text-label-bold text-primary">Q1</span>
+<span class="font-code-sm text-code-sm bg-easy/10 text-easy px-xs py-[2px] rounded-full">3 pts</span>
+</div>
+<h3 class="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors">Modify the Matrix</h3>
+<div class="mt-sm flex justify-between items-center">
+<span class="text-success text-xs flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">check_circle</span> Solved</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">04:12</span>
+</div>
+</a>
+<!-- Q2 -->
+<a class="block p-md rounded bg-surface-elevated border border-border-default hover:border-border-hover transition-all duration-200 cursor-pointer group relative overflow-hidden" href="#">
+<!-- Active indicator subtle -->
+<div class="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-container"></div>
+<div class="flex justify-between items-start mb-sm pl-sm">
+<span class="font-label-bold text-label-bold text-on-surface-variant group-hover:text-text-primary">Q2</span>
+<span class="font-code-sm text-code-sm bg-medium/10 text-medium px-xs py-[2px] rounded-full">4 pts</span>
+</div>
+<h3 class="font-body-md text-body-md text-text-primary pl-sm">Matching Pattern in Array</h3>
+<div class="mt-sm flex justify-between items-center pl-sm">
+<span class="text-primary-container text-xs flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">edit</span> In Progress</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">--:--</span>
+</div>
+</a>
+<!-- Q3 -->
+<a class="block p-md rounded bg-surface-elevated border border-border-default hover:border-border-hover transition-all duration-200 cursor-pointer group" href="#">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-bold text-label-bold text-on-surface-variant group-hover:text-text-primary">Q3</span>
+<span class="font-code-sm text-code-sm bg-medium/10 text-medium px-xs py-[2px] rounded-full">5 pts</span>
+</div>
+<h3 class="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors">Maximum Palindromes After Operations</h3>
+<div class="mt-sm flex justify-between items-center">
+<span class="text-on-surface-variant text-xs flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">lock</span> Locked</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">--:--</span>
+</div>
+</a>
+<!-- Q4 -->
+<a class="block p-md rounded bg-surface-elevated border border-border-default hover:border-border-hover transition-all duration-200 cursor-pointer group" href="#">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-bold text-label-bold text-on-surface-variant group-hover:text-text-primary">Q4</span>
+<span class="font-code-sm text-code-sm bg-hard/10 text-hard px-xs py-[2px] rounded-full">6 pts</span>
+</div>
+<h3 class="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors">Number of Subarrays That Match a Pattern II</h3>
+<div class="mt-sm flex justify-between items-center">
+<span class="text-on-surface-variant text-xs flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">lock</span> Locked</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">--:--</span>
+</div>
+</a>
+</div>
+<!-- Live Ranking Snapshot -->
+<div class="p-md border-t border-border-default bg-surface-container-lowest">
+<h4 class="font-label-bold text-label-bold text-on-surface-variant mb-sm">Live Ranking (Top 3)</h4>
+<div class="flex flex-col gap-xs font-code-sm text-code-sm">
+<div class="flex justify-between items-center p-xs rounded hover:bg-surface-elevated">
+<span class="text-primary-container">1. tourist</span>
+<span>18 pts (12:04)</span>
+</div>
+<div class="flex justify-between items-center p-xs rounded hover:bg-surface-elevated">
+<span class="text-text-primary">2. awice</span>
+<span>18 pts (14:22)</span>
+</div>
+<div class="flex justify-between items-center p-xs rounded hover:bg-surface-elevated">
+<span class="text-text-primary">3. uwi</span>
+<span>18 pts (15:10)</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Split Pane Layout -->
+<div class="flex-1 split-pane bg-surface">
+<!-- Problem Description Pane -->
+<div class="pane flex-1 min-w-[300px] flex flex-col p-lg border-r border-border-default">
+<h1 class="font-headline-lg text-headline-lg mb-md">Q2. Matching Pattern in Array</h1>
+<div class="flex flex-wrap gap-sm mb-lg">
+<span class="bg-medium/10 text-medium px-sm py-xs rounded-full font-label-bold text-label-bold">Medium</span>
+<span class="bg-surface-elevated border border-border-default text-on-surface-variant px-sm py-xs rounded-full font-label-bold text-label-bold">Array</span>
+<span class="bg-surface-elevated border border-border-default text-on-surface-variant px-sm py-xs rounded-full font-label-bold text-label-bold">String Matching</span>
+</div>
+<div class="prose prose-invert max-w-none font-body-md text-body-md text-on-surface mb-lg">
+<p class="mb-md">You are given a <strong>0-indexed</strong> integer array <code>nums</code> of size <code>n</code>, and a <strong>0-indexed</strong> integer array <code>pattern</code> of size <code>m</code> consisting of integers <code>-1</code>, <code>0</code>, and <code>1</code>.</p>
+<p class="mb-md">A subarray <code>nums[i..j]</code> of size <code>m + 1</code> is said to match the <code>pattern</code> if the following conditions hold for each element <code>pattern[k]</code>:</p>
+<ul class="list-disc pl-md mb-md space-y-sm">
+<li><code>nums[i + k + 1] &gt; nums[i + k]</code> if <code>pattern[k] == 1</code>.</li>
+<li><code>nums[i + k + 1] == nums[i + k]</code> if <code>pattern[k] == 0</code>.</li>
+<li><code>nums[i + k + 1] &lt; nums[i + k]</code> if <code>pattern[k] == -1</code>.</li>
+</ul>
+<p>Return <em>the <strong>count</strong> of subarrays in</em> <code>nums</code> <em>that match the</em> <code>pattern</code>.</p>
+</div>
+<div class="bg-surface-elevated border border-border-default rounded p-md mb-md">
+<p class="font-label-bold text-label-bold text-on-surface-variant mb-xs">Example 1:</p>
+<div class="font-code-md text-code-md">
+<p><span class="text-secondary">Input:</span> nums = [1,2,2,1,5,6], pattern = [1,0,-1,1]</p>
+<p><span class="text-secondary">Output:</span> 1</p>
+<p class="text-on-surface-variant text-sm mt-xs">Explanation: The pattern [1,0,-1,1] indicates that we are looking for a subarray nums[i..j] of size 5 such that:
+nums[i+1] &gt; nums[i]
+nums[i+2] == nums[i+1]
+nums[i+3] &lt; nums[i+2]
+nums[i+4] &gt; nums[i+3]</p>
+</div>
+</div>
+<div class="bg-surface-elevated border border-border-default rounded p-md mb-lg">
+<p class="font-label-bold text-label-bold text-on-surface-variant mb-xs">Constraints:</p>
+<ul class="list-disc pl-md font-code-sm text-code-sm text-on-surface space-y-xs">
+<li><code>2 &lt;= n == nums.length &lt;= 100</code></li>
+<li><code>1 &lt;= nums[i] &lt;= 10^9</code></li>
+<li><code>1 &lt;= m == pattern.length &lt; n</code></li>
+<li><code>-1 &lt;= pattern[i] &lt;= 1</code></li>
+</ul>
+</div>
+</div>
+<!-- Resizer Gutter -->
+<div class="gutter" id="resizer"></div>
+<!-- Code Editor Pane -->
+<div class="pane flex-1 min-w-[300px] flex flex-col bg-[#1e1e1e]">
+<!-- Editor Header -->
+<div class="flex justify-between items-center p-sm bg-surface-secondary border-b border-border-default">
+<div class="flex gap-sm">
+<select class="bg-surface-elevated border border-border-default text-text-primary text-sm rounded px-sm py-xs focus:ring-secondary focus:border-secondary font-code-sm">
+<option>C++</option>
+<option selected="">Python3</option>
+<option>Java</option>
+</select>
+<button class="p-xs text-on-surface-variant hover:text-text-primary rounded hover:bg-surface-elevated" title="Reset to default code">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+<div class="flex gap-sm items-center">
+<span class="font-code-sm text-on-surface-variant mr-sm">Auto-saved</span>
+<button class="bg-surface-elevated text-text-primary px-md py-xs rounded text-sm hover:bg-surface-bright transition-colors border border-border-default">Run Code</button>
+<button class="bg-primary-container text-on-primary-container px-md py-xs rounded text-sm font-semibold hover:bg-primary transition-colors">Submit</button>
+</div>
+</div>
+<!-- Editor Surface -->
+<div class="flex-1 flex overflow-hidden font-code-md text-code-md">
+<!-- Line Numbers -->
+<div class="w-12 bg-surface-secondary text-on-surface-variant text-right pr-sm py-sm border-r border-border-default select-none flex flex-col items-end opacity-50">
+<div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div>
+</div>
+<!-- Code Area -->
+<div class="flex-1 p-sm bg-[#1e1e1e] text-[#d4d4d4] overflow-auto whitespace-pre outline-none" contenteditable="true" spellcheck="false">
+<span class="text-[#569cd6]">class</span> <span class="text-[#4ec9b0]">Solution</span>:
+    <span class="text-[#569cd6]">def</span> <span class="text-[#dcdcaa]">countMatchingSubarrays</span>(<span class="text-[#9cdcfe]">self</span>, <span class="text-[#9cdcfe]">nums</span>: <span class="text-[#4ec9b0]">List</span>[<span class="text-[#4ec9b0]">int</span>], <span class="text-[#9cdcfe]">pattern</span>: <span class="text-[#4ec9b0]">List</span>[<span class="text-[#4ec9b0]">int</span>]) -&gt; <span class="text-[#4ec9b0]">int</span>:
+        <span class="text-[#6a9955]"># Write your contest code here</span>
+        n = <span class="text-[#dcdcaa]">len</span>(nums)
+        m = <span class="text-[#dcdcaa]">len</span>(pattern)
+        count = <span class="text-[#b5cea8]">0</span>
+<span class="text-[#569cd6]">return</span> count
+                    </div>
+</div>
+<!-- Terminal / Output Console (Collapsed) -->
+<div class="h-10 bg-surface-secondary border-t border-border-default flex items-center justify-between px-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex items-center gap-sm text-on-surface-variant font-code-sm">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span>Console</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_less</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+        // Simple Split Pane Resizer Logic
+        const resizer = document.getElementById('resizer');
+        const leftPane = resizer.previousElementSibling;
+        const rightPane = resizer.nextElementSibling;
+        const container = resizer.parentElement;
+
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            
+            const containerRect = container.getBoundingClientRect();
+            // Calculate new flex-basis for left pane based on mouse position relative to container
+            let newFlexBasis = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+            
+            // Constrain limits
+            if (newFlexBasis < 20) newFlexBasis = 20;
+            if (newFlexBasis > 80) newFlexBasis = 80;
+
+            leftPane.style.flex = `0 0 ${newFlexBasis}%`;
+            rightPane.style.flex = `1 1 0%`; // Right pane takes remaining space
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        // Simple Timer countdown visual simulation
+        let timeRemaining = 10522; // Seconds (approx 1h 45m)
+        const timerElement = document.getElementById('contest-timer');
+        
+        setInterval(() => {
+            if(timeRemaining <= 0) return;
+            timeRemaining--;
+            
+            const hours = Math.floor(timeRemaining / 3600);
+            const minutes = Math.floor((timeRemaining % 3600) / 60);
+            const seconds = timeRemaining % 60;
+            
+            timerElement.textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+    </script>
+</body></html>

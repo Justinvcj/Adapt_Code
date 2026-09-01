@@ -6,7 +6,6 @@ from app.core.config import settings
 # Import routers
 from app.routers.auth import router as auth_router
 from app.routers.problems import router as problems_router
-from app.routers.execution import router as execution_router
 from app.routers.mastery import router as mastery_router
 from app.routers.session import router as session_router
 from app.routers.stats import router as stats_router
@@ -39,23 +38,22 @@ setup_rate_limiting(app)
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Configure CORS strictly
+# Configure CORS
 origins = [settings.FRONTEND_URL]
-if settings.DEBUG:
+if settings.TEST_MODE:
     origins.append("http://localhost:3000")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include routers
 app.include_router(auth_router)
 app.include_router(problems_router)
-app.include_router(execution_router)
 app.include_router(mastery_router)
 app.include_router(session_router)
 app.include_router(stats_router)
@@ -69,12 +67,24 @@ app.include_router(admin_router)
 def read_root():
     return {"message": "AdaptCode API is running."}
 
+import httpx
 @app.get("/health")
 async def health_check():
-    supabase_ok = bool(settings.SUPABASE_URL and settings.SUPABASE_KEY)
-    gemini_ok = bool(settings.GEMINI_API_KEY)
+    piston_ok = False
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            r = await client.get(f"{settings.PISTON_URL}/api/v2/runtimes")
+            piston_ok = r.status_code == 200
+    except Exception:
+        piston_ok = False
+
     return {
         "status": "ok",
-        "supabase_configured": supabase_ok,
-        "gemini_configured": gemini_ok,
+        "piston_reachable": piston_ok,
+        "gemini_configured": bool(settings.GEMINI_API_KEY),
+        "supabase_configured": bool(settings.SUPABASE_URL and settings.SUPABASE_SERVICE_KEY),
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

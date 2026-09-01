@@ -1,51 +1,48 @@
-'use client';
-
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import PixelSwap from '@/components/reactbits/PixelSwap';
 
 export default function Sidebar() {
-  const pathname = usePathname();
-
-  const IC = {
-    library: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>,
-    compass: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
-    explore: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-    cap: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>,
-  };
-
   return (
-    <div className="sidebar">
-      <div style={{padding: '8px 12px', marginBottom: '12px'}}>
-        <PixelSwap 
-          firstContent={<div style={{fontWeight: 800, fontSize: '18px', color: 'var(--tx)', display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{color: 'var(--premium)'}}>&lt;/&gt;</span> AdaptCode</div>}
-          secondContent={<div style={{fontWeight: 800, fontSize: '18px', color: 'var(--tx)', display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{color: 'var(--blue)'}}>&lt;AI&gt;</span> TutorPro</div>}
-          pixelSize={12}
-          duration={1200}
-          pixelDuration={300}
-          style={{height: '30px', width: '100%'}}
-        />
+    <aside className="hidden md:flex flex-col py-md fixed left-0 top-[50px] h-[calc(100vh-50px)] w-[220px] bg-surface-container-low border-r border-border-default z-40">
+      <div className="px-md mb-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-8 h-8 rounded-md bg-primary-container/20 flex items-center justify-center text-primary border border-primary/30">
+            <span className="material-symbols-outlined text-sm">terminal</span>
+          </div>
+          <div>
+            <h2 className="font-label-bold text-label-bold text-primary">Navigation</h2>
+            <p className="font-body-md text-body-md text-on-surface-variant text-[11px] opacity-70">Workspace</p>
+          </div>
+        </div>
       </div>
-      <Link className={`si ${pathname === '/dashboard' ? 'act' : ''}`} href="/dashboard">
-        {IC.library} Library
-      </Link>
-      <Link className={`si ${pathname === '/history' ? 'act' : ''}`} href="/history">
-        {IC.compass} History
-      </Link>
-      <a className="si" href="#" onClick={(e) => { e.preventDefault(); alert('Coming soon'); }}>
-        {IC.explore} Explore
-      </a>
-      <a className="si" href="#" onClick={(e) => { e.preventDefault(); alert('Coming soon'); }}>
-        {IC.cap} Study Plan
-      </a>
-      
-      <div className="side-label">My Lists <button onClick={() => alert('Create list')}>+ ▾</button></div>
-      <a className="side-sub" href="#" onClick={(e) => e.preventDefault()}><span className="ico">⭐</span> Favorite <span style={{marginLeft:'auto', fontSize:'11px', color:'var(--tx-3)'}}>🔒</span></a>
-      <a className="side-sub" href="#" onClick={(e) => e.preventDefault()}><span className="ico">📋</span> array/string</a>
-      
-      <div className="side-label">Saved by me</div>
-      <a className="side-sub" href="#" onClick={(e) => e.preventDefault()}><span className="ico">🎨</span> Design</a>
-      <a className="side-sub" href="#" onClick={(e) => e.preventDefault()}><span className="ico">📊</span> Array</a>
-    </div>
+      <nav className="flex-1 flex flex-col gap-1 px-2">
+        <Link className="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-bright text-primary border-r-4 border-primary scale-95 transition-all" href="/problems">
+          <span className="material-symbols-outlined">menu_book</span>
+          <span className="font-label-bold text-label-bold">Library</span>
+        </Link>
+        <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="/dashboard">
+          <span className="material-symbols-outlined">ads_click</span>
+          <span className="font-label-bold text-label-bold">Quest</span>
+        </Link>
+        <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="/explore">
+          <span className="material-symbols-outlined">explore</span>
+          <span className="font-label-bold text-label-bold">Explore</span>
+        </Link>
+        <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="/history">
+          <span className="material-symbols-outlined">event_note</span>
+          <span className="font-label-bold text-label-bold">Study Plan</span>
+        </Link>
+        
+        <div className="h-px bg-border-default my-2 mx-3"></div>
+        
+        <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+          <span className="material-symbols-outlined">list</span>
+          <span className="font-label-bold text-label-bold">My Lists</span>
+        </Link>
+        <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+          <span className="material-symbols-outlined">bookmark</span>
+          <span className="font-label-bold text-label-bold">Saved by me</span>
+        </Link>
+      </nav>
+    </aside>
   );
 }

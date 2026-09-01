@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Study Plans - AdaptCode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#37374d",
+                      "surface-secondary": "#303240",
+                      "tertiary-fixed-dim": "#71d2ff",
+                      "border-default": "rgba(255, 255, 255, 0.08)",
+                      "surface-elevated": "#282A36",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-lowest": "#0c0c1f",
+                      "on-primary-container": "#683e00",
+                      "on-background": "#e2e0fc",
+                      "inverse-on-surface": "#2f2e43",
+                      "on-primary-fixed": "#2b1700",
+                      "outline-variant": "#544434",
+                      "secondary-fixed-dim": "#aec6ff",
+                      "secondary": "#aec6ff",
+                      "secondary-container": "#024ead",
+                      "surface-variant": "#333348",
+                      "text-primary": "#EFF1F6",
+                      "success": "#2CBB5D",
+                      "tertiary": "#94dbff",
+                      "hard": "#FF375F",
+                      "outline": "#a18d7a",
+                      "background": "#111125",
+                      "surface-container": "#1e1e32",
+                      "surface": "#111125",
+                      "medium": "#FFC01E",
+                      "tertiary-fixed": "#c0e8ff",
+                      "surface-dim": "#111125",
+                      "on-secondary": "#002e6b",
+                      "on-error": "#690005",
+                      "inverse-primary": "#875200",
+                      "surface-container-highest": "#333348",
+                      "on-surface": "#e2e0fc",
+                      "on-tertiary-fixed-variant": "#004d66",
+                      "on-secondary-fixed-variant": "#004397",
+                      "tertiary-container": "#02c4ff",
+                      "primary-container": "#ffa116",
+                      "secondary-fixed": "#d8e2ff",
+                      "error": "#ffb4ab",
+                      "primary": "#ffc78b",
+                      "primary-fixed": "#ffddba",
+                      "on-primary-fixed-variant": "#673d00",
+                      "surface-container-high": "#28283d",
+                      "error-container": "#93000a",
+                      "on-secondary-container": "#aec6ff",
+                      "easy": "#00B8A3",
+                      "surface-tint": "#ffb867",
+                      "on-tertiary-fixed": "#001e2b",
+                      "on-primary": "#482900",
+                      "on-secondary-fixed": "#001a43",
+                      "primary-fixed-dim": "#ffb867",
+                      "on-surface-variant": "#d9c3ad",
+                      "inverse-surface": "#e2e0fc",
+                      "surface-container-low": "#1a1a2e",
+                      "border-hover": "rgba(255, 255, 255, 0.16)",
+                      "on-tertiary-container": "#004d67",
+                      "on-tertiary": "#003547"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "base": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "margin-desktop": "32px",
+                      "gutter": "16px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "label-bold": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "label-bold": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #111125;
+            color: #EFF1F6;
+        }
+      </style>
+</head>
+<body class="bg-background text-text-primary antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface/80 backdrop-blur-md fixed top-0 w-full h-[50px] z-50 border-b border-border-default flex justify-between items-center px-margin-desktop max-w-7xl mx-auto hidden md:flex">
+<div class="flex items-center gap-xl">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">AdaptCode</span>
+<div class="flex gap-lg">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Problems</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Contest</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Discuss</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Interview</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors duration-200" href="#">Store</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="monetization_on">monetization_on</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-border-default object-cover" data-alt="A small circular user profile avatar with a tech-focused, minimalist icon on a dark background. High contrast, modern developer aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRdLOq4rNjP6PE67A-XdzJx38MyNpVBtBoLKM-aMSM4_-KQNGH6nKKSrLmQNS5GdOY1CYhRzfg8UV7jlXPONjoItGcEJTdn38p3JQKIk_tBg6PaoBOBERHenNnWn7pNy-OOOuOo9it0k_RLOgGyVmz8U1UjoRR0q3QXa3d_tdxi1uKSYCNVd1kfOioBuXGQ9jlfocp-ev0VloWy_SVWj5DVdlTbObTO09xfqlDUWscxANTxpej-WyJ"/>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="bg-surface-container-low fixed left-0 top-[50px] h-[calc(100vh-50px)] w-[220px] border-r border-border-default flex flex-col py-md hidden md:flex z-40">
+<div class="px-md pb-md mb-md border-b border-border-default">
+<div class="flex items-center gap-sm mb-xs">
+<span class="font-headline-sm text-primary">Nav</span>
+</div>
+<span class="text-on-surface-variant font-label-bold text-label-bold">Workspace</span>
+</div>
+<div class="flex flex-col gap-xs px-sm">
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="menu_book">menu_book</span>
+<span class="font-label-bold text-label-bold">Library</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="ads_click">ads_click</span>
+<span class="font-label-bold text-label-bold">Quest</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="explore">explore</span>
+<span class="font-label-bold text-label-bold">Explore</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT bg-surface-bright text-primary border-r-4 border-primary hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="event_note">event_note</span>
+<span class="font-label-bold text-label-bold">Study Plan</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="list">list</span>
+<span class="font-label-bold text-label-bold">My Lists</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="bookmark">bookmark</span>
+<span class="font-label-bold text-label-bold">Saved by me</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 mt-[50px] md:ml-[220px] p-margin-desktop md:p-xl max-w-[1440px] w-full mx-auto flex flex-col gap-xl">
+<!-- Hero Section -->
+<section class="bg-surface-elevated rounded-xl border border-border-default p-xl flex flex-col md:flex-row items-center justify-between gap-xl relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-primary-container/10 to-transparent pointer-events-none"></div>
+<div class="flex flex-col gap-md z-10 max-w-2xl">
+<h1 class="font-headline-lg text-headline-lg text-text-primary">Start your coding journey</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Master algorithms and data structures with the comprehensive AdaptCode 75 plan. Curated by experts to get you interview-ready.</p>
+<div class="flex gap-md mt-sm">
+<button class="bg-primary-container text-background font-label-bold text-label-bold px-lg py-sm rounded-DEFAULT hover:opacity-90 transition-opacity">Start AdaptCode 75</button>
+<button class="border border-border-default text-text-primary font-label-bold text-label-bold px-lg py-sm rounded-DEFAULT hover:border-border-hover transition-colors">View Details</button>
+</div>
+</div>
+<div class="z-10 w-full md:w-1/3 aspect-video rounded-lg overflow-hidden border border-border-default relative">
+<img alt="Coding Journey Hero Image" class="object-cover w-full h-full" data-alt="A conceptual 3D illustration of interconnected code blocks forming a glowing path upwards, symbolizing a learning journey. Dark background with neon orange and blue highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbmB4LvObUxbGXAvYhr5hOA9iK3Nk0SfkNLo8xejTlQ1Obkj6pZhtezLhMVmhSUap0dGjWq2XIIMxuPpkvO9h1QJ-lIwspIVLkJMggCLmBZELkf86JTM0xVN498cku0IIS6GePsZHjAWJLotDnZ4zAZX8RxEmQAhFfH8BU3tbmJ-J0p8qDw6Naxi4nySBBSHGd-Q6xM633_ESJpsUS2DfPDhfFesMrVQxfMxjDXqEqFI9BCDqntx32"/>
+</div>
+</section>
+<!-- Featured Plans -->
+<section class="flex flex-col gap-md">
+<h2 class="font-headline-md text-headline-md text-text-primary">Featured Plans</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Card 1 -->
+<div class="bg-surface-elevated border border-border-default rounded-xl p-md flex flex-col gap-md hover:border-border-hover transition-colors cursor-pointer group">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-secondary flex items-center justify-center text-medium">
+<span class="material-symbols-outlined" data-icon="star">star</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary group-hover:text-primary transition-colors">Top Interview 150</h3>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant font-code-md text-code-md">
+<span>150 Problems</span>
+<span class="w-1 h-1 rounded-full bg-border-default"></span>
+<span class="px-xs py-[2px] rounded text-medium bg-medium/10">Medium</span>
+</div>
+<div class="flex flex-col gap-xs mt-auto">
+<div class="flex justify-between text-code-sm font-code-sm text-on-surface-variant">
+<span>Progress</span>
+<span>45/150</span>
+</div>
+<div class="w-full h-1 bg-surface-secondary rounded-full overflow-hidden">
+<div class="h-full bg-success w-[30%]"></div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-elevated border border-border-default rounded-xl p-md flex flex-col gap-md hover:border-border-hover transition-colors cursor-pointer group">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-secondary flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary group-hover:text-primary transition-colors">SQL 50</h3>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant font-code-md text-code-md">
+<span>50 Problems</span>
+<span class="w-1 h-1 rounded-full bg-border-default"></span>
+<span class="px-xs py-[2px] rounded text-easy bg-easy/10">Easy</span>
+</div>
+<div class="flex flex-col gap-xs mt-auto">
+<div class="flex justify-between text-code-sm font-code-sm text-on-surface-variant">
+<span>Progress</span>
+<span>10/50</span>
+</div>
+<div class="w-full h-1 bg-surface-secondary rounded-full overflow-hidden">
+<div class="h-full bg-success w-[20%]"></div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-elevated border border-border-default rounded-xl p-md flex flex-col gap-md hover:border-border-hover transition-colors cursor-pointer group">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-secondary flex items-center justify-center text-hard">
+<span class="material-symbols-outlined" data-icon="moving">moving</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary group-hover:text-primary transition-colors">Dynamic Programming</h3>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant font-code-md text-code-md">
+<span>70 Problems</span>
+<span class="w-1 h-1 rounded-full bg-border-default"></span>
+<span class="px-xs py-[2px] rounded text-hard bg-hard/10">Hard</span>
+</div>
+<div class="flex flex-col gap-xs mt-auto">
+<div class="flex justify-between text-code-sm font-code-sm text-on-surface-variant">
+<span>Progress</span>
+<span>0/70</span>
+</div>
+<div class="w-full h-1 bg-surface-secondary rounded-full overflow-hidden">
+<div class="h-full bg-success w-0"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-dim border-t border-border-default w-full py-md flex justify-between items-center px-margin-desktop mt-auto z-50 md:ml-[220px] md:w-[calc(100%-220px)]">
+<span class="font-body-md text-body-md text-on-surface-variant">© 2024 AdaptCode. 1005 Online</span>
+<div class="flex gap-md">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface" href="#">Status</a>
+</div>
+</footer>
+</body></html>
