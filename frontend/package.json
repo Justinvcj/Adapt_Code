@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@monaco-editor/react": "^4.7.0",
     "framer-motion": "^13.1.0",
     "gsap": "^3.15.0",

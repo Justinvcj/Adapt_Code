@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import toast from 'react-hot-toast';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Please enter email and password");
@@ -20,28 +18,19 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, display_name: email.split('@')[0] })
       });
       
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Login failed');
+      if (!res.ok) throw new Error(data.detail || 'Registration failed');
       
-      login(data.access_token, {
-        user_id: data.user_id,
-        email: email,
-        display_name: data.display_name,
-        role: 'student',
-        is_pro: data.is_pro,
-        created_at: new Date().toISOString()
-      });
-      
-      toast.success("Successfully logged in!");
-      router.push('/dashboard');
+      toast.success("Successfully registered! Please log in.");
+      router.push('/login');
     } catch (error: any) {
-      toast.error(error.message || "Failed to log in");
+      toast.error(error.message || "Failed to register");
     } finally {
       setLoading(false);
     }
@@ -57,14 +46,14 @@ export default function LoginPage() {
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="text-center mb-xl">
           <h1 className="font-headline-lg text-headline-lg text-primary mb-sm tracking-tight">AdaptCode</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">Sign in to continue solving problems.</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">Create a free account to get started.</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-md">
+        <form onSubmit={handleRegister} className="space-y-md">
           <div>
-            <label className="block font-label-bold text-label-bold text-on-surface-variant mb-xs" htmlFor="email">Email / Username</label>
+            <label className="block font-label-bold text-label-bold text-on-surface-variant mb-xs" htmlFor="email">Email</label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 transform -translate-y-1/2 text-on-surface-variant" style={{ fontSize: '18px' }}>person</span>
+              <span className="material-symbols-outlined absolute left-sm top-1/2 transform -translate-y-1/2 text-on-surface-variant" style={{ fontSize: '18px' }}>mail</span>
               <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-surface-elevated border border-border-default rounded text-text-primary placeholder-on-surface-variant/50 pl-lg py-sm font-body-md text-body-md focus:outline-none input-glow transition-all" id="email" placeholder="Enter your email" type="email" required />
             </div>
           </div>
@@ -72,12 +61,12 @@ export default function LoginPage() {
             <label className="block font-label-bold text-label-bold text-on-surface-variant mb-xs" htmlFor="password">Password</label>
             <div className="relative">
               <span className="material-symbols-outlined absolute left-sm top-1/2 transform -translate-y-1/2 text-on-surface-variant" style={{ fontSize: '18px' }}>lock</span>
-              <input value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-surface-elevated border border-border-default rounded text-text-primary placeholder-on-surface-variant/50 pl-lg py-sm font-body-md text-body-md focus:outline-none input-glow transition-all" id="password" placeholder="Enter password" type="password" required />
+              <input value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-surface-elevated border border-border-default rounded text-text-primary placeholder-on-surface-variant/50 pl-lg py-sm font-body-md text-body-md focus:outline-none input-glow transition-all" id="password" placeholder="Create a password" type="password" required />
             </div>
           </div>
           
-          <button disabled={loading} className="w-full bg-success text-surface-container-lowest font-headline-sm text-headline-sm py-sm rounded hover:bg-opacity-90 transition-all mt-lg font-bold disabled:opacity-50" type="submit">
-            {loading ? "Signing In..." : "Sign In"}
+          <button disabled={loading} className="w-full bg-primary text-on-primary font-headline-sm text-headline-sm py-sm rounded hover:bg-opacity-90 transition-all mt-lg font-bold disabled:opacity-50" type="submit">
+            {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
 
@@ -99,7 +88,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-xl text-center">
-          <p className="font-body-md text-body-md text-on-surface-variant">Don't have an account? <Link className="text-primary-container hover:text-primary transition-colors font-bold" href="/register">Sign up free</Link></p>
+          <p className="font-body-md text-body-md text-on-surface-variant">Already have an account? <Link className="text-primary-container hover:text-primary transition-colors font-bold" href="/login">Sign In</Link></p>
         </div>
       </div>
     </>

@@ -27,22 +27,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // The practice page uses a fullscreen layout, so we don't wrap it in app-wrap
-  if (pathname === '/practice' || pathname.startsWith('/practice/')) {
-    return (
-      <>
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-      </>
-    );
-  }
+  const isWorkspace = pathname.startsWith('/problem/');
 
   return (
     <>
       <Navbar />
-      <Sidebar />
-      <main className="flex-1 mt-[50px] md:ml-[220px] p-margin-mobile md:p-margin-desktop bg-background overflow-y-auto min-h-[calc(100vh-50px)]">
+      {!isWorkspace && <Sidebar />}
+      <main className={`flex-1 mt-[50px] ${!isWorkspace ? 'md:ml-[220px] p-margin-mobile md:p-margin-desktop overflow-y-auto min-h-[calc(100vh-50px)]' : 'h-[calc(100vh-50px)] overflow-hidden'} bg-background`}>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

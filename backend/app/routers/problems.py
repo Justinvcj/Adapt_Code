@@ -345,3 +345,16 @@ async def run_diagnostic(user_id: str = Depends(get_current_user)):
             problems.extend(res.data)
             
     return {"diagnostic_problems": problems, "total": len(problems)}
+@router.get("/problems")
+async def get_all_problems():
+    supabase = get_supabase()
+    res = supabase.table("problems").select("id, title, difficulty_level, concept_tag").execute()
+    return {"status": "success", "data": res.data}
+
+@router.get("/problems/{problem_id}")
+async def get_single_problem(problem_id: str):
+    supabase = get_supabase()
+    res = supabase.table("problems").select("*").eq("id", problem_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    return {"status": "success", "problem": res.data[0]}

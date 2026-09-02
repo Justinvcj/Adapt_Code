@@ -1,7 +1,8 @@
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
 from app.core.database import get_supabase
-from app.core.dependencies import get_current_user, bkt_doctor
+from app.core.dependencies import get_current_user
+from app.services.bkt import L0
 from app.services.prerequisites import can_access_concept, PREREQUISITE_GRAPH
 
 router = APIRouter(prefix="/api", tags=["mastery"])
@@ -29,7 +30,7 @@ async def get_mastery(user_id: str = Depends(get_current_user)) -> Dict[str, Any
             
             result.append({
                 "concept_tag": c,
-                "mastery_probability": mastery_dict.get(c, bkt_doctor.p_prior),
+                "mastery_probability": mastery_dict.get(c, L0),
                 "is_unlocked": can_access_concept(c, mastery_dict),
                 "prerequisites": prereqs,
                 "problems_attempted": attempted,

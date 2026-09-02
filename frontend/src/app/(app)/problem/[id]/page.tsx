@@ -7,7 +7,7 @@ import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 
-export default function ProblemPage({ params }: { params: { id: str } }) {
+export default function ProblemPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [problem, setProblem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function ProblemPage({ params }: { params: { id: str } }) {
   useEffect(() => {
     async function loadProblem() {
       try {
-        const res = await fetchApi(`/api/problem/next?problem_id=${params.id}`);
+        const res = await fetchApi(`/api/problems/${params.id}`);
         setProblem(res.problem);
         setCode(res.problem.starter_code?.python || 'def solve():\n    pass');
         setLoading(false);
@@ -138,7 +138,7 @@ export default function ProblemPage({ params }: { params: { id: str } }) {
   if (!problem) return <div className="p-10 text-center text-red-500">Problem not found</div>;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-50px)] mt-[50px] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden w-full">
       <div className="h-[40px] bg-surface-elevated border-b border-border-default flex items-center justify-between px-md flex-shrink-0">
         <div className="flex items-center gap-sm">
           <button onClick={() => router.push('/dashboard')} className="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-2 py-1 rounded hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
