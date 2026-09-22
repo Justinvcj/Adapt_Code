@@ -2,20 +2,23 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
+import { fetchApi } from '@/lib/api';
+import { AlertCircle } from 'lucide-react';
 
 export default function ProblemsPage() {
   const [problems, setProblems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     async function loadProblems() {
       try {
-        const data = await api.get('/problems');
+        const data = await fetchApi('/api/problems');
         setProblems(data.data || []);
-      } catch (e) {
+      } catch (e: any) {
         console.error("Failed to load problems", e);
+        setError("Failed to connect to server. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -52,9 +55,18 @@ export default function ProblemsPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={4} className="p-4 text-center text-on-surface-variant">Loading problems...</td></tr>
+                  <tr><td colSpan={4} className="p-8 text-center text-on-surface-variant">Loading problems...</td></tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-red-400">
+                        <AlertCircle className="w-8 h-8" />
+                        <p>{error}</p>
+                      </div>
+                    </td>
+                  </tr>
                 ) : problems.length === 0 ? (
-                  <tr><td colSpan={4} className="p-4 text-center text-on-surface-variant">No problems found</td></tr>
+                  <tr><td colSpan={4} className="p-8 text-center text-on-surface-variant">No problems found</td></tr>
                 ) : (
                   problems.map((p, i) => (
                     <tr 

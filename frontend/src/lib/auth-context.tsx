@@ -31,31 +31,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('access_token');
       
-      const mockUser = {
-        user_id: 'guest-123',
-        email: 'guest@adaptcode.com',
-        display_name: 'Guest User',
-        role: 'student',
-        is_pro: false,
-        created_at: new Date().toISOString()
-      };
-
       if (storedToken) {
         setToken(storedToken);
         try {
           const res = await fetchApi('/api/auth/me');
-          setUser(res.user);
+          if (res && res.user) {
+            setUser(res.user);
+          } else {
+            // Invalid token or server error, log out
+            localStorage.removeItem('access_token');
+            setToken(null);
+            setUser(null);
+          }
         } catch (error) {
           console.error("Failed to fetch user", error);
-          localStorage.setItem('access_token', 'DEV_TOKEN_dev@adaptcode.com');
-          setToken('DEV_TOKEN_dev@adaptcode.com');
-          setUser(mockUser);
+          // If offline, we could theoretically keep the token but clear the user so they re-login,
+          // but for security we should probably clear it or handle it gracefully.
+          // For now, if fetch fails (e.g. backend down), we set user to null so they are routed out.
+          setUser(null);
         }
       } else {
-        // Automatically log in as guest for local development
-        localStorage.setItem('access_token', 'DEV_TOKEN_dev@adaptcode.com');
-        setToken('DEV_TOKEN_dev@adaptcode.com');
-        setUser(mockUser);
+        // No token, ensure clean state
+        setToken(null);
+        setUser(null);
       }
       setIsLoading(false);
     };

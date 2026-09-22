@@ -27,6 +27,7 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
   const [explanationStatus, setExplanationStatus] = useState<string>('not_needed');
   const [explanation, setExplanation] = useState<any>(null);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [error, setError] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadProblem() {
@@ -34,9 +35,10 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
         const res = await fetchApi(`/api/problems/${params.id}`);
         setProblem(res.problem);
         setCode(res.problem.starter_code?.python || 'def solve():\n    pass');
-        setLoading(false);
       } catch (err) {
         toast.error("Failed to load problem");
+        setError(true);
+      } finally {
         setLoading(false);
       }
     }
@@ -134,8 +136,19 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
     }
   };
 
-  if (loading) return <div className="p-10 text-center">Loading Problem...</div>;
-  if (!problem) return <div className="p-10 text-center text-red-500">Problem not found</div>;
+  if (loading) return <div className="p-10 text-center text-on-surface-variant flex flex-col items-center justify-center h-full"><span className="material-symbols-outlined animate-spin mb-2">sync</span> Loading Problem...</div>;
+  if (error || !problem) return (
+    <div className="flex flex-col items-center justify-center h-full p-10 text-center">
+      <div className="bg-surface-elevated border border-border-default rounded-xl p-8 max-w-md w-full shadow-lg">
+        <span className="material-symbols-outlined text-[48px] text-red-500 mb-4">cloud_off</span>
+        <h2 className="font-headline-sm text-xl text-text-primary mb-2">Connection Failed</h2>
+        <p className="text-on-surface-variant mb-6 text-sm">We couldn't connect to the server to load this problem. Make sure the backend is running.</p>
+        <button onClick={() => router.push('/problems')} className="px-4 py-2 bg-primary text-on-primary rounded hover:bg-primary/90 transition-colors font-label-bold">
+          Back to Library
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full overflow-hidden w-full">
