@@ -31,3 +31,15 @@
 - [ ] Ensure mobile responsiveness across all core pages (add mobile hamburger menu).
 - [ ] Setup production Docker Compose for Next.js + FastAPI + Piston.
 - [ ] Prepare deployment configuration (Cloudflare Tunnels, VPS, or PaaS).
+
+## Phase 4.1: Critical Remediation (10-Module Blueprint)
+- [ ] M1: Database Schema & Pipeline Alignment
+- [ ] M2: LinUCB Agent Thread-Safety & Memory
+- [ ] M3: Frontend Data Wiring & Typography
+- [ ] M4: Authentication Security & State
+- [ ] M5: Submission Pipeline Stability
+- [ ] M6: Gemini API Robustness
+- [ ] M7: BKT & Prerequisite Consistency
+- [ ] M8: Architecture & Database Scaling
+- [ ] M9: UI Workflow & Next Problem UX
+- [ ] M10: Missing Research & Academic Features

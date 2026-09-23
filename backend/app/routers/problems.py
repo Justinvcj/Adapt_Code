@@ -60,18 +60,16 @@ async def get_mastery_vector(user_id: str):
 
 async def get_recent_events(user_id: str, limit: int = 5):
     supabase = get_supabase()
-    res = supabase.table("session_events").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
+    res = supabase.table("session_events").select("*").eq("student_id", user_id).order("timestamp", desc=True).limit(limit).execute()
     return res.data or []
 
 async def save_mastery(user_id: str, concept: str, mastery: float):
     supabase = get_supabase()
-    is_mastered = mastery >= MASTERY_THRESHOLD
     supabase.table("mastery_scores").upsert({
-        "user_id": user_id,
-        "concept": concept,
-        "mastery_probability": mastery,
-        "is_mastered": is_mastered
-    }).execute()
+        "student_id": user_id,
+        "concept_tag": concept,
+        "mastery_probability": mastery
+    }, on_conflict="student_id,concept_tag").execute()
 
 async def get_unsolved_problem(user_id: str, concept: str, difficulty: str):
     supabase = get_supabase()
@@ -91,7 +89,7 @@ async def get_unsolved_problem(user_id: str, concept: str, difficulty: str):
                 return {}
     
     # Try to find one not solved by user
-    solved_res = supabase.table("session_events").select("problem_id").eq("user_id", user_id).eq("verdict", "accepted").execute()
+    solved_res = supabase.table("session_events").select("problem_id").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
     solved_ids = {row["problem_id"] for row in (solved_res.data or [])}
     
     unsolved = [p for p in problems if str(p["id"]) not in solved_ids]
@@ -163,23 +161,38 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     await save_mastery(user_id, concept, new_mastery)
     
     # 4. Save Session Event
+    VERDICT_MAP = {
+        "accepted": "Accepted",
+        "wrong_answer": "Wrong Answer",
+        "compile_error": "Compilation Error",
+        "runtime_error": "Runtime Error",
+        "time_limit_exceeded": "Time Limit Exceeded",
+        "abandoned": "Abandoned"
+    }
+    mapped_verdict = VERDICT_MAP.get(execution["verdict"], "Abandoned")
+
+    sessions_res = supabase.table("sessions").select("session_id").eq("student_id", user_id).order("started_at", desc=True).limit(1).execute()
+    session_id = sessions_res.data[0]["session_id"] if sessions_res.data else None
+    if not session_id:
+        new_session = supabase.table("sessions").insert({"student_id": user_id, "session_number": 1}).execute()
+        if new_session.data:
+            session_id = new_session.data[0]["session_id"]
+
     event_res = supabase.table("session_events").insert({
-        "user_id": user_id,
+        "session_id": session_id,
+        "student_id": user_id,
         "problem_id": req.problem_id,
-        "compile_error_count": req.compile_error_count,
-        "time_on_task_seconds": req.time_on_task_seconds,
+        "concept_tag": concept,
+        "difficulty_level": problem.get("difficulty_level", "medium"),
+        "compile_errors": req.compile_error_count,
+        "time_on_task_seconds": int(req.time_on_task_seconds),
         "hint_used": req.hint_used,
-        "hint_used_at_attempt": req.hint_used_at_attempt,
         "attempt_count": req.attempt_count,
         "abandoned": False,
-        "code": req.code,
-        "language": req.language,
-        "verdict": execution["verdict"],
-        "test_cases_passed": execution["passed"],
-        "test_cases_total": execution["total"],
-        "effective_correctness_weight": w
+        "final_verdict": mapped_verdict,
+        "reward_signal": w
     }).execute()
-    event_id = event_res.data[0]["id"] if event_res.data else None
+    event_id = event_res.data[0]["event_id"] if event_res.data else None
     
     # 5. LinUCB
     x = agent.build_context(user_mastery, recent_events)
@@ -263,20 +276,26 @@ async def abandon_problem(req: AbandonRequest, user_id: str = Depends(get_curren
     new_mastery = update_mastery(old_mastery, 0.0)
     await save_mastery(user_id, concept, new_mastery)
     
+    sessions_res = supabase.table("sessions").select("session_id").eq("student_id", user_id).order("started_at", desc=True).limit(1).execute()
+    session_id = sessions_res.data[0]["session_id"] if sessions_res.data else None
+    if not session_id:
+        new_session = supabase.table("sessions").insert({"student_id": user_id, "session_number": 1}).execute()
+        if new_session.data:
+            session_id = new_session.data[0]["session_id"]
+
     supabase.table("session_events").insert({
-        "user_id": user_id,
+        "session_id": session_id,
+        "student_id": user_id,
         "problem_id": req.problem_id,
-        "compile_error_count": req.compile_error_count,
-        "time_on_task_seconds": req.time_on_task_seconds,
+        "concept_tag": concept,
+        "difficulty_level": problem.get("difficulty_level", "medium"),
+        "compile_errors": req.compile_error_count,
+        "time_on_task_seconds": int(req.time_on_task_seconds),
         "hint_used": False,
         "attempt_count": req.attempt_count,
         "abandoned": True,
-        "code": "",
-        "language": "python",
-        "verdict": "abandoned",
-        "test_cases_passed": 0,
-        "test_cases_total": 0,
-        "effective_correctness_weight": 0.0
+        "final_verdict": "Abandoned",
+        "reward_signal": 0.0
     }).execute()
     
     return {"status": "recorded"}
