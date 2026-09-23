@@ -78,3 +78,28 @@ CREATE TABLE active_problem_state (
     hint_used BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (student_id, problem_id)
 );
+
+-- 8. Leaderboard RPC
+CREATE OR REPLACE FUNCTION get_leaderboard_stats()
+RETURNS TABLE (
+    user_id UUID,
+    display_name TEXT,
+    solved_count BIGINT,
+    avg_mastery NUMERIC
+) AS \$\$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        u.user_id,
+        u.display_name,
+        COUNT(DISTINCT e.problem_id) AS solved_count,
+        COALESCE(AVG(m.mastery_probability), 0) AS avg_mastery
+    FROM users u
+    LEFT JOIN session_events e ON u.user_id = e.student_id AND e.final_verdict = 'Accepted'
+    LEFT JOIN mastery_scores m ON u.user_id = m.student_id
+    GROUP BY u.user_id, u.display_name
+    HAVING COUNT(DISTINCT e.problem_id) > 0 OR COALESCE(AVG(m.mastery_probability), 0) > 0
+    ORDER BY solved_count DESC, avg_mastery DESC
+    LIMIT 50;
+END;
+\$\$ LANGUAGE plpgsql;
