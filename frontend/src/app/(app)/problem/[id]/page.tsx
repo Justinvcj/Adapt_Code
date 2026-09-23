@@ -28,6 +28,8 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
   const [explanation, setExplanation] = useState<any>(null);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [error, setError] = useState<boolean>(false);
+  const [nextProblemInfo, setNextProblemInfo] = useState<any>(null);
+  const [masteryDelta, setMasteryDelta] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadProblem() {
@@ -125,7 +127,8 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
       if (res.verdict === 'accepted') {
         setSolved(true);
         toast.success(`Accepted! +${(res.effective_weight).toFixed(2)} mastery`);
-        // Show next problem card
+        setNextProblemInfo(res.next_problem);
+        setMasteryDelta(res.effective_weight);
       } else {
         toast.error(`Failed: ${res.verdict}`);
         if (res.explanation_status === 'pending' && res.event_id) {
@@ -269,6 +272,51 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       </div>
+
+      {/* Post-Solve Modal */}
+      {solved && nextProblemInfo && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-surface-elevated border border-border-default rounded-lg shadow-xl p-8 max-w-md w-full animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-4xl">check_circle</span>
+              </div>
+              <h2 className="text-2xl font-bold text-text-primary mb-2">Problem Solved!</h2>
+              {masteryDelta !== null && (
+                <p className="text-success font-label-bold">
+                  +{masteryDelta.toFixed(2)} Mastery
+                </p>
+              )}
+            </div>
+            
+            <div className="bg-surface p-4 rounded border border-border-default mb-6">
+              <p className="text-sm text-text-secondary mb-1">Up Next:</p>
+              <h3 className="font-bold text-lg mb-1">{nextProblemInfo.title}</h3>
+              <div className="flex gap-2 mt-2">
+                <span className={`px-2 py-0.5 rounded-full bg-${nextProblemInfo.difficulty || 'medium'}/10 text-${nextProblemInfo.difficulty || 'medium'} font-label-bold text-xs capitalize`}>
+                  {nextProblemInfo.difficulty || 'medium'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-surface-secondary text-xs">{nextProblemInfo.concept}</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => router.push('/problem/' + nextProblemInfo.id)}
+                className="w-full bg-primary text-text-primary font-bold py-3 px-4 rounded hover:bg-primary/90 transition-colors"
+              >
+                Proceed to Next Problem
+              </button>
+              <button 
+                onClick={() => router.push('/dashboard')}
+                className="w-full bg-surface-secondary text-text-primary font-bold py-3 px-4 rounded hover:bg-surface-secondary/80 transition-colors"
+              >
+                Return to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
