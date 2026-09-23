@@ -37,7 +37,7 @@
 - [x] M2: LinUCB Agent Thread-Safety & Memory
 - [x] M3: Frontend Data Wiring & Typography
 - [x] M4: Authentication Security & State
-- [ ] M5: Submission Pipeline Stability
+- [x] M5: Submission Pipeline Stability
 - [ ] M6: Gemini API Robustness
 - [ ] M7: BKT & Prerequisite Consistency
 - [ ] M8: Architecture & Database Scaling

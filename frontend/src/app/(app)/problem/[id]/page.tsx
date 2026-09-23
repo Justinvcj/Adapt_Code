@@ -63,8 +63,15 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
   // Polling for explanation
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let pollCount = 0;
     if (explanationStatus === 'pending' && activeEventId) {
       interval = setInterval(async () => {
+        pollCount++;
+        if (pollCount > 30) {
+          clearInterval(interval);
+          setExplanationStatus('failed');
+          return;
+        }
         try {
           const res = await fetchApi(`/api/explanation/${activeEventId}`);
           if (res.status === 'completed') {
@@ -80,9 +87,7 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
         }
       }, 2000);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    }
+    return () => clearInterval(interval);
   }, [explanationStatus, activeEventId]);
 
   const handleHint = () => {

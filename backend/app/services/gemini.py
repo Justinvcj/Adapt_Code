@@ -67,7 +67,7 @@ RULES:
 - Keep each part to 2-3 sentences maximum.
 - Respond with valid JSON only. No markdown, no backticks, no preamble."""
 
-    url = f"{GEMINI_URL}?key={settings.GEMINI_API_KEY}"
+    url = GEMINI_URL
     
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -78,7 +78,10 @@ RULES:
         }
     }
     
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "x-goog-api-key": settings.GEMINI_API_KEY,
+        "Content-Type": "application/json"
+    }
     
     supabase_client = get_supabase()
     
