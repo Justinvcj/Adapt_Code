@@ -129,3 +129,6 @@ CREATE INDEX IF NOT EXISTS idx_sessions_student_id ON sessions(student_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_student_started ON sessions(student_id, started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_state_student_id ON agent_state(student_id);
 CREATE INDEX IF NOT EXISTS idx_problems_concept_difficulty ON problems(concept_tag, difficulty_level);
+
+-- 12. Starter Code (Fix missing column)
+ALTER TABLE problems ADD COLUMN IF NOT EXISTS starter_code JSONB;
