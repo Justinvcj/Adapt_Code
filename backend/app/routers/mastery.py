@@ -42,3 +42,32 @@ async def get_mastery(user_id: str = Depends(get_current_user)) -> Dict[str, Any
         from app.core.config import logger
         logger.error(f"Mastery fetch failed for user {user_id}: {e}")
         raise HTTPException(status_code=500, detail="An internal error occurred.")
+
+from pydantic import BaseModel
+
+class OnboardingRequest(BaseModel):
+    mastered_concepts: list[str]
+
+@router.post("/onboarding/complete")
+async def complete_onboarding(req: OnboardingRequest, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+    try:
+        from app.services.prerequisites import MASTERY_THRESHOLD
+        
+        records = []
+        for c in req.mastered_concepts:
+            records.append({
+                "student_id": user_id,
+                "concept_tag": c,
+                "mastery_probability": MASTERY_THRESHOLD
+            })
+            
+        if records:
+            # Need to specify on_conflict but supabase-py rest client handles it via upsert automatically 
+            # if we just pass the records (assuming unique constraint on student_id, concept_tag)
+            supabase.table("mastery_scores").upsert(records).execute()
+            
+        return {"status": "success", "message": "Onboarding completed successfully"}
+    except Exception as e:
+        from app.core.config import logger
+        logger.error(f"Onboarding failed for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")

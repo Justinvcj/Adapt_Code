@@ -41,5 +41,5 @@
 - [x] M6: Gemini API Robustness
 - [x] M7: BKT & Prerequisite Consistency
 - [x] M8: Architecture & Database Scaling
-- [ ] M9: UI Workflow & Next Problem UX
+- [x] M9: UI Workflow & Next Problem UX
 - [ ] M10: Missing Research & Academic Features
