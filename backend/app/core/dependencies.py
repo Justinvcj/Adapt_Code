@@ -3,10 +3,8 @@ import httpx
 import uuid
 from app.core.config import settings
 from app.core.database import get_supabase
-from app.services.linucb import LinUCBAgent
 
 supabase = get_supabase()
-linucb_agent = LinUCBAgent(d=16, alpha=1.0)
 
 async def get_current_user(authorization: str = Header(None)) -> str:
     if not authorization or not authorization.startswith("Bearer "):

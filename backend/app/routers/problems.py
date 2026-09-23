@@ -16,9 +16,6 @@ from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api", tags=["core"])
 
-# Initialize agent (assuming we load from DB in a real app or use pretrained)
-agent = LinUCBAgent(d=16, alpha=1.0)
-
 # Request Models
 class SubmitRequest(BaseModel):
     problem_id: str
@@ -195,18 +192,20 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     event_id = event_res.data[0]["event_id"] if event_res.data else None
     
     # 5. LinUCB
-    x = agent.build_context(user_mastery, recent_events)
-    allowed = agent.get_allowed_actions(user_mastery, concept)
+    agent = LinUCBAgent(d=16, alpha=1.0)
     
     # Load the student's a_matrix / b_vector from DB
-    res = supabase.table("agent_params").select("*").eq("student_id", user_id).execute()
-    db_data = res.data or []
-    agent.load_student(user_id, db_data)
+    res = supabase.table("agent_state").select("*").eq("student_id", user_id).execute()
+    db_row = res.data[0] if res.data else {}
+    agent.load_student(user_id, db_row)
+
+    x = agent.build_context(user_mastery, recent_events)
+    allowed = agent.get_allowed_actions(user_mastery, concept)
     
     action_idx = agent.select_action(user_id, x, allowed)
     
     consecutive_same_diff = 0
-    curr_diff = problem.get("difficulty", "medium")
+    curr_diff = problem.get("difficulty_level", "medium")
     for event in recent_events:
         if event.get("difficulty_level") == curr_diff:
             consecutive_same_diff += 1
@@ -224,12 +223,12 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     agent.update(user_id, action_idx, x, reward)
     
     # Save back to DB
-    action_name = agent.ACTIONS[action_idx]
-    supabase.table("agent_params").upsert({
+    a_matrices_json = [a.tolist() for a in agent.A[user_id]]
+    b_vectors_json = [b.tolist() for b in agent.b[user_id]]
+    supabase.table("agent_state").upsert({
         "student_id": user_id,
-        "action_name": action_name,
-        "a_matrix": agent.A[user_id][action_idx].tolist(),
-        "b_vector": agent.b[user_id][action_idx].tolist()
+        "a_matrices": a_matrices_json,
+        "b_vectors": b_vectors_json
     }).execute()
     
     next_prob = await select_next_problem(
@@ -327,19 +326,20 @@ async def get_mastery(user_id: str = Depends(get_current_user)):
         "overall_progress": sum(1 for v in mastery.values() if v >= MASTERY_THRESHOLD) / 12
     }
 
-@router.get("/next-problem/{user_id}")
+@router.get("/next-problem")
 async def get_next_problem_endpoint(user_id: str = Depends(get_current_user)):
     mastery = await get_mastery_vector(user_id)
     recent_events = await get_recent_events(user_id, limit=5)
     weakest = get_weakest_unlocked(mastery)
     
+    agent = LinUCBAgent(d=16, alpha=1.0)
+    supabase = get_supabase()
+    res = supabase.table("agent_state").select("*").eq("student_id", user_id).execute()
+    db_row = res.data[0] if res.data else {}
+    agent.load_student(user_id, db_row)
+
     x = agent.build_context(mastery, recent_events)
     allowed = agent.get_allowed_actions(mastery, weakest)
-    
-    supabase = get_supabase()
-    res = supabase.table("agent_params").select("*").eq("student_id", user_id).execute()
-    db_data = res.data or []
-    agent.load_student(user_id, db_data)
     
     action = agent.select_action(user_id, x, allowed)
     

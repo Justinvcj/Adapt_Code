@@ -49,19 +49,7 @@ async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
             "display_name": req.display_name
         }).execute()
         
-        # Copy pretrained policy
-        try:
-            pretrained = supabase.table("agent_params").select("*").eq("student_id", "pretrained_policy").execute()
-            if pretrained.data:
-                for row in pretrained.data:
-                    supabase.table("agent_params").upsert({
-                        "student_id": user_id,
-                        "action_name": row["action_name"],
-                        "a_matrix": row["a_matrix"],
-                        "b_vector": row["b_vector"],
-                    }).execute()
-        except Exception as e:
-            print(f"Failed to copy pretrained policy: {e}")
+        # Removed pretrained policy copy since agent state is lazily initialized on first use
         
         return {
             "status": "success",

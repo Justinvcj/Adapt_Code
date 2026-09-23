@@ -57,21 +57,7 @@ def save_pretrained_policy(agent):
     db_url = os.environ.get("SUPABASE_URL_DB", "postgresql://postgres:Justin12345Don54321@db.mnsuaqcrvnocvgbfreei.supabase.co:5432/postgres")
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
-    cursor = conn.cursor()
-    
-    for i, action_name in enumerate(agent.ACTIONS):
-        cursor.execute("""
-            INSERT INTO agent_params (student_id, action_name, a_matrix, b_vector)
-            VALUES ('pretrained_policy', %s, %s, %s)
-            ON CONFLICT (student_id, action_name) DO UPDATE SET
-            a_matrix = EXCLUDED.a_matrix,
-            b_vector = EXCLUDED.b_vector
-        """, (
-            action_name,
-            json.dumps(agent.A[i].tolist()),
-            json.dumps(agent.b[i].tolist())
-        ))
-    cursor.close()
+    print("Skipping save to DB in simulator since agent_state is lazily initialized on first use.")
     conn.close()
 
 if __name__ == "__main__":

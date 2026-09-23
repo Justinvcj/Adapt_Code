@@ -1,4 +1,4 @@
-﻿# AdaptCode Roadmap
+# AdaptCode Roadmap
 
 ## Phase 1: Foundation & Infrastructure (✅ Completed)
 - [x] Set up Supabase DB, tables (users, problems, session_events).
@@ -33,8 +33,8 @@
 - [ ] Prepare deployment configuration (Cloudflare Tunnels, VPS, or PaaS).
 
 ## Phase 4.1: Critical Remediation (10-Module Blueprint)
-- [ ] M1: Database Schema & Pipeline Alignment
-- [ ] M2: LinUCB Agent Thread-Safety & Memory
+- [x] M1: Database Schema & Pipeline Alignment
+- [x] M2: LinUCB Agent Thread-Safety & Memory
 - [ ] M3: Frontend Data Wiring & Typography
 - [ ] M4: Authentication Security & State
 - [ ] M5: Submission Pipeline Stability

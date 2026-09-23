@@ -54,15 +54,19 @@ class LinUCBAgent:
             self.A[student_id] = {a: np.eye(self.d) for a in range(self.n_actions)}
             self.b[student_id] = {a: np.zeros(self.d) for a in range(self.n_actions)}
             
-    def load_student(self, student_id: str, db_data: list):
+    def load_student(self, student_id: str, db_row: dict):
         self._init_student(student_id)
-        if db_data:
-            for row in db_data:
-                a_idx = row['action_index']
-                if row.get('a_matrix'):
-                    self.A[student_id][a_idx] = np.array(row['a_matrix'])
-                if row.get('b_vector'):
-                    self.b[student_id][a_idx] = np.array(row['b_vector'])
+        if db_row:
+            a_mats = db_row.get('a_matrices')
+            b_vecs = db_row.get('b_vectors')
+            if a_mats:
+                for idx, a in enumerate(a_mats):
+                    if idx < len(self.A[student_id]):
+                        self.A[student_id][idx] = np.array(a)
+            if b_vecs:
+                for idx, b in enumerate(b_vecs):
+                    if idx < len(self.b[student_id]):
+                        self.b[student_id][idx] = np.array(b)
 
     def build_context(self, mastery_vector: dict, recent_events: list) -> np.ndarray:
         concepts = list(PREREQUISITE_GRAPH.keys())
