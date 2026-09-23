@@ -16,10 +16,12 @@ from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api", tags=["core"])
 
+from pydantic import BaseModel, Field
+
 # Request Models
 class SubmitRequest(BaseModel):
     problem_id: str
-    code: str
+    code: str = Field(..., max_length=50000)
     language: str = "python"
     compile_error_count: int = 0
     time_on_task_seconds: float = 0
