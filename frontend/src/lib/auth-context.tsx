@@ -16,6 +16,7 @@ type AuthContextType = {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isOffline: boolean;
   login: (token: string, userData: User) => void;
   logout: () => void;
 };
@@ -26,29 +27,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('access_token');
+      const cachedUser = localStorage.getItem('cached_user');
       
       if (storedToken) {
         setToken(storedToken);
+        if (cachedUser) {
+          try { setUser(JSON.parse(cachedUser)); } catch (e) { /* ignore */ }
+        }
+        
         try {
           const res = await fetchApi('/api/auth/me');
           if (res && res.user) {
             setUser(res.user);
+            localStorage.setItem('cached_user', JSON.stringify(res.user));
+            setIsOffline(false);
           } else {
             // Invalid token or server error, log out
             localStorage.removeItem('access_token');
+            localStorage.removeItem('cached_user');
             setToken(null);
             setUser(null);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Failed to fetch user", error);
-          // If offline, we could theoretically keep the token but clear the user so they re-login,
-          // but for security we should probably clear it or handle it gracefully.
-          // For now, if fetch fails (e.g. backend down), we set user to null so they are routed out.
-          setUser(null);
+          if (error?.status === 401) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('cached_user');
+            setToken(null);
+            setUser(null);
+          } else {
+            setIsOffline(true);
+            // keep existing cached user
+          }
         }
       } else {
         // No token, ensure clean state
@@ -63,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (newToken: string, userData: User) => {
     localStorage.setItem('access_token', newToken);
+    localStorage.setItem('cached_user', JSON.stringify(userData));
     setToken(newToken);
     setUser(userData);
   };
@@ -74,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // ignore
     } finally {
       localStorage.removeItem('access_token');
+      localStorage.removeItem('cached_user');
       setToken(null);
       setUser(null);
       window.location.assign('/login');
@@ -81,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isOffline, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

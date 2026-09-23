@@ -34,6 +34,12 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
+
+import os
+env = os.environ.get("ENV", "development").lower()
+if env == "production" or env == "prod":
+    assert not settings.TEST_MODE, "CRITICAL: TEST_MODE active in production! This opens a severe authentication bypass vulnerability."
+
 setup_rate_limiting(app)
 
 app.add_middleware(SecurityHeadersMiddleware)
