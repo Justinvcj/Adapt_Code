@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { fetchApi } from '@/lib/api';
@@ -78,7 +78,7 @@ export default function HistoryPage() {
                     <td className="px-md py-3 text-body-md text-on-surface-variant whitespace-nowrap">
                       {formatDate(h.timestamp)}
                     </td>
-                    <td className={px-md py-3 text-body-md whitespace-nowrap }>
+                    <td className={`px-md py-3 text-body-md whitespace-nowrap ${getStatusColor(h.final_verdict)}`}>
                       {h.final_verdict || "Attempted"}
                     </td>
                     <td className="px-md py-3 text-body-md">
@@ -90,7 +90,7 @@ export default function HistoryPage() {
                       {h.concept_tag}
                     </td>
                     <td className="px-md py-3 text-body-md">
-                      <span className={inline-block px-2 py-0.5 rounded-full text-xs font-label-bold capitalize }>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-label-bold capitalize bg-${h.difficulty_level}/10 text-${h.difficulty_level}`}>
                         {h.difficulty_level}
                       </span>
                     </td>

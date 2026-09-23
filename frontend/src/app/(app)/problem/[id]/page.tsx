@@ -174,7 +174,9 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
         <div className="w-1/2 bg-surface overflow-y-auto p-6 border-r border-border-default">
           <h1 className="text-2xl font-bold mb-2">{problem.title}</h1>
           <div className="flex gap-2 mb-6">
-            <span className="px-2 py-0.5 rounded-full bg-easy/10 text-easy font-label-bold text-xs">{problem.difficulty}</span>
+            <span className={`px-2 py-0.5 rounded-full bg-${problem.difficulty_level}/10 text-${problem.difficulty_level} font-label-bold text-xs`}>
+              {problem.difficulty_level}
+            </span>
             <span className="px-2 py-0.5 rounded-full bg-surface-secondary text-xs">{problem.concept || problem.concept_tag}</span>
           </div>
           
@@ -184,15 +186,16 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
           
           <div className="mb-8">
             <button 
-              onClick={handleHint}
+              onClick={() => setHintUsed(true)}
               disabled={hintUsed}
-              className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded disabled:opacity-50 text-sm"
+              className="text-sm font-label-bold text-primary hover:text-primary/80 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
+              <span className="material-symbols-outlined text-[18px]">lightbulb</span>
               {hintUsed ? 'Hint Revealed' : 'Show Hint'}
             </button>
-            {hintUsed && problem.hints && problem.hints.length > 0 && (
+            {hintUsed && problem.hint_text && (
               <div className="mt-2 p-3 bg-primary/5 border border-primary/10 rounded text-sm text-on-surface-variant">
-                {problem.hints[0]}
+                {problem.hint_text}
               </div>
             )}
           </div>

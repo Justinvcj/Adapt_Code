@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<any>({ total_solved: 0, streak: 0, total_sessions: 0 });
+  const [stats, setStats] = useState<any>({ total_problems_solved: 0, current_streak: 0, total_sessions: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<boolean>(false);
 
@@ -72,7 +72,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="font-headline-lg text-[42px] text-text-primary leading-none tracking-tight">
-                {loading ? '...' : error ? '--' : stats.total_solved || 0}
+                {loading ? '...' : error ? '--' : stats.total_problems_solved || 0}
               </span>
             </div>
           </div>
@@ -87,7 +87,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="font-headline-lg text-[42px] text-text-primary leading-none tracking-tight">
-                {loading ? '...' : error ? '--' : stats.streak || 0}
+                {loading ? '...' : error ? '--' : stats.current_streak || 0}
               </span>
               <span className="font-body-md text-on-surface-variant">days</span>
             </div>
