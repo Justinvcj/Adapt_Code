@@ -1,21 +1,5 @@
 import numpy as np
-
-PREREQUISITE_GRAPH = {
-    "basic_syntax":         [],
-    "loops":                ["basic_syntax"],
-    "arrays":               ["loops"],
-    "strings":              ["arrays"],
-    "hashing":              ["arrays"],
-    "two_pointers":         ["arrays"],
-    "sliding_window":       ["two_pointers"],
-    "recursion":            ["loops"],
-    "backtracking":         ["recursion"],
-    "binary_search":        ["arrays"],
-    "trees":                ["recursion"],
-    "dynamic_programming":  ["recursion"],
-}
-
-MASTERY_THRESHOLD = 0.85
+from app.services.prerequisites import PREREQUISITE_GRAPH, MASTERY_THRESHOLD
 
 def get_unlocked_concepts(mastery_vector: dict) -> list:
     unlocked = []

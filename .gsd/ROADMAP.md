@@ -38,7 +38,7 @@
 - [x] M3: Frontend Data Wiring & Typography
 - [x] M4: Authentication Security & State
 - [x] M5: Submission Pipeline Stability
-- [ ] M6: Gemini API Robustness
+- [x] M6: Gemini API Robustness
 - [ ] M7: BKT & Prerequisite Consistency
 - [ ] M8: Architecture & Database Scaling
 - [ ] M9: UI Workflow & Next Problem UX

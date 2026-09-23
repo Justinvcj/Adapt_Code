@@ -32,7 +32,9 @@ CONCEPT_TIERS = {
     'dynamic_programming': 3
 }
 
-def get_weakest_unmastered_prerequisite(concept: str, mastery_dict: dict, threshold: float = 0.85):
+MASTERY_THRESHOLD = 0.85
+
+def get_weakest_unmastered_prerequisite(concept: str, mastery_dict: dict):
     """
     Given a target concept and the student's mastery dictionary, returns the prerequisite 
     concept that has the lowest mastery score below the threshold.
@@ -47,14 +49,14 @@ def get_weakest_unmastered_prerequisite(concept: str, mastery_dict: dict, thresh
     
     for req in prereqs:
         score = mastery_dict.get(req, 0.0)
-        if score < threshold and score < lowest_score:
+        if score < MASTERY_THRESHOLD and score < lowest_score:
             lowest_score = score
             weakest_prereq = req
             
     return weakest_prereq
 
-def can_access_concept(concept: str, mastery_dict: dict, threshold: float = 0.85) -> bool:
+def can_access_concept(concept: str, mastery_dict: dict) -> bool:
     """
     Returns True if all prerequisites for the given concept are mastered.
     """
-    return get_weakest_unmastered_prerequisite(concept, mastery_dict, threshold) is None
+    return get_weakest_unmastered_prerequisite(concept, mastery_dict) is None
