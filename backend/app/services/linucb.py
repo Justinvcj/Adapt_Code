@@ -43,11 +43,22 @@ class LinUCBAgent:
         if db_row:
             a_mats = db_row.get('a_matrices')
             b_vecs = db_row.get('b_vectors')
-            if a_mats:
+            if isinstance(a_mats, dict):
+                for k, v in a_mats.items():
+                    idx = int(k)
+                    if idx < len(self.A[student_id]):
+                        self.A[student_id][idx] = np.array(v)
+            elif isinstance(a_mats, list):
                 for idx, a in enumerate(a_mats):
                     if idx < len(self.A[student_id]):
                         self.A[student_id][idx] = np.array(a)
-            if b_vecs:
+                        
+            if isinstance(b_vecs, dict):
+                for k, v in b_vecs.items():
+                    idx = int(k)
+                    if idx < len(self.b[student_id]):
+                        self.b[student_id][idx] = np.array(v)
+            elif isinstance(b_vecs, list):
                 for idx, b in enumerate(b_vecs):
                     if idx < len(self.b[student_id]):
                         self.b[student_id][idx] = np.array(b)

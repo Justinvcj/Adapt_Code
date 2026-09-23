@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 
 export default function ProblemPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [problem, setProblem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState<string>('');
@@ -18,6 +19,12 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
   const [compileErrors, setCompileErrors] = useState(0);
   const [attemptCount, setAttemptCount] = useState(0);
   const [hintUsed, setHintUsed] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get('hint') === '1') {
+      setHintUsed(true);
+    }
+  }, [searchParams]);
   const [hintAtAttempt, setHintAtAttempt] = useState<number | null>(null);
   const [solved, setSolved] = useState(false);
   
@@ -48,19 +55,29 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
   }, [params.id]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (!solved && problem) {
-        navigator.sendBeacon(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/abandon`, JSON.stringify({
-          problem_id: problem.id,
-          compile_error_count: compileErrors,
-          time_on_task_seconds: (Date.now() - startTime) / 1000,
-          attempt_count: attemptCount,
-        }));
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && !solved && problem) {
+        const token = localStorage.getItem('access_token');
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/abandon`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            problem_id: problem.problem_id || problem.id,
+            compile_error_count: compileErrors,
+            time_on_task_seconds: (Date.now() - startTime) / 1000,
+            attempt_count: attemptCount,
+            hint_used: hintUsed,
+          }),
+          keepalive: true,
+        }).catch(err => console.error("Abandon telemetry failed", err));
       }
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [solved, compileErrors, attemptCount, problem, startTime]);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [solved, compileErrors, attemptCount, problem, startTime, hintUsed]);
   
   // Polling for explanation
   useEffect(() => {
@@ -194,7 +211,7 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
           
           <div className="mb-8">
             <button 
-              onClick={() => setHintUsed(true)}
+              onClick={handleHint}
               disabled={hintUsed}
               className="text-sm font-label-bold text-primary hover:text-primary/80 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
@@ -302,7 +319,7 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
             
             <div className="flex flex-col gap-3">
               <button 
-                onClick={() => router.push('/problem/' + nextProblemInfo.id)}
+                onClick={() => router.push('/problem/' + nextProblemInfo.id + (nextProblemInfo.hint_pre_expanded ? '?hint=1' : ''))}
                 className="w-full bg-primary text-text-primary font-bold py-3 px-4 rounded hover:bg-primary/90 transition-colors"
               >
                 Proceed to Next Problem

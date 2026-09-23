@@ -1,13 +1,13 @@
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
 from app.core.database import get_supabase
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/checkout", tags=["checkout"])
 supabase = get_supabase()
 
 @router.post("/mock-upgrade")
-async def mock_upgrade(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def mock_upgrade(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
     """
     Mock endpoint to instantly upgrade a user to Pro tier without Stripe.
     """

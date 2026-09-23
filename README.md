@@ -27,7 +27,7 @@
 |             +--------------------------+------------------------+           |
 |                                        v                        v           |
 |  +-----------------------------------------------------------------------+  |
-|  |        Local Subprocess Execution (Python, Java, C++, JavaScript)     |  |
+|  |        Piston Code Execution Sandbox (HTTP POST to :2000)             |  |
 |  +-------------------------------------+---------------------------------+  |
 |                                        v                                    |
 |  +-----------------------------------------------------------------------+  |
@@ -49,7 +49,7 @@
 
 - **Dynamic Knowledge Tracing** -- Models concept mastery across 12 algorithmic topics in real time using Bayesian Knowledge Tracing (BKT).
 - **Contextual Bandit Selection** -- Recommends optimal practice problems dynamically via LinUCB multi-armed bandit algorithms with ridge regression.
-- **Local Sandbox** -- Executes and evaluates multi-language submissions securely inside local subprocesses with strict timeouts.
+- **Piston Sandbox** -- Executes and evaluates multi-language submissions securely inside a standalone Piston container with strict timeouts.
 - **Monaco In-Browser IDE** -- Delivers a complete in-browser coding environment with syntax highlighting, custom themes, and instant execution telemetry.
 - **AI Diagnostic Tutoring** -- Generates targeted explanations and remediation hints automatically upon test case failures using Google Gemini integration.
 - **Curriculum Prerequisite Graph** -- Visualizes concept progression and dependencies across data structures and algorithms.
@@ -60,12 +60,12 @@
 
 ```mermaid
 graph TD
-    A[Student Submits Code] --> B[FastAPI Backend Endpoint: /api/execute]
-    B --> C[Local Subprocess Sandbox]
+    A[Student Submits Code] --> B[FastAPI Backend Endpoint: /api/submit]
+    B --> C[Piston Execution Sandbox :2000]
     C -->|Execution Telemetry| D[BKT Engine Updates Mastery State]
     D --> E[LinUCB Contextual Bandit]
     E --> F[Next Optimal Problem Selected]
-    C -->|On Failure| G[LLM Diagnostic Tutor: /api/tutor]
+    C -->|On Failure| G[LLM Diagnostic Tutor: /api/explanation/{event_id}]
     G --> H[Contextual Hint & Remediation Plan]
 ```
 
@@ -80,6 +80,7 @@ graph TD
 | [Node.js](https://nodejs.org/) | 18+ | Frontend runtime |
 | [Python](https://www.python.org/) | 3.10+ | Backend runtime |
 | [Supabase](https://supabase.com/) | Cloud / Local | PostgreSQL database and authentication |
+| [Docker](https://www.docker.com/) | 20+ | Required for Piston Code Runner |
 
 ### Installation
 
@@ -92,6 +93,8 @@ graph TD
 2. Set up the backend:
    ```bash
    cd backend
+   python -m venv venv
+   source venv/bin/activate  # Or `venv\Scripts\activate` on Windows
    pip install -r requirements.txt
    cp .env.example .env
    ```
@@ -105,7 +108,13 @@ graph TD
 
 4. Launch services via Docker Compose:
    ```bash
-   docker compose up -d
+   docker-compose up -d
+   ```
+
+5. **CRITICAL: Launch Piston Sandbox:**
+   The `docker-compose.yml` does not currently include Piston. You must launch it manually:
+   ```bash
+   docker run -d -p 2000:2000 --privileged --tmpfs /tmp:exec --name piston ghcr.io/engineer-man/piston
    ```
 
 ### Usage
@@ -124,8 +133,9 @@ Open `http://localhost:3000` in your browser, select a topic from the curriculum
 | `SUPABASE_KEY` | Yes | -- | Supabase service role or anon API key |
 | `GEMINI_API_KEY` | Yes | -- | API key for Google Gemini LLM tutoring explanations |
 | `FRONTEND_URL` | No | `http://localhost:3000` | Allowed CORS origin |
+| `PISTON_URL` | No | `http://localhost:2000/api/v2/execute` | Piston execution endpoint |
 | `DEBUG` | No | `false` | Enable verbose logging |
-| `TEST_MODE` | No | `false` | Enable test mode |
+| `TEST_MODE` | No | `false` | Enable test mode (bypasses auth for development) |
 
 ### Frontend (`frontend/.env.local`)
 
@@ -141,17 +151,19 @@ Open `http://localhost:3000` in your browser, select a topic from the curriculum
 |---|---|
 | Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS, Monaco Editor, Framer Motion, Lucide React |
 | Backend | FastAPI, Uvicorn, Pydantic, Supabase Python SDK, NumPy, SlowAPI |
-| Execution Sandbox | Local subprocess, Docker |
+| Execution Sandbox | Piston API (Docker) |
 | AI & Adaptive Engine | Google Gemini LLM, Bayesian Knowledge Tracing (BKT), LinUCB Bandit |
 | Testing | Pytest, Jest |
 
 ---
 
-## Testing
+## Testing (Requires Maintenance)
+
+> **Warning:** The backend test suite currently suffers from import debt due to structural refactoring and requires updates before passing.
 
 ```bash
 # Run backend test suite
-cd backend && pytest
+cd backend && venv/bin/pytest tests/
 
 # Run frontend unit tests
 cd ../frontend && npm test

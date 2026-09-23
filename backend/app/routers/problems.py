@@ -44,18 +44,19 @@ class AbandonRequest(BaseModel):
     compile_error_count: int = 0
     time_on_task_seconds: float = 0
     attempt_count: int = 0
+    hint_used: bool = False
 
 async def get_problem(problem_id: str):
     supabase = get_supabase()
-    res = supabase.table("problems").select("*").eq("id", problem_id).execute()
+    res = supabase.table("problems").select("*").eq("problem_id", problem_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Problem not found")
     return res.data[0]
 
 async def get_mastery_vector(user_id: str):
     supabase = get_supabase()
-    res = supabase.table("mastery_scores").select("concept, mastery_probability").eq("user_id", user_id).execute()
-    return {row["concept"]: float(row["mastery_probability"]) for row in res.data} if res.data else {}
+    res = supabase.table("mastery_scores").select("concept_tag, mastery_probability").eq("student_id", user_id).execute()
+    return {row["concept_tag"]: float(row["mastery_probability"]) for row in res.data} if res.data else {}
 
 async def get_recent_events(user_id: str, limit: int = 5):
     supabase = get_supabase()
@@ -73,12 +74,12 @@ async def save_mastery(user_id: str, concept: str, mastery: float):
 async def get_unsolved_problem(user_id: str, concept: str, difficulty: str):
     supabase = get_supabase()
     # Find all problems matching concept and difficulty
-    prob_res = supabase.table("problems").select("*").eq("concept", concept).eq("difficulty", difficulty).execute()
+    prob_res = supabase.table("problems").select("*").eq("concept_tag", concept).eq("difficulty_level", difficulty).execute()
     problems = prob_res.data or []
     
     if not problems:
         # Fallback to any difficulty for this concept
-        prob_res = supabase.table("problems").select("*").eq("concept", concept).execute()
+        prob_res = supabase.table("problems").select("*").eq("concept_tag", concept).execute()
         problems = prob_res.data or []
         if not problems:
             # Absolute fallback
@@ -91,14 +92,14 @@ async def get_unsolved_problem(user_id: str, concept: str, difficulty: str):
     solved_res = supabase.table("session_events").select("problem_id").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
     solved_ids = {row["problem_id"] for row in (solved_res.data or [])}
     
-    unsolved = [p for p in problems if str(p["id"]) not in solved_ids]
+    unsolved = [p for p in problems if str(p["problem_id"]) not in solved_ids]
     selected = unsolved[0] if unsolved else problems[0]
     
     return {
-        "id": selected["id"],
+        "id": selected["problem_id"],
         "title": selected["title"],
-        "concept": selected["concept"],
-        "difficulty": selected["difficulty"]
+        "concept": selected["concept_tag"],
+        "difficulty": selected["difficulty_level"]
     }
 
 async def select_next_problem(action: str, current_concept: str, current_difficulty: str, mastery_vector: dict, user_id: str):
@@ -123,12 +124,17 @@ async def select_next_problem(action: str, current_concept: str, current_difficu
         else:
             target_concept = get_weakest_unlocked(mastery_vector)
         target_difficulty = "medium"
+    elif action == "hint_augmented":
+        pass
     
     unlocked = get_unlocked_concepts(mastery_vector)
     if target_concept not in unlocked:
         target_concept = get_weakest_unlocked(mastery_vector)
         
-    return await get_unsolved_problem(user_id, target_concept, target_difficulty)
+    selected = await get_unsolved_problem(user_id, target_concept, target_difficulty)
+    if action == "hint_augmented" and selected:
+        selected["hint_pre_expanded"] = True
+    return selected
 
 @router.post("/submit", response_model=SubmitResponse)
 @limiter.limit("20/minute")
@@ -153,7 +159,7 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     )
     
     # 3. Update BKT mastery
-    concept = problem["concept"]
+    concept = problem["concept_tag"]
     old_mastery = user_mastery.get(concept, L0)
     new_mastery = update_mastery(old_mastery, w)
     user_mastery[concept] = new_mastery
@@ -173,7 +179,9 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     sessions_res = supabase.table("sessions").select("session_id").eq("student_id", user_id).order("started_at", desc=True).limit(1).execute()
     session_id = sessions_res.data[0]["session_id"] if sessions_res.data else None
     if not session_id:
-        new_session = supabase.table("sessions").insert({"student_id": user_id, "session_number": 1}).execute()
+        count_res = supabase.table("sessions").select("session_number").eq("student_id", user_id).order("session_number", desc=True).limit(1).execute()
+        next_num = (count_res.data[0]["session_number"] + 1) if count_res.data else 1
+        new_session = supabase.table("sessions").insert({"student_id": user_id, "session_number": next_num}).execute()
         if new_session.data:
             session_id = new_session.data[0]["session_id"]
 
@@ -225,8 +233,8 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     agent.update(user_id, action_idx, x, reward)
     
     # Save back to DB
-    a_matrices_json = [a.tolist() for a in agent.A[user_id]]
-    b_vectors_json = [b.tolist() for b in agent.b[user_id]]
+    a_matrices_json = {str(k): v.tolist() for k, v in agent.A[user_id].items()}
+    b_vectors_json = {str(k): v.tolist() for k, v in agent.b[user_id].items()}
     supabase.table("agent_state").upsert({
         "student_id": user_id,
         "a_matrices": a_matrices_json,
@@ -270,7 +278,7 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
 async def abandon_problem(req: AbandonRequest, user_id: str = Depends(get_current_user)):
     supabase = get_supabase()
     problem = await get_problem(req.problem_id)
-    concept = problem["concept"]
+    concept = problem["concept_tag"]
     user_mastery = await get_mastery_vector(user_id)
     
     old_mastery = user_mastery.get(concept, L0)
@@ -280,7 +288,9 @@ async def abandon_problem(req: AbandonRequest, user_id: str = Depends(get_curren
     sessions_res = supabase.table("sessions").select("session_id").eq("student_id", user_id).order("started_at", desc=True).limit(1).execute()
     session_id = sessions_res.data[0]["session_id"] if sessions_res.data else None
     if not session_id:
-        new_session = supabase.table("sessions").insert({"student_id": user_id, "session_number": 1}).execute()
+        count_res = supabase.table("sessions").select("session_number").eq("student_id", user_id).order("session_number", desc=True).limit(1).execute()
+        next_num = (count_res.data[0]["session_number"] + 1) if count_res.data else 1
+        new_session = supabase.table("sessions").insert({"student_id": user_id, "session_number": next_num}).execute()
         if new_session.data:
             session_id = new_session.data[0]["session_id"]
 
@@ -292,7 +302,7 @@ async def abandon_problem(req: AbandonRequest, user_id: str = Depends(get_curren
         "difficulty_level": problem.get("difficulty_level", "medium"),
         "compile_errors": req.compile_error_count,
         "time_on_task_seconds": int(req.time_on_task_seconds),
-        "hint_used": False,
+        "hint_used": req.hint_used,
         "attempt_count": req.attempt_count,
         "abandoned": True,
         "final_verdict": "Abandoned",
@@ -316,17 +326,7 @@ async def get_explanation_status(event_id: str, user_id: str = Depends(get_curre
         "concept_to_review": explanation.get("concept_to_review"),
     }
 
-@router.get("/mastery/{user_id}")
-async def get_mastery(user_id: str = Depends(get_current_user)):
-    mastery = await get_mastery_vector(user_id)
-    unlocked = get_unlocked_concepts(mastery)
-    weakest = get_weakest_unlocked(mastery)
-    return {
-        "mastery": mastery,
-        "unlocked_concepts": unlocked,
-        "focus_concept": weakest,
-        "overall_progress": sum(1 for v in mastery.values() if v >= MASTERY_THRESHOLD) / 12
-    }
+
 
 @router.get("/next-problem")
 async def get_next_problem_endpoint(user_id: str = Depends(get_current_user)):
@@ -361,7 +361,7 @@ async def run_diagnostic(user_id: str = Depends(get_current_user)):
     supabase = get_supabase()
     
     for concept in diagnostic_concepts:
-        res = supabase.table("problems").select("*").eq("concept", concept).eq("difficulty", "easy").limit(2).execute()
+        res = supabase.table("problems").select("*").eq("concept_tag", concept).eq("difficulty_level", "easy").limit(2).execute()
         if res.data:
             problems.extend(res.data)
             
@@ -369,13 +369,14 @@ async def run_diagnostic(user_id: str = Depends(get_current_user)):
 @router.get("/problems")
 async def get_all_problems():
     supabase = get_supabase()
-    res = supabase.table("problems").select("id, title, difficulty_level, concept_tag").execute()
-    return {"status": "success", "data": res.data}
+    res = supabase.table("problems").select("problem_id, title, difficulty_level, concept_tag").execute()
+    data = [{"id": p["problem_id"], "title": p["title"], "difficulty_level": p["difficulty_level"], "concept_tag": p["concept_tag"]} for p in (res.data or [])]
+    return {"status": "success", "data": data}
 
 @router.get("/problems/{problem_id}")
 async def get_single_problem(problem_id: str):
     supabase = get_supabase()
-    res = supabase.table("problems").select("*").eq("id", problem_id).execute()
+    res = supabase.table("problems").select("*").eq("problem_id", problem_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Problem not found")
     return {"status": "success", "problem": res.data[0]}

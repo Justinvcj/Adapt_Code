@@ -42,4 +42,4 @@
 - [x] M7: BKT & Prerequisite Consistency
 - [x] M8: Architecture & Database Scaling
 - [x] M9: UI Workflow & Next Problem UX
-- [ ] M10: Missing Research & Academic Features
+- [x] M10: Missing Research & Academic Features
