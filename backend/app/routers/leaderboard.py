@@ -3,13 +3,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from app.core.database import get_supabase
 
 router = APIRouter(prefix="/api", tags=["leaderboard"])
-supabase = get_supabase()
+
 
 @router.get("/leaderboard")
 async def get_leaderboard() -> Dict[str, Any]:
     try:
         # We utilize the get_leaderboard_stats RPC defined in schema.sql
         # to offload aggregation to the Postgres engine and prevent O(N) memory blowouts.
+        supabase = get_supabase()
         res = supabase.rpc("get_leaderboard_stats").execute()
         
         leaderboard = []

@@ -5,12 +5,13 @@ from app.core.dependencies import get_current_user
 from app.models.schemas import SessionStart, SessionEnd
 
 router = APIRouter(prefix="/api/session", tags=["session"])
-supabase = get_supabase()
+
 
 @router.post("/start")
 async def start_session(req: Optional[SessionStart] = None, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         session_num = req.session_number if req else 1
+        supabase = get_supabase()
         res = supabase.table("sessions").insert({
             "student_id": user_id,
             "session_number": session_num
@@ -24,6 +25,7 @@ async def start_session(req: Optional[SessionStart] = None, user_id: str = Depen
 @router.post("/end")
 async def end_session(req: SessionEnd, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
+        supabase = get_supabase()
         supabase.table("sessions").update({
             "ended_at": "now()"
         }).eq("session_id", req.session_id).eq("student_id", user_id).execute()

@@ -6,11 +6,12 @@ from app.core.database import get_supabase
 from app.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/api", tags=["potd"])
-supabase = get_supabase()
+
 
 @router.get("/problem/potd")
 async def get_potd(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
+        supabase = get_supabase()
         res = supabase.table("problems").select(
             "problem_id, title, description, concept_tag, difficulty_level, hint_text"
         ).execute()

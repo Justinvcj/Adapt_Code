@@ -4,7 +4,7 @@ from app.core.database import get_supabase
 from app.core.dependencies import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/checkout", tags=["checkout"])
-supabase = get_supabase()
+
 
 @router.post("/mock-upgrade")
 async def mock_upgrade(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
@@ -12,6 +12,7 @@ async def mock_upgrade(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
     Mock endpoint to instantly upgrade a user to Pro tier without Stripe.
     """
     try:
+        supabase = get_supabase()
         res = supabase.table("users").update({"is_pro": True}).eq("user_id", user_id).execute()
         return {"status": "success", "message": "Successfully upgraded to AdaptCode Pro!"}
     except Exception as e:
@@ -25,6 +26,7 @@ async def get_status(user_id: str = Depends(get_current_user)) -> Dict[str, Any]
     Check if the user is a Pro subscriber.
     """
     try:
+        supabase = get_supabase()
         res = supabase.table("users").select("is_pro").eq("user_id", user_id).execute()
         is_pro = False
         if res.data:

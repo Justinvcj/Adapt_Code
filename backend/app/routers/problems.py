@@ -8,7 +8,7 @@ import numpy as np
 from app.core.config import settings
 from app.core.database import get_supabase
 from app.core.dependencies import get_current_user
-from app.services.bkt import compute_effective_weight, update_mastery, L0
+from app.services.bkt import compute_effective_weight, update_mastery, get_bkt_params
 from app.services.linucb import LinUCBAgent, get_unlocked_concepts, get_weakest_unlocked, PREREQUISITE_GRAPH, MASTERY_THRESHOLD
 from app.services.gemini import generate_explanation
 from app.services.piston import run_test_cases
@@ -19,6 +19,24 @@ router = APIRouter(prefix="/api", tags=["core"])
 from pydantic import BaseModel, Field
 
 # Request Models
+
+from pydantic import BaseModel
+
+class StartRequest(BaseModel):
+    problem_id: str
+
+@router.post("/start")
+async def start_problem(req: StartRequest, user_id: str = Depends(get_current_user)):
+    import time
+    supabase = get_supabase()
+    supabase.table("active_problem_state").upsert({
+        "student_id": user_id,
+        "problem_id": req.problem_id,
+        "start_time": time.time(),
+        "hint_used": False
+    }).execute()
+    return {"status": "success"}
+
 class SubmitRequest(BaseModel):
     problem_id: str
     code: str = Field(..., max_length=50000)
@@ -150,18 +168,30 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     
     # 2. Compute effective correctness
     result_binary = 1 if execution["verdict"] == "accepted" else 0
+
+    import time
+    res = supabase.table("active_problem_state").select("start_time").eq("student_id", user_id).eq("problem_id", req.problem_id).execute()
+    server_time = int(req.time_on_task_seconds)
+    if res.data:
+        server_time = int(time.time() - float(res.data[0]["start_time"]))
+        # clamp
+        if server_time < 0: server_time = 1
+        if server_time > 3600: server_time = 3600
+
     w = compute_effective_weight(
         result=result_binary,
         hint_used=req.hint_used,
         attempt_count=req.attempt_count,
         compile_errors=req.compile_error_count,
-        time_seconds=req.time_on_task_seconds
+        time_seconds=server_time
     )
     
     # 3. Update BKT mastery
     concept = problem["concept_tag"]
-    old_mastery = user_mastery.get(concept, L0)
-    new_mastery = update_mastery(old_mastery, w)
+    bkt_params = get_bkt_params(concept)
+    concept_L0 = bkt_params["L0"]
+    old_mastery = user_mastery.get(concept, concept_L0)
+    new_mastery = update_mastery(old_mastery, w, concept)
     user_mastery[concept] = new_mastery
     await save_mastery(user_id, concept, new_mastery)
     
@@ -192,7 +222,7 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
         "concept_tag": concept,
         "difficulty_level": problem.get("difficulty_level", "medium"),
         "compile_errors": req.compile_error_count,
-        "time_on_task_seconds": int(req.time_on_task_seconds),
+        "time_on_task_seconds": server_time,
         "hint_used": req.hint_used,
         "attempt_count": req.attempt_count,
         "abandoned": False,
@@ -205,14 +235,21 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     agent = LinUCBAgent(d=16, alpha=1.0)
     
     # Load the student's a_matrix / b_vector from DB
-    res = supabase.table("agent_state").select("*").eq("student_id", user_id).execute()
+    res = supabase.table("agent_state").select("*").eq("student_id", "00000000-0000-0000-0000-000000000000").execute()
     db_row = res.data[0] if res.data else {}
-    agent.load_student(user_id, db_row)
+    agent.load_state(db_row)
 
     x = agent.build_context(user_mastery, recent_events)
     allowed = agent.get_allowed_actions(user_mastery, concept)
     
-    action_idx = agent.select_action(user_id, x, allowed)
+
+    action_idx = agent.select_action(x, allowed)
+    
+    # FR-5: Diagnostic Escalation Thresholds
+    if req.attempt_count >= 3 or req.compile_error_count >= 5 or server_time > 1200:
+        if 3 in allowed:
+            action_idx = 3
+
     
     consecutive_same_diff = 0
     curr_diff = problem.get("difficulty_level", "medium")
@@ -230,13 +267,13 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
         curr_difficulty=curr_diff,
         consecutive_same_diff=consecutive_same_diff
     )
-    agent.update(user_id, action_idx, x, reward)
+    agent.update(action_idx, x, reward)
     
     # Save back to DB
-    a_matrices_json = {str(k): v.tolist() for k, v in agent.A[user_id].items()}
-    b_vectors_json = {str(k): v.tolist() for k, v in agent.b[user_id].items()}
+    a_matrices_json = {str(k): v.tolist() for k, v in agent.A.items()}
+    b_vectors_json = {str(k): v.tolist() for k, v in agent.b.items()}
     supabase.table("agent_state").upsert({
-        "student_id": user_id,
+        "student_id": "00000000-0000-0000-0000-000000000000",
         "a_matrices": a_matrices_json,
         "b_vectors": b_vectors_json
     }).execute()
@@ -281,8 +318,10 @@ async def abandon_problem(req: AbandonRequest, user_id: str = Depends(get_curren
     concept = problem["concept_tag"]
     user_mastery = await get_mastery_vector(user_id)
     
-    old_mastery = user_mastery.get(concept, L0)
-    new_mastery = update_mastery(old_mastery, 0.0)
+    bkt_params = get_bkt_params(concept)
+    concept_L0 = bkt_params["L0"]
+    old_mastery = user_mastery.get(concept, concept_L0)
+    new_mastery = update_mastery(old_mastery, 0.0, concept)
     await save_mastery(user_id, concept, new_mastery)
     
     sessions_res = supabase.table("sessions").select("session_id").eq("student_id", user_id).order("started_at", desc=True).limit(1).execute()
@@ -301,7 +340,7 @@ async def abandon_problem(req: AbandonRequest, user_id: str = Depends(get_curren
         "concept_tag": concept,
         "difficulty_level": problem.get("difficulty_level", "medium"),
         "compile_errors": req.compile_error_count,
-        "time_on_task_seconds": int(req.time_on_task_seconds),
+        "time_on_task_seconds": server_time,
         "hint_used": req.hint_used,
         "attempt_count": req.attempt_count,
         "abandoned": True,
@@ -336,14 +375,14 @@ async def get_next_problem_endpoint(user_id: str = Depends(get_current_user)):
     
     agent = LinUCBAgent(d=16, alpha=1.0)
     supabase = get_supabase()
-    res = supabase.table("agent_state").select("*").eq("student_id", user_id).execute()
+    res = supabase.table("agent_state").select("*").eq("student_id", "00000000-0000-0000-0000-000000000000").execute()
     db_row = res.data[0] if res.data else {}
-    agent.load_student(user_id, db_row)
+    agent.load_state(db_row)
 
     x = agent.build_context(mastery, recent_events)
     allowed = agent.get_allowed_actions(mastery, weakest)
     
-    action = agent.select_action(user_id, x, allowed)
+    action = agent.select_action(x, allowed)
     
     next_problem = await select_next_problem(
         action=agent.ACTIONS[action],

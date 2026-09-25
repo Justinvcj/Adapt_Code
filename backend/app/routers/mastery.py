@@ -2,15 +2,15 @@ from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
 from app.core.database import get_supabase
 from app.core.dependencies import get_current_user
-from app.services.bkt import L0
+from app.services.bkt import get_bkt_params
 from app.services.prerequisites import can_access_concept, PREREQUISITE_GRAPH
 
 router = APIRouter(prefix="/api", tags=["mastery"])
-supabase = get_supabase()
 
 @router.get("/mastery")
 async def get_mastery(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
+        supabase = get_supabase()
         mastery_res = supabase.table("mastery_scores").select("*").eq("student_id", user_id).execute()
         mastery_dict = {row['concept_tag']: float(row['mastery_probability']) for row in mastery_res.data}
         
@@ -28,9 +28,12 @@ async def get_mastery(user_id: str = Depends(get_current_user)) -> Dict[str, Any
             
             prereqs = PREREQUISITE_GRAPH.get(c, [])
             
+            bkt_params = get_bkt_params(c)
+            concept_L0 = bkt_params["L0"]
+            
             result.append({
                 "concept_tag": c,
-                "mastery_probability": mastery_dict.get(c, L0),
+                "mastery_probability": mastery_dict.get(c, concept_L0),
                 "is_unlocked": can_access_concept(c, mastery_dict),
                 "prerequisites": prereqs,
                 "problems_attempted": attempted,
@@ -52,6 +55,7 @@ class OnboardingRequest(BaseModel):
 async def complete_onboarding(req: OnboardingRequest, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         from app.services.prerequisites import MASTERY_THRESHOLD
+        supabase = get_supabase()
         
         records = []
         for c in req.mastered_concepts:

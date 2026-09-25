@@ -5,7 +5,7 @@ from app.core.database import get_supabase
 from app.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/api", tags=["stats"])
-supabase = get_supabase()
+
 
 def _compute_streak(events: List[Dict[str, Any]]) -> int:
     if not events:
@@ -32,6 +32,7 @@ def _compute_streak(events: List[Dict[str, Any]]) -> int:
 async def get_stats(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         # Total Solved
+        supabase = get_supabase()
         solved_res = supabase.table("session_events").select("problem_id").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
         total_solved = len(set(e["problem_id"] for e in solved_res.data)) if solved_res.data else 0
         
@@ -77,6 +78,7 @@ async def get_stats(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
 @router.get("/stats/heatmap")
 async def get_heatmap(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
+        supabase = get_supabase()
         events_res = supabase.table("session_events").select("timestamp").eq("student_id", user_id).execute()
         counts = {}
         if events_res.data:
@@ -98,6 +100,7 @@ async def get_badges(user_id: str = Depends(get_current_user)) -> Dict[str, Any]
         badges = []
         
         # Total Solved
+        supabase = get_supabase()
         solved_res = supabase.table("session_events").select("problem_id").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
         unique_solved = len(set(e["problem_id"] for e in solved_res.data)) if solved_res.data else 0
         

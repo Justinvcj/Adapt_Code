@@ -8,12 +8,12 @@ from app.core.dependencies import get_current_user
 from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-supabase = get_supabase()
 
 @router.post("/register")
 @limiter.limit("5/minute")
 async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
     try:
+        supabase = get_supabase()
         # Dev bypass for e2e tests
         if settings.TEST_MODE and req.email.startswith("dev_"):
             # Mock successful registration for end-to-end tests
@@ -68,6 +68,7 @@ async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
 @limiter.limit("5/minute")
 async def login(request: Request, req: LoginRequest) -> Dict[str, Any]:
     try:
+        supabase = get_supabase()
         # Dev bypass for e2e tests
         if settings.TEST_MODE and "testuser_" in req.email:
             user_record = supabase.table("users").select("user_id, display_name, is_pro").eq("email", req.email).execute()
@@ -112,6 +113,7 @@ async def logout(authorization: str = Header(None)) -> Dict[str, Any]:
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
         try:
+            supabase = get_supabase()
             supabase.auth.sign_out(token)
         except Exception as e:
             from app.core.config import logger
@@ -121,6 +123,7 @@ async def logout(authorization: str = Header(None)) -> Dict[str, Any]:
 @router.get("/me")
 async def get_me(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
     try:
+        supabase = get_supabase()
         res = supabase.table("users").select("user_id, email, display_name, role, is_pro, created_at").eq("user_id", user_id).execute()
         if res.data:
             return {"status": "success", "user": res.data[0]}

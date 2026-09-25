@@ -4,12 +4,13 @@ from app.core.database import get_supabase
 from app.core.dependencies import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
-supabase = get_supabase()
+
 
 @router.get("/users")
 async def get_all_users(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
         
     try:
+        supabase = get_supabase()
         users = supabase.table("users").select("user_id, email, display_name, created_at, role").execute()
         return {"status": "success", "data": users.data or []}
     except Exception as e:
@@ -21,6 +22,7 @@ async def get_all_users(user_id: str = Depends(require_admin)) -> Dict[str, Any]
 async def get_platform_stats(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
         
     try:
+        supabase = get_supabase()
         users = supabase.table("users").select("user_id", count="exact").execute()
         sessions = supabase.table("sessions").select("session_id", count="exact").execute()
         events = supabase.table("session_events").select("event_id", count="exact").execute()
