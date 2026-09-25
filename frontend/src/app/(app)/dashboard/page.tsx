@@ -1,14 +1,34 @@
 "use client";
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
 export default function DashboardPage() {
+  const handleResumePractice = async () => {
+    setLoadingNext(true);
+    try {
+      const res = await fetchApi('/api/next-problem');
+      if (res && res.id) {
+        router.push(`/problem/${res.id}${res.hint_pre_expanded ? '?hint=1' : ''}`);
+      } else {
+        router.push('/problems');
+      }
+    } catch (e) {
+      console.error(e);
+      router.push('/problems');
+    } finally {
+      setLoadingNext(false);
+    }
+  };
+
   const { user } = useAuth();
   const [stats, setStats] = useState<any>({ total_problems_solved: 0, current_streak: 0, total_sessions: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<boolean>(false);
+  const router = useRouter();
+  const [loadingNext, setLoadingNext] = useState(false);
 
   useEffect(() => {
     async function loadStats() {
@@ -53,10 +73,12 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex shrink-0">
-              <Link href="/problems" className="bg-primary text-on-primary hover:bg-primary/90 transition-colors font-label-bold text-label-bold px-lg py-sm rounded-lg flex items-center gap-2 shadow-lg shadow-primary/20">
-                <span className="material-symbols-outlined text-[20px]" data-icon="play_arrow" data-weight="fill">play_arrow</span>
-                Resume Practice
-              </Link>
+              <button onClick={handleResumePractice} disabled={loadingNext} className="bg-primary text-on-primary hover:bg-primary/90 transition-colors font-label-bold text-label-bold px-lg py-sm rounded-lg flex items-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50">
+                <span className="material-symbols-outlined text-[20px]" data-icon="play_arrow" data-weight="fill">
+                  {loadingNext ? 'hourglass_empty' : 'play_arrow'}
+                </span>
+                {loadingNext ? 'Loading...' : 'Resume Practice'}
+              </button>
             </div>
           </div>
         </div>
