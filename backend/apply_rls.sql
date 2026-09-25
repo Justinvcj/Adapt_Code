@@ -51,3 +51,9 @@ CREATE POLICY "Users can modify own agent state" ON agent_state
 
 -- Note: The `problems` table can remain public for SELECT since all users need to fetch problems.
 -- Ensure you have appropriate admin policies if you need admins to view all data.
+
+ALTER TABLE explanations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own explanations" ON explanations FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own explanations" ON explanations FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own explanations" ON explanations FOR UPDATE USING (auth.uid() = user_id);
+

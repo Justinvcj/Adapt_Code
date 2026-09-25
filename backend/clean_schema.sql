@@ -1,4 +1,14 @@
--- AdaptCode Database Schema for Supabase (PostgreSQL)
+-- AdaptCode Database Schema (Wipe and Recreate)
+
+-- DROP EXISTING TABLES TO ENSURE CLEAN SLATE
+DROP TABLE IF EXISTS active_problem_state CASCADE;
+DROP TABLE IF EXISTS agent_state CASCADE;
+DROP TABLE IF EXISTS mastery_scores CASCADE;
+DROP TABLE IF EXISTS explanations CASCADE;
+DROP TABLE IF EXISTS session_events CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS problems CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
 -- 1. Users Table
 CREATE TABLE users (
@@ -7,7 +17,8 @@ CREATE TABLE users (
     hashed_password TEXT NOT NULL,
     display_name TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    role TEXT DEFAULT 'student' CHECK (role IN ('student', 'admin'))
+    role TEXT DEFAULT 'student' CHECK (role IN ('student', 'admin')),
+    is_pro BOOLEAN DEFAULT FALSE
 );
 
 -- 2. Problems Table
@@ -21,6 +32,7 @@ CREATE TABLE problems (
     hint_text TEXT,
     solution_code TEXT,
     solution_explanation TEXT,
+    starter_code JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -63,10 +75,10 @@ CREATE TABLE mastery_scores (
 );
 
 -- 6. Agent State Table (LinUCB parameters)
-CREATE TABLE global_agent_state (
-    id INT PRIMARY KEY DEFAULT 1,
-    a_matrices JSONB NOT NULL,
-    b_vectors JSONB NOT NULL,
+CREATE TABLE agent_state (
+    student_id UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+    a_matrices JSONB NOT NULL, -- JSON serialized NumPy arrays
+    b_vectors JSONB NOT NULL, -- JSON serialized NumPy arrays
     last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -86,7 +98,7 @@ RETURNS TABLE (
     display_name TEXT,
     solved_count BIGINT,
     avg_mastery NUMERIC
-) AS \$\$
+) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
@@ -102,10 +114,9 @@ BEGIN
     ORDER BY solved_count DESC, avg_mastery DESC
     LIMIT 50;
 END;
-\$\$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
-
--- 9. Explanations Table (Added via Fix N8)
+-- 9. Explanations Table
 CREATE TABLE IF NOT EXISTS explanations (
     explanation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_event_id UUID NOT NULL REFERENCES session_events(event_id) ON DELETE CASCADE,
@@ -118,26 +129,11 @@ CREATE TABLE IF NOT EXISTS explanations (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_explanations_event_unique ON explanations(session_event_id);
 
--- 10. Users Table Alteration (Added via Fix N8)
-ALTER TABLE users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN DEFAULT FALSE;
-
--- 11. Performance Indexes (Added via Fix N6)
+-- 11. Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_session_events_student_id ON session_events(student_id);
 CREATE INDEX IF NOT EXISTS idx_session_events_student_verdict ON session_events(student_id, final_verdict);
 CREATE INDEX IF NOT EXISTS idx_mastery_scores_student_id ON mastery_scores(student_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_student_id ON sessions(student_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_student_started ON sessions(student_id, started_at DESC);
-CREATE INDEX IF NOT EXISTS idx_global_agent_state_id ON global_agent_state(id);
+CREATE INDEX IF NOT EXISTS idx_agent_state_student_id ON agent_state(student_id);
 CREATE INDEX IF NOT EXISTS idx_problems_concept_difficulty ON problems(concept_tag, difficulty_level);
-
--- 12. Starter Code (Fix missing column)
-ALTER TABLE problems ADD COLUMN IF NOT EXISTS starter_code JSONB;
-
--- BKT Params Table
-CREATE TABLE IF NOT EXISTS bkt_params (
-    concept_tag TEXT PRIMARY KEY,
-    l0 NUMERIC(4,3) NOT NULL,
-    p_t NUMERIC(4,3) NOT NULL,
-    p_g NUMERIC(4,3) NOT NULL,
-    p_s NUMERIC(4,3) NOT NULL
-);
