@@ -1,10 +1,28 @@
 import numpy as np
 
 # BKT Parameters (fixed, not learned)
-L0 = 0.30     # Prior probability of mastery
-P_T = 0.12    # Probability of learning (transition)
-P_G = 0.20    # Probability of guessing correctly
-P_S = 0.10    # Probability of slipping (knowing but failing)
+
+from app.core.database import get_supabase
+
+bkt_cache = {}
+
+def get_bkt_params(concept: str):
+    if concept in bkt_cache:
+        return bkt_cache[concept]
+    
+    try:
+        supabase = get_supabase()
+        res = supabase.table("bkt_params").select("*").eq("concept_tag", concept).execute()
+        if res.data:
+            p = res.data[0]
+            params = (float(p['l0']), float(p['p_t']), float(p['p_g']), float(p['p_s']))
+            bkt_cache[concept] = params
+            return params
+    except Exception:
+        pass
+    
+    # Fallback to defaults
+    return (0.30, 0.12, 0.20, 0.10)
 
 # Behavioral penalty weights
 LAMBDA_H = 0.15   # Hint usage — strongest indicator
@@ -42,21 +60,20 @@ def compute_effective_weight(
     w = result * (1 - rho)
     return w
 
-def update_mastery(
-    prior_mastery: float,  # P(L) before this observation
-    w: float               # effective-correctness weight
-) -> float:
+def update_mastery(prior_mastery: float, w: float, concept_tag: str = "default") -> float:
     """
     Update mastery probability using BKT with graded evidence.
     """
     L = prior_mastery
     
-    # Blend between correct-update and incorrect-update using w
-    p_correct_given_L = (1 - P_S)
-    p_correct_given_not_L = P_G
+    l0, p_t, p_g, p_s = get_bkt_params(concept_tag)
     
-    p_incorrect_given_L = P_S
-    p_incorrect_given_not_L = (1 - P_G)
+    # Blend between correct-update and incorrect-update using w
+    p_correct_given_L = (1 - p_s)
+    p_correct_given_not_L = p_g
+    
+    p_incorrect_given_L = p_s
+    p_incorrect_given_not_L = (1 - p_g)
     
     # Weighted observation likelihood
     p_obs_given_L = w * p_correct_given_L + (1 - w) * p_incorrect_given_L
@@ -70,6 +87,6 @@ def update_mastery(
         p_L_given_obs = (p_obs_given_L * L) / denominator
     
     # Apply learning transition
-    updated = p_L_given_obs + (1 - p_L_given_obs) * P_T
+    updated = p_L_given_obs + (1 - p_L_given_obs) * p_t
     
     return float(np.clip(updated, 0.0, 1.0))

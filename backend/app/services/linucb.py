@@ -30,38 +30,34 @@ class LinUCBAgent:
         self.n_actions = len(self.ACTIONS)
         
         # We'll store per-student parameters in dictionaries
-        self.A = {}
-        self.b = {}
+        self.A = {a: np.eye(self.d) for a in range(self.n_actions)}
+        self.b = {a: np.zeros(self.d) for a in range(self.n_actions)}
         
-    def _init_student(self, student_id: str):
-        if student_id not in self.A:
-            self.A[student_id] = {a: np.eye(self.d) for a in range(self.n_actions)}
-            self.b[student_id] = {a: np.zeros(self.d) for a in range(self.n_actions)}
+    
             
-    def load_student(self, student_id: str, db_row: dict):
-        self._init_student(student_id)
+    def load_state(self, db_row: dict):
         if db_row:
             a_mats = db_row.get('a_matrices')
             b_vecs = db_row.get('b_vectors')
             if isinstance(a_mats, dict):
                 for k, v in a_mats.items():
                     idx = int(k)
-                    if idx < len(self.A[student_id]):
-                        self.A[student_id][idx] = np.array(v)
+                    if idx < len(self.A):
+                        self.A[idx] = np.array(v)
             elif isinstance(a_mats, list):
                 for idx, a in enumerate(a_mats):
-                    if idx < len(self.A[student_id]):
-                        self.A[student_id][idx] = np.array(a)
+                    if idx < len(self.A):
+                        self.A[idx] = np.array(a)
                         
             if isinstance(b_vecs, dict):
                 for k, v in b_vecs.items():
                     idx = int(k)
-                    if idx < len(self.b[student_id]):
-                        self.b[student_id][idx] = np.array(v)
+                    if idx < len(self.b):
+                        self.b[idx] = np.array(v)
             elif isinstance(b_vecs, list):
                 for idx, b in enumerate(b_vecs):
-                    if idx < len(self.b[student_id]):
-                        self.b[student_id][idx] = np.array(b)
+                    if idx < len(self.b):
+                        self.b[idx] = np.array(b)
 
     def build_context(self, mastery_vector: dict, recent_events: list) -> np.ndarray:
         concepts = list(PREREQUISITE_GRAPH.keys())
@@ -81,14 +77,13 @@ class LinUCBAgent:
             x[15] = np.mean([e.get("time_on_task_seconds", 0) for e in last_5]) / 1200.0
         return x
     
-    def select_action(self, student_id: str, x: np.ndarray, allowed_actions: list) -> int:
-        self._init_student(student_id)
+    def select_action(self, x: np.ndarray, allowed_actions: list) -> int:
         best_score = -np.inf
         best_action = allowed_actions[0]
         
         for a in allowed_actions:
-            A_inv = np.linalg.inv(self.A[student_id][a])
-            theta = A_inv @ self.b[student_id][a]
+            A_inv = np.linalg.inv(self.A[a])
+            theta = A_inv @ self.b[a]
             exploitation = theta @ x
             exploration = self.alpha * np.sqrt(x @ A_inv @ x)
             score = exploitation + exploration
@@ -97,10 +92,9 @@ class LinUCBAgent:
                 best_action = a
         return best_action
     
-    def update(self, student_id: str, action: int, x: np.ndarray, reward: float):
-        self._init_student(student_id)
-        self.A[student_id][action] += np.outer(x, x)
-        self.b[student_id][action] += reward * x
+    def update(self, action: int, x: np.ndarray, reward: float):
+        self.A[action] += np.outer(x, x)
+        self.b[action] += reward * x
     
     def get_allowed_actions(self, mastery_vector: dict, current_concept: str) -> list:
         allowed = [0, 1, 4]

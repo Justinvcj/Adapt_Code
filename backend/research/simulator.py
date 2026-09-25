@@ -37,19 +37,23 @@ def simulate(n_students=100, problems_per_student=50, strategy="linucb", seed=42
             allowed_actions = list(range(agent.n_actions))
             
             if strategy == "linucb":
-                action = agent.select_action(student_id, ctx, allowed_actions)
+                action = agent.select_action(ctx, allowed_actions)
             else:
                 action = np.random.choice(allowed_actions)
                 
             focus_concept = prereq if prereq else np.random.choice(CONCEPTS)
             
             p_correct = mastery.get(focus_concept, 0.1)
-            # Action impact: harder problem => lower p_correct, easier => higher p_correct
-            # action mapping: 0=easier, 1=same, 2=harder, 3=redirect_prereq, 4=revisit
+            # Authentic knowledge state mapping
+            # Action 0 (easier) is more likely correct if mastery is low
+            # Action 2 (harder) requires high mastery to be correct
             if action == 0:
-                p_correct = min(1.0, p_correct * 1.5)
+                p_correct = min(1.0, p_correct + 0.2 * (1 - p_correct))
             elif action == 2:
-                p_correct = max(0.01, p_correct * 0.5)
+                p_correct = max(0.01, p_correct - 0.2 * p_correct)
+            elif action == 3:
+                # Redirect prereq increases chance on current focus concept
+                p_correct = min(1.0, p_correct + 0.15)
                 
             correct = np.random.random() < p_correct
             hint_used = np.random.random() < (1 - p_correct) * 0.4
@@ -61,10 +65,10 @@ def simulate(n_students=100, problems_per_student=50, strategy="linucb", seed=42
             reward = (0.5 if hint_used else 1.0) if correct else -0.3
             
             if strategy == "linucb":
-                agent.update(student_id, action, ctx, reward)
+                agent.update(action, ctx, reward)
                 
             w = compute_effective_weight(1 if correct else 0, hint_used, attempts, compile_errs, time_secs)
-            mastery[focus_concept] = update_mastery(mastery[focus_concept], w)
+            mastery[focus_concept] = update_mastery(mastery[focus_concept], w, focus_concept)
             
             recent_hints.append(1.0 if hint_used else 0.0)
             recent_attempts.append(attempts)
