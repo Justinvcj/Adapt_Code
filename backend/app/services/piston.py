@@ -2,7 +2,9 @@ import httpx
 from typing import List, Dict, Any
 from app.core.config import settings
 
-PISTON_URL = getattr(settings, "PISTON_URL", "http://localhost:2000/api/v2/execute")
+# Treat PISTON_URL strictly as the base URL
+PISTON_BASE_URL = getattr(settings, "PISTON_URL", "http://localhost:2000").rstrip("/")
+PISTON_EXECUTE_URL = f"{PISTON_BASE_URL}/api/v2/execute"
 
 LANGUAGE_MAP = {
     "python": {"language": "python", "version": "3.10"},
@@ -28,7 +30,7 @@ async def execute_on_piston(code: str, language: str, stdin: str = "") -> dict:
     }
     
     async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.post(PISTON_URL, json=payload)
+        response = await client.post(PISTON_EXECUTE_URL, json=payload)
         response.raise_for_status()
         return response.json()
 
