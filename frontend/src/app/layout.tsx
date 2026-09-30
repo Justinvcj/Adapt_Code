@@ -31,7 +31,7 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased min-h-screen flex flex-col`}>
         <AuthProvider>
           <Toaster position="bottom-right" toastOptions={{
             style: { background: '#282A36', color: '#EFF1F6', border: '1px solid rgba(255, 255, 255, 0.08)' }

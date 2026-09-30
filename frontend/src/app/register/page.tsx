@@ -2,19 +2,17 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
-import { User, Lock } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Please enter email and password");
@@ -22,28 +20,19 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, display_name: email.split('@')[0] })
       });
       
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Login failed');
+      if (!res.ok) throw new Error(data.detail || 'Registration failed');
       
-      login(data.access_token, {
-        user_id: data.user_id,
-        email: email,
-        display_name: data.display_name,
-        role: 'student',
-        is_pro: data.is_pro,
-        created_at: new Date().toISOString()
-      });
-      
-      toast.success("Successfully logged in!");
-      router.push('/dashboard');
+      toast.success("Successfully registered! Please log in.");
+      router.push('/login');
     } catch (error: any) {
-      toast.error(error.message || "Failed to log in");
+      toast.error(error.message || "Failed to register");
     } finally {
       setLoading(false);
     }
@@ -72,14 +61,14 @@ export default function LoginPage() {
       <div className="w-full max-w-[420px] bg-surface-elevated border border-border-default rounded-2xl p-8 shadow-2xl z-10">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary mb-2 tracking-tight">AdaptCode</h1>
-          <p className="text-sm text-on-surface-variant">Sign in to continue solving problems.</p>
+          <p className="text-sm text-on-surface-variant">Create a free account to get started.</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleRegister} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-on-surface-variant" htmlFor="email">Email / Username</label>
+            <label className="text-sm font-semibold text-on-surface-variant" htmlFor="email">Email</label>
             <div className="relative flex items-center">
-              <User className="absolute left-3.5 text-on-surface-variant w-5 h-5" />
+              <Mail className="absolute left-3.5 text-on-surface-variant w-5 h-5" />
               <input 
                 id="email" 
                 type="email" 
@@ -100,7 +89,7 @@ export default function LoginPage() {
                 id="password" 
                 type="password" 
                 required 
-                placeholder="Enter password" 
+                placeholder="Create a password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 className="w-full bg-[#1A1A1A] border border-border-default rounded-lg text-text-primary placeholder-on-surface-variant/50 pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
@@ -111,9 +100,9 @@ export default function LoginPage() {
           <button 
             disabled={loading} 
             type="submit"
-            className="w-full bg-success text-white font-bold text-sm py-3.5 rounded-lg hover:bg-success/90 transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary text-white font-bold text-sm py-3.5 rounded-lg hover:bg-primary/90 transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Signing In..." : "Sign In"}
+            {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
 
@@ -138,7 +127,7 @@ export default function LoginPage() {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-on-surface-variant">
-            Don't have an account? <Link className="text-primary hover:text-primary/80 transition-colors font-bold ml-1" href="/register">Sign up free</Link>
+            Already have an account? <Link className="text-primary hover:text-primary/80 transition-colors font-bold ml-1" href="/login">Sign In</Link>
           </p>
         </div>
       </div>

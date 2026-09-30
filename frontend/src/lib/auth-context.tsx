@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { fetchApi } from './api';
+import { supabase } from './supabase';
 
 type User = {
   user_id: string;
@@ -31,6 +32,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
+      // 1. Check Supabase session first (for Google Auth)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        handleSupabaseSession(session);
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Fallback to our custom email/password token
       const storedToken = localStorage.getItem('access_token');
       const cachedUser = localStorage.getItem('cached_user');
       
@@ -47,34 +58,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('cached_user', JSON.stringify(res.user));
             setIsOffline(false);
           } else {
-            // Invalid token or server error, log out
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('cached_user');
-            setToken(null);
-            setUser(null);
+            clearAuth();
           }
         } catch (error: any) {
-          console.error("Failed to fetch user", error);
           if (error?.status === 401) {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('cached_user');
-            setToken(null);
-            setUser(null);
+            clearAuth();
           } else {
             setIsOffline(true);
-            // keep existing cached user
           }
         }
       } else {
-        // No token, ensure clean state
-        setToken(null);
-        setUser(null);
+        clearAuth();
       }
       setIsLoading(false);
     };
 
     initAuth();
+
+    // Listen for Google Auth redirects!
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        handleSupabaseSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        clearAuth();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const handleSupabaseSession = (session: any) => {
+    const userData: User = {
+      user_id: session.user.id,
+      email: session.user.email,
+      display_name: session.user.user_metadata.full_name || session.user.email.split('@')[0],
+      role: 'student',
+      is_pro: false,
+      created_at: session.user.created_at
+    };
+    login(session.access_token, userData);
+  };
+
+  const clearAuth = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('cached_user');
+    setToken(null);
+    setUser(null);
+  };
 
   const login = (newToken: string, userData: User) => {
     localStorage.setItem('access_token', newToken);

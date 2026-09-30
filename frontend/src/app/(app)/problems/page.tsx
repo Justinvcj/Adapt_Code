@@ -1,116 +1,100 @@
 "use client";
-import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Search, ArrowUpDown, Filter, Shuffle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import Navbar from '@/components/adapt/Navbar';
-import Sidebar from '@/components/adapt/Sidebar';
-import Calendar from '@/components/adapt/Calendar';
-import { PROBLEMS, TAGS } from '@/components/adapt/data';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { fetchApi } from '@/lib/api';
+import { AlertCircle } from 'lucide-react';
 
 export default function ProblemsPage() {
-  const [search, setSearch] = useState('');
-  const solved = PROBLEMS.filter((p) => p.st === 'solved').length;
-  const total = 4033;
+  const [problems, setProblems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const filtered = useMemo(() => PROBLEMS.filter((p) => {
-    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }), [search]);
+  useEffect(() => {
+    async function loadProblems() {
+      try {
+        const data = await fetchApi('/api/problems');
+        setProblems(data.data || []);
+      } catch (e: any) {
+        console.error("Failed to load problems", e);
+        setError("Failed to connect to server. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProblems();
+  }, []);
 
-  const dashArr = (solved / total) * 50.3;
+  const getDifficultyColor = (diff: string) => {
+    switch (diff?.toLowerCase()) {
+      case 'easy': return 'text-success bg-success/10';
+      case 'medium': return 'text-medium bg-medium/10';
+      case 'hard': return 'text-hard bg-hard/10';
+      default: return 'text-on-surface-variant bg-surface-bright';
+    }
+  };
 
   return (
     <>
-      <Navbar active="problems" />
-      <div className="app-wrap">
-        <Sidebar active="problems" />
-        <div className="main">
-          <div className="main-inner" style={{ maxWidth: 'none', padding: '12px 20px' }}>
-            <div className="tags-row">
-              {TAGS.map((t) => (
-                <span key={t.n} className="tag-pill" onClick={() => toast(`${t.n} — demo`)}>
-                  {t.n} <span className="tc">{t.c}</span>
-                </span>
-              ))}
-              <span className="tag-pill" style={{ color: 'var(--blue)' }}>Expand ▾</span>
+      <div className="max-w-[1440px] mx-auto w-full gap-lg">
+        <div className="w-full flex flex-col gap-lg">
+          <div className="bg-surface-elevated rounded-xl border border-border-default overflow-hidden">
+            <div className="p-4 border-b border-border-default flex items-center justify-between">
+              <h2 className="font-headline-sm text-[18px] text-text-primary">Problem Library</h2>
             </div>
-            <div className="cat-tabs">
-              {['All Topics', 'Algorithms', 'Database', 'Shell', 'Concurrency', 'JavaScript'].map((t, i) => (
-                <span key={t} className={`cat-tab ${i === 0 ? 'act' : ''}`} onClick={() => toast(`${t} — demo`)}>{t}</span>
-              ))}
-            </div>
-            <div className="ps-toolbar">
-              <div className="ps-search">
-                <Search />
-                <input placeholder="Search questions" value={search} onChange={(e) => setSearch(e.target.value)} />
-              </div>
-              <div className="ps-icons">
-                <button className="ps-icon" title="Sort"><ArrowUpDown /></button>
-                <button className="ps-icon" title="Filter"><Filter /></button>
-              </div>
-              <div className="ps-solved">
-                <svg viewBox="0 0 20 20" width="16" height="16">
-                  <circle cx="10" cy="10" r="8" fill="none" stroke="var(--border)" strokeWidth="2" />
-                  <circle cx="10" cy="10" r="8" fill="none" stroke="var(--solved)" strokeWidth="2"
-                    strokeDasharray={`${dashArr.toFixed(1)} 50.3`} transform="rotate(-90 10 10)" />
-                </svg>
-                {solved}/{total} Solved
-              </div>
-              <button className="ps-icon" title="Random" onClick={() => toast('Random problem — demo')}><Shuffle /></button>
-            </div>
-            <table className="tbl">
+            
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr>
-                  <th style={{ width: 36 }}></th>
-                  <th style={{ width: 48 }}>#</th>
-                  <th>Title</th>
-                  <th style={{ width: 90 }}>Acceptance</th>
-                  <th style={{ width: 80 }}>Difficulty</th>
-                  <th style={{ width: 70 }}>Frequency</th>
-                  <th style={{ width: 36 }}></th>
+                <tr className="border-b border-border-default text-on-surface-variant font-label-bold text-label-bold">
+                  <th className="py-3 px-4 font-medium w-12">#</th>
+                  <th className="py-3 px-4 font-medium">Title</th>
+                  <th className="py-3 px-4 font-medium w-32 text-center">Difficulty</th>
+                  <th className="py-3 px-4 font-medium">Concept</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
-                  const dc = p.diff === 'Easy' ? 'e' : p.diff === 'Medium' ? 'm' : 'h';
-                  const freq = ((p.id * 7919) % 100) / 100 * 0.8 + 0.1;
-                  return (
-                    <tr key={p.id}>
-                      <td>{p.st === 'solved' ? <span className="solved-icon">✓</span> : p.st === 'attempted' ? <span className="attempted-icon">○</span> : ''}</td>
-                      <td style={{ color: 'var(--tx-2)' }}>{p.id}.</td>
-                      <td className="t-link">
-                        <Link href={`/problem/${p.id === 1 ? 'two-sum' : 'coming-soon'}`} style={{ color: 'inherit' }}>{p.title}</Link>
+                {loading ? (
+                  <tr><td colSpan={4} className="p-8 text-center text-on-surface-variant">Loading problems...</td></tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-red-400">
+                        <AlertCircle className="w-8 h-8" />
+                        <p>{error}</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : problems.length === 0 ? (
+                  <tr><td colSpan={4} className="p-8 text-center text-on-surface-variant">No problems found</td></tr>
+                ) : (
+                  problems.map((p, i) => (
+                    <tr 
+                      key={p.id} 
+                      onClick={() => router.push(`/problem/${p.id}`)}
+                      className="border-b border-border-default hover:bg-surface-secondary transition-colors group cursor-pointer"
+                    >
+                      <td className="py-3 px-4 text-on-surface-variant">{i + 1}</td>
+                      <td className="py-3 px-4">
+                        <span className="text-text-primary group-hover:text-secondary transition-colors font-medium">
+                          {p.title}
+                        </span>
                       </td>
-                      <td>{p.acc}%</td>
-                      <td><span className={`diff diff-${dc}`}>{p.diff}</span></td>
-                      <td><div className="freq-bar"><div className="freq-fill" style={{ width: `${(freq * 100).toFixed(0)}%` }} /></div></td>
-                      <td style={{ color: 'var(--tx-3)', cursor: 'pointer' }} onClick={() => toast('Bookmarked — demo')}>☆</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-label-bold w-full max-w-[80px] ${getDifficultyColor(p.difficulty_level)}`}>
+                          {p.difficulty_level}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-on-surface-variant text-sm">
+                        <span className="bg-surface-bright px-2 py-1 rounded">
+                          {p.concept_tag}
+                        </span>
+                      </td>
                     </tr>
-                  );
-                })}
+                  ))
+                )}
               </tbody>
             </table>
-            <div className="ps-pg">
-              <button className="pg-b act">1</button>
-              <button className="pg-b" onClick={() => toast('Page 2 — demo')}>2</button>
-              <button className="pg-b" onClick={() => toast('Page 3 — demo')}>3</button>
-              <span className="pg-b" style={{ pointerEvents: 'none' }}>…</span>
-              <button className="pg-b" onClick={() => toast('Last page — demo')}>81</button>
-            </div>
-          </div>
-        </div>
-        <div className="right-sb">
-          <Calendar />
-          <div className="trending-card">
-            <h5>
-              Trending Companies
-              <span style={{ display: 'flex', gap: 4 }}>
-                <button style={{ color: 'var(--tx-2)' }} onClick={() => toast('Prev — demo')}>‹</button>
-                <button style={{ color: 'var(--tx-2)' }} onClick={() => toast('Next — demo')}>›</button>
-              </span>
-            </h5>
-            <input className="trending-search" placeholder="Search for a company..." onClick={() => toast('Company search — demo')} />
           </div>
         </div>
       </div>

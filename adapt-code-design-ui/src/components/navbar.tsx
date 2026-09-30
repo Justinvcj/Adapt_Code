@@ -51,10 +51,10 @@ export function Navbar() {
           {/* Nav links */}
           <div className="flex gap-0.5 flex-1">
             <NavLink href="/problems" active={isActive('/problems')}>Problems</NavLink>
-            <NavLink href="/contests" active={isActive('/contests')}>Contest</NavLink>
-            <NavLink href="/discuss" active={isActive('/discuss')}>Discuss</NavLink>
-            <NavLink href="/interview" active={isActive('/interview')}>Interview <span className="text-[10px] ml-0.5 opacity-50">▾</span></NavLink>
-            <NavLink href="/explore" active={isActive('/explore')}>Store <span className="text-[10px] ml-0.5 opacity-50">▾</span></NavLink>
+            <NavLink href="/playground" active={isActive('/playground')}>Playground</NavLink>
+            <NavLink href="/paths" active={isActive('/paths')}>Learning Path </NavLink>
+            <NavLink href="/analytics" active={isActive('/analytics')}>Analytics</NavLink>
+            
           </div>
 
           {/* Right actions */}
@@ -175,3 +175,5 @@ function DDItem({
     </button>
   );
 }
+
+
