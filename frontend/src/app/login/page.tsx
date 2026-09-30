@@ -1,9 +1,9 @@
 "use client";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Github } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/adapt/Navbar';
+import { GithubIcon } from '@/components/adapt/icons';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function LoginPage() {
                 Continue with Google
               </button>
               <button className="social-btn" onClick={() => done('Signed in with GitHub')}>
-                <Github size={16} /> Continue with GitHub
+                <GithubIcon size={16} /> Continue with GitHub
               </button>
             </div>
             <p className="l-footer">Don&apos;t have an account? <a onClick={() => done('Account created!')}>Sign up free</a></p>

@@ -1,7 +1,8 @@
 "use client";
 import { useMemo } from 'react';
-import { Github, Edit } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
+import { GithubIcon } from '@/components/adapt/icons';
 import { USER } from '@/components/adapt/data';
 
 export default function ProfilePage() {
@@ -45,7 +46,7 @@ export default function ProfilePage() {
               <span><b>{u.followers}</b> Followers</span>
             </div>
             <button className="btn btn-outline" style={{ width: '100%' }}><Edit size={14} /> Edit Profile</button>
-            <div className="prof-gh"><Github /> {u.user}</div>
+            <div className="prof-gh"><GithubIcon /> {u.user}</div>
             <div className="comm-stats">
               <h4>Community Stats</h4>
               {[

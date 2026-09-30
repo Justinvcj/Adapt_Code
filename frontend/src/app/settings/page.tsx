@@ -1,9 +1,10 @@
 "use client";
 import { useState } from 'react';
-import { User, Mail, Phone, Key, Github } from 'lucide-react';
+import { User, Mail, Phone, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/adapt/Navbar';
 import Sidebar from '@/components/adapt/Sidebar';
+import { GithubIcon } from '@/components/adapt/icons';
 import { USER } from '@/components/adapt/data';
 
 const TABS: [string, string][] = [
@@ -54,7 +55,7 @@ export default function SettingsPage() {
                     <button className="btn-disconnect" onClick={() => toast('Disconnect — demo')}>Disconnect</button>
                   </div>
                   <div className="social-row">
-                    <div className="social-row-icon"><Github /></div>
+                    <div className="social-row-icon"><GithubIcon size={18} /></div>
                     <div className="social-row-name">Github</div>
                     <button className="btn-disconnect" onClick={() => toast('Disconnect — demo')}>Disconnect</button>
                   </div>
