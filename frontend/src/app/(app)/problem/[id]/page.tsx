@@ -1,339 +1,265 @@
 "use client";
-
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { fetchApi } from '@/lib/api';
-import Editor from '@monaco-editor/react';
-import ReactMarkdown from 'react-markdown';
+import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import {
+  Menu, ChevronLeft, ChevronRight, Shuffle, Play, Check, FileText, Code2, Terminal,
+  List, ThumbsUp, ThumbsDown, MessageSquare, Star, Share2, Info, Bookmark, Undo,
+  Maximize2, Settings, Grid3x3, Lock, ClipboardCheck, FileCode,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CODE, LANG_NAMES } from '@/components/adapt/data';
 
-export default function ProblemPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [problem, setProblem] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [code, setCode] = useState<string>('');
-  
-  // Behavioral tracking
-  const [startTime] = useState(Date.now());
-  const [compileErrors, setCompileErrors] = useState(0);
-  const [attemptCount, setAttemptCount] = useState(0);
-  const [hintUsed, setHintUsed] = useState(false);
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
-  useEffect(() => {
-    if (searchParams?.get('hint') === '1') {
-      setHintUsed(true);
-    }
-  }, [searchParams]);
-  const [hintAtAttempt, setHintAtAttempt] = useState<number | null>(null);
-  const [solved, setSolved] = useState(false);
-  
-  // Execution state
-  const [executing, setExecuting] = useState(false);
-  const [verdict, setVerdict] = useState<string | null>(null);
-  const [explanationStatus, setExplanationStatus] = useState<string>('not_needed');
-  const [explanation, setExplanation] = useState<any>(null);
-  const [activeEventId, setActiveEventId] = useState<string | null>(null);
-  const [error, setError] = useState<boolean>(false);
-  const [nextProblemInfo, setNextProblemInfo] = useState<any>(null);
-  const [masteryDelta, setMasteryDelta] = useState<number | null>(null);
+const MONACO_LANG: Record<string, string> = {
+  java: 'java', python: 'python', javascript: 'javascript', cpp: 'cpp',
+};
 
-  useEffect(() => {
-    async function loadProblem() {
-      try {
-        const res = await fetchApi(`/api/problems/${params.id}`);
-        setProblem(res.problem);
-        setCode(res.problem.starter_code?.python || 'def solve():\n    pass');
-      } catch (err) {
-        toast.error("Failed to load problem");
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProblem();
-  }, [params.id]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && !solved && problem) {
-        const token = localStorage.getItem('access_token');
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/abandon`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            problem_id: problem.problem_id || problem.id,
-            compile_error_count: compileErrors,
-            time_on_task_seconds: (Date.now() - startTime) / 1000,
-            attempt_count: attemptCount,
-            hint_used: hintUsed,
-          }),
-          keepalive: true,
-        }).catch(err => console.error("Abandon telemetry failed", err));
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [solved, compileErrors, attemptCount, problem, startTime, hintUsed]);
-  
-  // Polling for explanation
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    let pollCount = 0;
-    if (explanationStatus === 'pending' && activeEventId) {
-      interval = setInterval(async () => {
-        pollCount++;
-        if (pollCount > 30) {
-          clearInterval(interval);
-          setExplanationStatus('failed');
-          return;
-        }
-        try {
-          const res = await fetchApi(`/api/explanation/${activeEventId}`);
-          if (res.status === 'completed') {
-            setExplanation(res);
-            setExplanationStatus('completed');
-            clearInterval(interval);
-          } else if (res.status === 'failed') {
-            setExplanationStatus('failed');
-            clearInterval(interval);
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }, 2000);
-    }
-    return () => clearInterval(interval);
-  }, [explanationStatus, activeEventId]);
-
-  const handleHint = () => {
-    setHintUsed(true);
-    setHintAtAttempt(attemptCount);
-    toast("Hint revealed (penalty applied to BKT)", { icon: '💡' });
-  };
-
-  const handleSubmit = async () => {
-    if (!problem) return;
-    setExecuting(true);
-    setAttemptCount(prev => prev + 1);
-    const timeOnTask = (Date.now() - startTime) / 1000;
-    
-    try {
-      const res = await fetchApi('/api/submit', {
-        method: 'POST',
-        body: JSON.stringify({
-          problem_id: problem.id || problem.problem_id,
-          code,
-          language: 'python',
-          compile_error_count: compileErrors,
-          time_on_task_seconds: timeOnTask,
-          hint_used: hintUsed,
-          hint_used_at_attempt: hintAtAttempt,
-          attempt_count: attemptCount + 1,
-        })
-      });
-      
-      setVerdict(res.verdict);
-      if (res.verdict === 'compile_error') {
-        setCompileErrors(prev => prev + 1);
-      }
-      
-      if (res.verdict === 'accepted') {
-        setSolved(true);
-        toast.success(`Accepted! +${(res.effective_weight).toFixed(2)} mastery`);
-        setNextProblemInfo(res.next_problem);
-        setMasteryDelta(res.effective_weight);
-      } else {
-        toast.error(`Failed: ${res.verdict}`);
-        if (res.explanation_status === 'pending' && res.event_id) {
-          setExplanationStatus('pending');
-          setActiveEventId(res.event_id);
-          setExplanation(null);
-        }
-      }
-    } catch (err) {
-      toast.error("Execution failed");
-    } finally {
-      setExecuting(false);
-    }
-  };
-
-  if (loading) return <div className="p-10 text-center text-on-surface-variant flex flex-col items-center justify-center h-full"><span className="material-symbols-outlined animate-spin mb-2">sync</span> Loading Problem...</div>;
-  if (error || !problem) return (
-    <div className="flex flex-col items-center justify-center h-full p-10 text-center">
-      <div className="bg-surface-elevated border border-border-default rounded-xl p-8 max-w-md w-full shadow-lg">
-        <span className="material-symbols-outlined text-[48px] text-red-500 mb-4">cloud_off</span>
-        <h2 className="font-headline-sm text-xl text-text-primary mb-2">Connection Failed</h2>
-        <p className="text-on-surface-variant mb-6 text-sm">We couldn't connect to the server to load this problem. Make sure the backend is running.</p>
-        <button onClick={() => router.push('/problems')} className="px-4 py-2 bg-primary text-on-primary rounded hover:bg-primary/90 transition-colors font-label-bold">
-          Back to Library
-        </button>
-      </div>
-    </div>
+export default function ProblemPage() {
+  const params = useParams<{ id: string }>();
+  const slug = params?.id || '';
+  const [pTab, setPTab] = useState<'desc' | 'editorial' | 'solutions' | 'submissions'>('desc');
+  const [cTab, setCTab] = useState<'tc' | 'result'>('tc');
+  const [lang, setLang] = useState<string>('java');
+  const [code, setCode] = useState<string>(CODE.java);
+  const [leftW, setLeftW] = useState(50);
+  const [conBody, setConBody] = useState<React.ReactNode>(
+    <>
+      <div className="cl">nums =</div>
+      <div className="cv" style={{ color: 'var(--tx)' }}>[2, 7, 11, 15]</div>
+      <div className="cl">target =</div>
+      <div className="cv" style={{ color: 'var(--tx)' }}>9</div>
+    </>
   );
+  const dragRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setCode(CODE[lang] || ''); }, [lang]);
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (!dragRef.current || !containerRef.current) return;
+      const b = containerRef.current.getBoundingClientRect();
+      const p = ((e.clientX - b.left) / b.width) * 100;
+      setLeftW(Math.max(25, Math.min(75, p)));
+    };
+    const up = () => { dragRef.current = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+  }, []);
+
+  if (slug !== 'two-sum') {
+    return (
+      <>
+        <div className="prob-nav">
+          <Link href="/" className="logo" style={{ marginRight: 4 }}>&lt;/&gt;</Link>
+          <Link className="pn-item" href="/problems"><Menu /> Problem List</Link>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-h))', flexDirection: 'column', gap: 12 }}>
+          <h2 style={{ fontSize: 16 }}>Problem Not Available</h2>
+          <p style={{ color: 'var(--tx-2)', fontSize: 13 }}>Only Two Sum is loaded in this demo.</p>
+          <Link className="btn btn-outline" href="/problems"><ChevronLeft /> Back to Problems</Link>
+        </div>
+      </>
+    );
+  }
+
+  const runCode = () => {
+    setCTab('result');
+    setConBody(<div style={{ color: 'var(--tx-2)' }}>Running...</div>);
+    setTimeout(() => {
+      setConBody(
+        <>
+          <div style={{ color: 'var(--solved)', fontWeight: 600, marginBottom: 8 }}>✓ All test cases passed</div>
+          <div className="cl">Input</div><div className="cv">nums = [2, 7, 11, 15], target = 9</div>
+          <div className="cl">Output</div><div className="cv" style={{ color: 'var(--tx)' }}>[0, 1]</div>
+          <div className="cl">Expected</div><div className="cv" style={{ color: 'var(--tx)' }}>[0, 1]</div>
+        </>
+      );
+      toast.success('All test cases passed');
+    }, 800);
+  };
+
+  const submitCode = () => {
+    toast('Submitting...');
+    setTimeout(() => toast.success('Accepted — 3ms runtime, beats 94.7%'), 1400);
+  };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden w-full">
-      <div className="h-[40px] bg-surface-elevated border-b border-border-default flex items-center justify-between px-md flex-shrink-0">
-        <div className="flex items-center gap-sm">
-          <button onClick={() => router.push('/dashboard')} className="flex items-center gap-1 text-on-surface-variant hover:text-text-primary px-2 py-1 rounded hover:bg-surface-secondary transition-colors font-label-bold text-label-bold">
-            <span className="material-symbols-outlined text-[18px]">list</span> Dashboard
-          </button>
-        </div>
-        <div className="flex items-center gap-sm">
-          <button 
-            onClick={handleSubmit}
-            disabled={executing}
-            className="flex items-center gap-1 bg-success/10 text-success px-3 py-1 rounded border border-success/20 hover:bg-success/20 transition-colors font-label-bold text-label-bold disabled:opacity-50"
-          >
-            {executing ? 'Running...' : 'Submit'}
-          </button>
+    <>
+      <div className="prob-nav">
+        <Link href="/" className="logo" style={{ marginRight: 4 }}>&lt;/&gt;</Link>
+        <Link className="pn-item" href="/problems"><Menu /> Problem List</Link>
+        <button className="pn-item" onClick={() => toast('Previous problem — demo')}><ChevronLeft /></button>
+        <button className="pn-item" onClick={() => toast('Next problem — demo')}><ChevronRight /></button>
+        <button className="pn-item" onClick={() => toast('Random — demo')}><Shuffle /></button>
+        <div className="pn-right">
+          <button className="pn-run" onClick={runCode}><Play size={12} /> Run</button>
+          <button className="pn-submit" onClick={submitCode}><ClipboardCheck /> Submit</button>
+          <button className="pn-icon" onClick={() => toast.success('Copied — demo')} title="Copy"><FileText /></button>
+          <button className="pn-icon" title="AI Assistant" onClick={() => toast('AI Assistant — demo')}>✨</button>
+          <span className="pn-sep" />
+          <button className="pn-icon" title="Layout"><Grid3x3 /></button>
+          <button className="pn-icon" title="Settings"><Settings /></button>
+          <button className="pn-icon" title="Like" style={{ display: 'flex', gap: 4, width: 'auto', padding: '0 8px' }}><ThumbsUp /><span style={{ fontSize: 12 }}>0</span></button>
+          <span className="pn-sep" />
+          <button className="pn-icon" title="Fullscreen"><Maximize2 /></button>
         </div>
       </div>
-
-      <div className="flex flex-1 overflow-hidden bg-background">
-        {/* Left Panel: Description */}
-        <div className="w-1/2 bg-surface overflow-y-auto p-6 border-r border-border-default">
-          <h1 className="text-2xl font-bold mb-2">{problem.title}</h1>
-          <div className="flex gap-2 mb-6">
-            <span className={`px-2 py-0.5 rounded-full bg-${problem.difficulty_level}/10 text-${problem.difficulty_level} font-label-bold text-xs`}>
-              {problem.difficulty_level}
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-surface-secondary text-xs">{problem.concept || problem.concept_tag}</span>
+      <div className="prob" ref={containerRef}>
+        <div className="prob-l" style={{ width: `${leftW}%` }}>
+          <div className="tabs">
+            {([['desc', 'Description', FileText], ['editorial', 'Editorial', List], ['solutions', 'Solutions', Code2], ['submissions', 'Submissions', Terminal]] as const).map(([k, l, Ic]) => (
+              <span key={k} className={`tab ${pTab === k ? 'act' : ''}`} onClick={() => setPTab(k)}><Ic /> {l}</span>
+            ))}
           </div>
-          
-          <div className="prose prose-invert max-w-none mb-8">
-            <ReactMarkdown>{problem.description}</ReactMarkdown>
-          </div>
-          
-          <div className="mb-8">
-            <button 
-              onClick={handleHint}
-              disabled={hintUsed}
-              className="text-sm font-label-bold text-primary hover:text-primary/80 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">lightbulb</span>
-              {hintUsed ? 'Hint Revealed' : 'Show Hint'}
-            </button>
-            {hintUsed && problem.hint_text && (
-              <div className="mt-2 p-3 bg-primary/5 border border-primary/10 rounded text-sm text-on-surface-variant">
-                {problem.hint_text}
+          <div className="prob-l-body">
+            {pTab === 'desc' && (
+              <>
+                <div className="p-title">
+                  <h2>1. Two Sum</h2>
+                  <span className="p-solved-tag"><Check size={14} /> Solved</span>
+                </div>
+                <div className="p-tags">
+                  <span className="p-tag diff-e">Easy</span>
+                  <span className="p-tag">🏷 Topics</span>
+                  <span className="p-tag">🏢 Companies</span>
+                  <span className="p-tag">💡 Hint</span>
+                </div>
+                <div className="p-desc">
+                  <p>You are given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p>
+                  <p>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the <em>same</em> element twice.</p>
+                  <p>You can return the answer in any order.</p>
+                  <div className="p-ex">
+                    <strong>Example 1:</strong>
+                    {'Input: nums = [2,7,11,15], target = 9\nOutput: [0,1]\nExplanation: Because nums[0] + nums[1] == 9, we return [0, 1].'}
+                  </div>
+                  <div className="p-ex">
+                    <strong>Example 2:</strong>
+                    {'Input: nums = [3,2,4], target = 6\nOutput: [1,2]'}
+                  </div>
+                  <div className="p-ex">
+                    <strong>Example 3:</strong>
+                    {'Input: nums = [3,3], target = 6\nOutput: [0,1]'}
+                  </div>
+                  <div className="p-constraints">
+                    <h4>Constraints:</h4>
+                    <ul>
+                      <li>2 ≤ nums.length ≤ 10<sup>4</sup></li>
+                      <li>-10<sup>9</sup> ≤ nums[i] ≤ 10<sup>9</sup></li>
+                      <li>-10<sup>9</sup> ≤ target ≤ 10<sup>9</sup></li>
+                      <li>Only one valid answer exists.</li>
+                    </ul>
+                  </div>
+                </div>
+              </>
+            )}
+            {pTab === 'solutions' && (
+              <div style={{ padding: '4px 0' }}>
+                <h3 style={{ fontSize: 14, marginBottom: 12 }}>Community Solutions</h3>
+                {[
+                  { t: 'Hash Map — O(n) Time, O(n) Space', u: '@algorithmist', l: 'Python 3', v: '2.4k', up: 342 },
+                  { t: 'Brute Force vs Optimized — Walkthrough', u: '@codemaster', l: 'Java', v: '1.8k', up: 218 },
+                  { t: 'Two-pass Hash Table with Edge Cases', u: '@devpro', l: 'C++', v: '956', up: 147 },
+                ].map((s) => (
+                  <div key={s.t} onClick={() => toast('Solution detail — demo')}
+                    style={{ padding: 12, border: '1px solid var(--border)', borderRadius: 'var(--r-md)', marginBottom: 8, cursor: 'pointer' }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{s.t}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx-2)' }}>
+                      <span>{s.u} · {s.l} · {s.v} views</span>
+                      <span style={{ color: 'var(--solved)' }}>▲ {s.up}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {pTab === 'editorial' && (
+              <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--tx-2)' }}>Editorial content — demo only</div>
+            )}
+            {pTab === 'submissions' && (
+              <div style={{ padding: '4px 0' }}>
+                <h3 style={{ fontSize: 14, marginBottom: 12 }}>Your Submissions</h3>
+                <table className="tbl">
+                  <thead><tr><th>Result</th><th>Language</th><th>Runtime</th><th>Submitted</th></tr></thead>
+                  <tbody>
+                    <tr><td style={{ color: 'var(--solved)', fontWeight: 500 }}>Accepted</td><td>Java</td><td>3 ms</td><td style={{ color: 'var(--tx-2)' }}>2 hours ago</td></tr>
+                    <tr><td style={{ color: 'var(--hard)', fontWeight: 500 }}>Wrong Answer</td><td>Java</td><td>—</td><td style={{ color: 'var(--tx-2)' }}>3 hours ago</td></tr>
+                    <tr><td style={{ color: 'var(--hard)', fontWeight: 500 }}>Wrong Answer</td><td>Java</td><td>—</td><td style={{ color: 'var(--tx-2)' }}>3 hours ago</td></tr>
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
-
-          {/* Explanation Panel */}
-          {explanationStatus !== 'not_needed' && (
-            <div className="mt-8 border-t border-border-default pt-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[20px]">auto_awesome</span>
-                AI Tutor Diagnosis
-              </h3>
-              
-              {explanationStatus === 'pending' ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-secondary rounded w-3/4"></div>
-                  <div className="h-4 bg-surface-secondary rounded w-full"></div>
-                  <div className="h-4 bg-surface-secondary rounded w-5/6"></div>
-                </div>
-              ) : explanationStatus === 'completed' && explanation ? (
-                <div className="space-y-4 text-sm">
-                  <div className="bg-error/10 border border-error/20 p-3 rounded">
-                    <strong className="text-error block mb-1">What went wrong:</strong>
-                    {explanation.what_went_wrong}
-                  </div>
-                  <div className="bg-surface-elevated border border-border-default p-3 rounded">
-                    <strong className="text-text-primary block mb-1">Why this approach fails:</strong>
-                    {explanation.why_approach_fails}
-                  </div>
-                  <div className="bg-primary/10 border border-primary/20 p-3 rounded">
-                    <strong className="text-primary block mb-1">Concept to review:</strong>
-                    {explanation.concept_to_review}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-on-surface-variant">Explanation failed to load.</div>
-              )}
-            </div>
-          )}
+          <div className="p-bottom">
+            <button><ThumbsUp /> <span className="count">69.7K</span></button>
+            <button><ThumbsDown /></button>
+            <button><MessageSquare /> <span className="count">2.1K</span></button>
+            <button onClick={() => toast.success('Bookmarked!')}><Star /></button>
+            <button onClick={() => toast.success('Link copied!')}><Share2 /></button>
+            <button><Info /></button>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--solved)' }}>● 1005 Online</span>
+          </div>
         </div>
-
-        {/* Right Panel: Editor */}
-        <div className="w-1/2 flex flex-col bg-[#1E1E2E]">
-          <div className="flex-1">
-            <Editor
+        <div
+          className="prob-div"
+          onMouseDown={(e) => { dragRef.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; e.preventDefault(); }}
+        />
+        <div className="prob-r" style={{ flex: 'none', width: `${100 - leftW - 0.3}%` }}>
+          <div className="ed-head">
+            <span className="ed-label"><FileCode /> Code</span>
+            <select className="lang-sel" value={lang} onChange={(e) => setLang(e.target.value)}>
+              {Object.keys(CODE).map((k) => <option key={k} value={k}>{LANG_NAMES[k]}</option>)}
+            </select>
+            <span className="ed-auto"><Lock /> Auto</span>
+            <div className="ed-icons">
+              <button className="ed-icon" title="Format" onClick={() => toast('Format — demo')}><Menu /></button>
+              <button className="ed-icon" title="Bookmark" onClick={() => toast('Bookmark — demo')}><Bookmark /></button>
+              <button className="ed-icon" title="Reset" onClick={() => setCode(CODE[lang])}><Undo /></button>
+              <button className="ed-icon" title="Fullscreen"><Maximize2 /></button>
+            </div>
+          </div>
+          <div className="ed-area">
+            <MonacoEditor
               height="100%"
-              defaultLanguage="python"
               theme="vs-dark"
+              language={MONACO_LANG[lang]}
               value={code}
-              onChange={(val) => setCode(val || '')}
+              onChange={(v) => setCode(v || '')}
               options={{
                 minimap: { enabled: false },
-                fontSize: 14,
-                fontFamily: "'Fira Code', monospace",
+                fontSize: 13,
+                fontFamily: "'Fira Code', 'Cascadia Code', monospace",
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 4,
+                padding: { top: 12 },
               }}
             />
           </div>
-          <div className="h-[200px] border-t border-border-default bg-surface-elevated p-4 overflow-y-auto">
-            <h3 className="font-bold mb-2">Execution Result</h3>
-            {verdict ? (
-              <div className={`p-3 rounded border ${verdict === 'accepted' ? 'bg-success/10 border-success/20 text-success' : 'bg-error/10 border-error/20 text-error'}`}>
-                {verdict}
-              </div>
-            ) : (
-              <div className="text-on-surface-variant text-sm">Submit your code to see results.</div>
-            )}
+          <div className="ed-status"><span>Restored from local</span><span>Ln 1, Col 1</span></div>
+          <div className="console">
+            <div className="con-tabs">
+              {([['tc', 'Testcase', ClipboardCheck], ['result', 'Test Result', Terminal]] as const).map(([k, l, Ic]) => (
+                <span key={k} className={`con-tab ${cTab === k ? 'act' : ''}`} onClick={() => setCTab(k)}><Ic /> {l}</span>
+              ))}
+            </div>
+            <div className="con-body">
+              {cTab === 'tc' ? (
+                <>
+                  <div className="cl">nums =</div>
+                  <div className="cv" style={{ color: 'var(--tx)' }}>[2, 7, 11, 15]</div>
+                  <div className="cl">target =</div>
+                  <div className="cv" style={{ color: 'var(--tx)' }}>9</div>
+                </>
+              ) : conBody}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Post-Solve Modal */}
-      {solved && nextProblemInfo && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-surface-elevated border border-border-default rounded-lg shadow-xl p-8 max-w-md w-full animate-fade-in">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined text-4xl">check_circle</span>
-              </div>
-              <h2 className="text-2xl font-bold text-text-primary mb-2">Problem Solved!</h2>
-              {masteryDelta !== null && (
-                <p className="text-success font-label-bold">
-                  +{masteryDelta.toFixed(2)} Mastery
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-surface p-4 rounded border border-border-default mb-6">
-              <p className="text-sm text-text-secondary mb-1">Up Next:</p>
-              <h3 className="font-bold text-lg mb-1">{nextProblemInfo.title}</h3>
-              <div className="flex gap-2 mt-2">
-                <span className={`px-2 py-0.5 rounded-full bg-${nextProblemInfo.difficulty || 'medium'}/10 text-${nextProblemInfo.difficulty || 'medium'} font-label-bold text-xs capitalize`}>
-                  {nextProblemInfo.difficulty || 'medium'}
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-surface-secondary text-xs">{nextProblemInfo.concept}</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => router.push('/problem/' + nextProblemInfo.id + (nextProblemInfo.hint_pre_expanded ? '?hint=1' : ''))}
-                className="w-full bg-primary text-text-primary font-bold py-3 px-4 rounded hover:bg-primary/90 transition-colors"
-              >
-                Proceed to Next Problem
-              </button>
-              <button 
-                onClick={() => router.push('/dashboard')}
-                className="w-full bg-surface-secondary text-text-primary font-bold py-3 px-4 rounded hover:bg-surface-secondary/80 transition-colors"
-              >
-                Return to Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
