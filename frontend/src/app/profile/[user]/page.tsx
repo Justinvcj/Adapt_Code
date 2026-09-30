@@ -47,6 +47,47 @@ export default function ProfilePage() {
             </div>
             <button className="btn btn-outline" style={{ width: '100%' }}><Edit size={14} /> Edit Profile</button>
             <div className="prof-gh"><GithubIcon /> {u.user}</div>
+            <div className="lang-card">
+              <h4>Languages</h4>
+              {[
+                { n: 'Java', c: 142 },
+                { n: 'Python 3', c: 38 },
+                { n: 'C++', c: 5 },
+                { n: 'JavaScript', c: 1 },
+              ].map((l) => (
+                <div key={l.n} className="lang-row">
+                  <span className="lang-pill">{l.n}</span>
+                  <span className="lang-count"><b style={{ color: 'var(--tx)' }}>{l.c}</b> problems solved</span>
+                </div>
+              ))}
+            </div>
+            <div className="lang-card">
+              <h4>Skills</h4>
+              <div className="skill-group" style={{ ['--dot' as string]: 'var(--hard)' }}>
+                <h5>Advanced</h5>
+                <div className="skill-chips">
+                  {[['Dynamic Programming', 6], ['Divide and Conquer', 2], ['Trie', 1]].map(([n, c]) => (
+                    <span key={n as string} className="skill-chip">{n}<span className="n">×{c}</span></span>
+                  ))}
+                </div>
+              </div>
+              <div className="skill-group" style={{ ['--dot' as string]: 'var(--med)' }}>
+                <h5>Intermediate</h5>
+                <div className="skill-chips">
+                  {[['Hash Table', 24], ['Math', 18], ['Two Pointers', 12], ['Binary Search', 9], ['Sorting', 8], ['Greedy', 7]].map(([n, c]) => (
+                    <span key={n as string} className="skill-chip">{n}<span className="n">×{c}</span></span>
+                  ))}
+                </div>
+              </div>
+              <div className="skill-group" style={{ ['--dot' as string]: 'var(--easy)' }}>
+                <h5>Fundamental</h5>
+                <div className="skill-chips">
+                  {[['Array', 62], ['String', 41], ['Linked List', 11], ['Recursion', 6], ['Simulation', 4]].map(([n, c]) => (
+                    <span key={n as string} className="skill-chip">{n}<span className="n">×{c}</span></span>
+                  ))}
+                </div>
+              </div>
+            </div>
             <div className="comm-stats">
               <h4>Community Stats</h4>
               {[
