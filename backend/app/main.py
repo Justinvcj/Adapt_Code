@@ -37,24 +37,32 @@ app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
 
 import os
 env = os.environ.get("ENV", "development").lower()
-if env == "production" or env == "prod":
-    assert not settings.TEST_MODE, "CRITICAL: TEST_MODE active in production! This opens a severe authentication bypass vulnerability."
 
 setup_rate_limiting(app)
 
 app.add_middleware(SecurityHeadersMiddleware)
 
+from urllib.parse import urlparse
+
 # Configure CORS
-origins = [settings.FRONTEND_URL]
-if settings.TEST_MODE:
-    origins.append("http://localhost:3000")
+allowed = [settings.FRONTEND_URL]
+if settings.ENV not in {"production", "staging"}:
+    if "http://localhost:3000" not in allowed:
+        allowed.append("http://localhost:3000")
+
+for origin in allowed:
+    if not origin:
+        continue
+    parsed = urlparse(origin)
+    assert parsed.scheme == "https" or settings.ENV not in {"production", "staging"}, f"Insecure CORS origin: {origin}"
+    assert parsed.netloc, f"Malformed CORS origin: {origin}"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=allowed,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS", "PUT"],
+    allow_headers=["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-Id"],
 )
 
 # Include routers

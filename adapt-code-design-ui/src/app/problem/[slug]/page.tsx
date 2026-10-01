@@ -34,11 +34,8 @@ export default function ProblemPage() {
 
   // Sync scroll + highlight
   const syncEditor = useCallback(() => {
-    if (hlRef.current) hlRef.current.innerHTML = highlight(code, lang);
-    if (lnRef.current) {
-      const lines = code.split('\n').length;
-      lnRef.current.innerHTML = Array.from({ length: lines }, (_, i) => `<span>${i + 1}</span>`).join('');
-    }
+    // We remove manual innerHTML to prevent React hydration / removeChild errors.
+    // React now strictly controls the highlighted pre tag via dangerouslySetInnerHTML in JSX.
   }, [code, lang]);
 
   useEffect(() => { syncEditor(); }, [syncEditor]);
@@ -200,11 +197,11 @@ export default function ProblemPage() {
           {/* Editor area */}
           <div className="flex-1 flex overflow-hidden relative bg-[#0a0a0c]">
             <div ref={lnRef} className="py-3 text-[var(--tx-3)] font-[var(--font-mono)] text-[13px] leading-[1.65] text-right select-none overflow-hidden min-w-[44px] shrink-0 border-r border-[var(--border)] [&>span]:block [&>span]:px-2 [&>span]:pl-1">
-              {Array.from({ length: lines }, (_, i) => <span key={i}>{i + 1}</span>)}
+              {Array.from({ length: code.split('\n').length || 1 }, (_, i) => <span key={i}>{i + 1}</span>)}
             </div>
             <div className="relative flex-1 overflow-hidden">
-              <pre ref={hlRef} className="absolute inset-0 p-3 font-[var(--font-mono)] text-[13px] leading-[1.65] whitespace-pre overflow-auto m-0 pointer-events-none text-[var(--tx)]" dangerouslySetInnerHTML={{ __html: highlight(code, lang) }} />
-              <textarea ref={taRef} className="relative z-[2] block w-full h-full p-3 font-[var(--font-mono)] text-[13px] leading-[1.65] bg-transparent text-transparent caret-[var(--tx)] resize-none whitespace-pre overflow-auto [tab-size:4] selection:bg-[rgba(94,106,210,0.25)]" spellCheck={false} value={code} onChange={(e) => setCode(e.target.value)} onScroll={handleScroll} onKeyDown={handleTab} />
+              <pre ref={hlRef} className="absolute inset-0 p-3 font-[var(--font-mono)] text-[13px] leading-[1.65] whitespace-pre overflow-hidden m-0 pointer-events-none text-[var(--tx)] [tab-size:4]" style={{ fontVariantLigatures: 'none' }} dangerouslySetInnerHTML={{ __html: highlight(code, lang) }} />
+              <textarea ref={taRef} className="absolute inset-0 z-[2] block w-full h-full p-3 font-[var(--font-mono)] text-[13px] leading-[1.65] bg-transparent text-transparent !text-transparent outline-none border-none caret-[var(--tx)] resize-none whitespace-pre overflow-auto [tab-size:4] selection:bg-[rgba(94,106,210,0.25)]" spellCheck={false} value={code} onChange={(e) => setCode(e.target.value)} onScroll={handleScroll} onKeyDown={handleTab} style={{ color: 'transparent', WebkitTextFillColor: 'transparent', fontVariantLigatures: 'none' }} />
             </div>
           </div>
 

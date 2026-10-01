@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
     PISTON_URL: str = os.environ.get("PISTON_URL", "http://localhost:2000")
     FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "")
-    TEST_MODE: bool = os.environ.get("TEST_MODE", "false").lower() == "true"
+    ENV: str = os.environ.get("ENV", "development")
+    TRUSTED_PROXY_CIDRS: str = os.environ.get("TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
 
     class Config:
         env_file = ".env"
@@ -17,4 +18,3 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-logger = logging.getLogger("uvicorn")

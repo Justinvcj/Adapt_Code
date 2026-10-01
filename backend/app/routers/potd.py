@@ -2,16 +2,17 @@ import hashlib
 from datetime import datetime
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
-from app.core.database import get_supabase
-from app.core.dependencies import get_current_user
+from app.core.database import get_supabase_admin, get_supabase_user
+from app.core.dependencies import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/api", tags=["potd"])
 
 
 @router.get("/problem/potd")
-async def get_potd(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def get_potd(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = user.user_id
     try:
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         res = supabase.table("problems").select(
             "problem_id, title, description, concept_tag, difficulty_level, hint_text"
         ).execute()
@@ -34,6 +35,6 @@ async def get_potd(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
         return {"status": "success", "data": potd}
         
     except Exception as e:
-        from app.core.config import logger
-        logger.error(f"POTD fetch failed: {e}")
+        from app.core.logging import logger
+        logger.error("operation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal error occurred.")
