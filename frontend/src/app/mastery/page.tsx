@@ -1,0 +1,109 @@
+"use client";
+import { useRouter } from 'next/navigation';
+import { Lock } from 'lucide-react';
+import Navbar from '@/components/adapt/Navbar';
+import Footer from '@/components/adapt/Footer';
+import { CONCEPTS, MOCK_MASTERY, CONCEPT_BY_ID } from '@/data/concepts';
+import toast from 'react-hot-toast';
+
+export default function MasteryPage() {
+  const router = useRouter();
+  const unlockedCount = Object.values(MOCK_MASTERY).filter((m) => m.unlocked).length;
+  const avgMastery = Object.values(MOCK_MASTERY).reduce((a, b) => a + b.mastery, 0) / 12;
+  const totalSolved = Object.values(MOCK_MASTERY).reduce((a, b) => a + b.solved, 0);
+
+  const C = 2 * Math.PI * 28;
+  const dash = C * avgMastery;
+
+  return (
+    <>
+      <Navbar active="mastery" />
+      <div className="land">
+        <main className="mast-main">
+          <header className="mast-head">
+            <div className="mast-head-text">
+              <h1>Mastery</h1>
+              <p>Twelve concepts, prerequisite-gated. Earn each ring to unlock what builds on top of it.</p>
+            </div>
+            <div className="mast-overall">
+              <div className="mast-overall-ring">
+                <svg viewBox="0 0 68 68" width="68" height="68">
+                  <defs>
+                    <linearGradient id="mo-g" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#ffb867" />
+                      <stop offset="100%" stopColor="#ffa116" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="6" />
+                  <circle cx="34" cy="34" r="28" fill="none" stroke="url(#mo-g)" strokeWidth="6"
+                    strokeLinecap="round" strokeDasharray={`${dash} 999`} />
+                </svg>
+                <div className="mast-overall-ring-pct">{Math.round(avgMastery * 100)}%</div>
+              </div>
+              <div style={{ display: 'flex', gap: 20 }}>
+                <div className="mast-overall-meta"><span>Unlocked</span><b>{unlockedCount}/12</b></div>
+                <div className="mast-overall-meta"><span>Solved</span><b>{totalSolved}</b></div>
+              </div>
+            </div>
+          </header>
+
+          <div className="mast-cat-grid">
+            {CONCEPTS.map((c) => {
+              const m = MOCK_MASTERY[c.id];
+              const Icon = c.icon;
+              const total = c.problems.easy + c.problems.medium + c.problems.hard;
+              const fillCls = !m.unlocked ? '' : m.mastery >= 0.75 ? 'done' : m.mastery < 0.4 ? 'weak' : '';
+              const blockedBy = c.prereqs.filter((p) => (MOCK_MASTERY[p]?.mastery ?? 0) < 0.5);
+
+              return (
+                <button
+                  key={c.id}
+                  id={c.id}
+                  className={`mast-tile ${m.unlocked ? '' : 'locked'}`}
+                  onClick={() => m.unlocked
+                    ? router.push(`/mastery/${c.id}`)
+                    : toast(`Locked — reach 50% in ${blockedBy.map((b) => CONCEPT_BY_ID[b].title).join(', ')}`)}
+                >
+                  <div className="mast-tile-head">
+                    <div className="mast-tile-icon">
+                      {m.unlocked
+                        ? <Icon size={22} color="var(--accent)" strokeWidth={1.75} />
+                        : <Lock size={20} color="var(--tx-3)" strokeWidth={1.75} />}
+                    </div>
+                    <div>
+                      <div className="mast-tile-title">{c.title}</div>
+                      <div className="mast-tile-short">{c.short}</div>
+                    </div>
+                  </div>
+
+                  <div className="mast-tile-bar">
+                    <div className={`mast-tile-fill ${fillCls}`} style={{ width: `${m.mastery * 100}%` }} />
+                  </div>
+
+                  <div className="mast-tile-meta">
+                    <div>
+                      <b>{m.solved}</b> / {total} solved · <b>{Math.round(m.mastery * 100)}%</b>
+                    </div>
+                    <div className="mast-tile-diff">
+                      <span className="d"><span className="dot e" />{c.problems.easy}</span>
+                      <span className="d"><span className="dot m" />{c.problems.medium}</span>
+                      <span className="d"><span className="dot h" />{c.problems.hard}</span>
+                    </div>
+                  </div>
+
+                  {!m.unlocked && blockedBy.length > 0 && (
+                    <div className="mast-tile-lock">
+                      <Lock size={11} />
+                      Unlock after {blockedBy.map((b) => CONCEPT_BY_ID[b].title).join(' & ')}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </main>
+        <Footer />
+      </div>
+    </>
+  );
+}

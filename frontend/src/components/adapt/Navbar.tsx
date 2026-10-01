@@ -38,11 +38,11 @@ export default function Navbar({ active, loggedIn = true }: { active?: string; l
             <span className="logo" style={{ background: 'linear-gradient(135deg,#ffb867,#ffa116)' }}>&lt;/&gt;</span> AdaptCode
           </Link>
           <div className="nav-links">
-            <Link className={`nav-link ${active === 'problems' ? 'act' : ''}`} href="/problems">Problems</Link>
-            <button className="nav-link" onClick={() => notify('Contest coming soon')}>Contest</button>
+            <Link className={`nav-link ${active === 'home' ? 'act' : ''}`} href="/">Home</Link>
+            <Link className={`nav-link ${active === 'mastery' ? 'act' : ''}`} href="/mastery">Mastery</Link>
+            <Link className={`nav-link ${active === 'graph' ? 'act' : ''}`} href="/graph">Graph</Link>
+            <Link className={`nav-link ${active === 'problems' ? 'act' : ''}`} href="/problems">Practice</Link>
             <button className="nav-link" onClick={() => notify('Discuss coming soon')}>Discuss</button>
-            <button className="nav-link" onClick={() => notify('Interview coming soon')}>Interview <span className="chev">▾</span></button>
-            <button className="nav-link" onClick={() => notify('Store coming soon')}>Store <span className="chev">▾</span></button>
           </div>
           <div className="nav-acts">
             <button className="nav-search" onClick={() => setSmOpen(true)}>
