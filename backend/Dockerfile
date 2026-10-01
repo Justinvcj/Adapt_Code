@@ -1,6 +1,6 @@
-FROM python:3.11-slim
+FROM python:3.11-slim AS runtime
 
-WORKDIR /app
+WORKDIR /srv
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -12,16 +12,13 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . .
+COPY app ./app
 
-# Create a non-root user
 RUN adduser --disabled-password --gecos "" appuser
-RUN chown -R appuser:appuser /app
+RUN chown -R appuser:appuser /srv
 USER appuser
 
 EXPOSE 8000

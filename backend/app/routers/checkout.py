@@ -1,32 +1,34 @@
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
-from app.core.database import get_supabase
-from app.core.dependencies import get_current_user, require_admin
+from app.core.database import get_supabase_admin, get_supabase_user
+from app.core.dependencies import get_current_user, CurrentUser, require_admin
 
 router = APIRouter(prefix="/api/checkout", tags=["checkout"])
 
 
 @router.post("/mock-upgrade")
-async def mock_upgrade(user_id: str = Depends(require_admin)) -> Dict[str, Any]:
+async def mock_upgrade(user: CurrentUser = Depends(require_admin)) -> Dict[str, Any]:
+    user_id = user.user_id
     """
     Mock endpoint to instantly upgrade a user to Pro tier without Stripe.
     """
     try:
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         res = supabase.table("users").update({"is_pro": True}).eq("user_id", user_id).execute()
         return {"status": "success", "message": "Successfully upgraded to AdaptCode Pro!"}
     except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Failed to upgrade user {user_id}: {e}")
+        from app.core.logging import logger
+        logger.error("operation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to process upgrade.")
 
 @router.get("/status")
-async def get_status(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def get_status(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = user.user_id
     """
     Check if the user is a Pro subscriber.
     """
     try:
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         res = supabase.table("users").select("is_pro").eq("user_id", user_id).execute()
         is_pro = False
         if res.data:

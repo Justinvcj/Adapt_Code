@@ -1,16 +1,17 @@
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
-from app.core.database import get_supabase
-from app.core.dependencies import get_current_user
+from app.core.database import get_supabase_admin, get_supabase_user
+from app.core.dependencies import get_current_user, CurrentUser
 from app.services.bkt import get_bkt_params
 from app.services.prerequisites import can_access_concept, PREREQUISITE_GRAPH
 
 router = APIRouter(prefix="/api", tags=["mastery"])
 
 @router.get("/mastery")
-async def get_mastery(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def get_mastery(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = user.user_id
     try:
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         mastery_res = supabase.table("mastery_scores").select("*").eq("student_id", user_id).execute()
         mastery_dict = {row['concept_tag']: float(row['mastery_probability']) for row in mastery_res.data}
         
@@ -42,8 +43,8 @@ async def get_mastery(user_id: str = Depends(get_current_user)) -> Dict[str, Any
             
         return {"status": "success", "data": result}
     except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Mastery fetch failed for user {user_id}: {e}")
+        from app.core.logging import logger
+        logger.error("operation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 from pydantic import BaseModel
@@ -52,10 +53,11 @@ class OnboardingRequest(BaseModel):
     mastered_concepts: list[str]
 
 @router.post("/onboarding/complete")
-async def complete_onboarding(req: OnboardingRequest, user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def complete_onboarding(req: OnboardingRequest, user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = user.user_id
     try:
         from app.services.prerequisites import MASTERY_THRESHOLD
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         
         records = []
         for c in req.mastered_concepts:
@@ -72,6 +74,6 @@ async def complete_onboarding(req: OnboardingRequest, user_id: str = Depends(get
             
         return {"status": "success", "message": "Onboarding completed successfully"}
     except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Onboarding failed for user {user_id}: {e}")
+        from app.core.logging import logger
+        logger.error("operation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal error occurred.")

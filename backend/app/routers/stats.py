@@ -1,8 +1,8 @@
 from typing import Dict, Any, List
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
-from app.core.database import get_supabase
-from app.core.dependencies import get_current_user
+from app.core.database import get_supabase_admin, get_supabase_user
+from app.core.dependencies import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/api", tags=["stats"])
 
@@ -29,10 +29,11 @@ def _compute_streak(events: List[Dict[str, Any]]) -> int:
     return streak
 
 @router.get("/stats")
-async def get_stats(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def get_stats(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = user.user_id
     try:
         # Total Solved
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         solved_res = supabase.table("session_events").select("problem_id").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
         total_solved = len(set(e["problem_id"] for e in solved_res.data)) if solved_res.data else 0
         
@@ -71,14 +72,15 @@ async def get_stats(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
             }
         }
     except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Stats fetch failed for user {user_id}: {e}")
+        from app.core.logging import logger
+        logger.error("operation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/stats/heatmap")
-async def get_heatmap(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def get_heatmap(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = user.user_id
     try:
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         events_res = supabase.table("session_events").select("timestamp").eq("student_id", user_id).execute()
         counts = {}
         if events_res.data:
@@ -90,17 +92,18 @@ async def get_heatmap(user_id: str = Depends(get_current_user)) -> Dict[str, Any
         data = [{"date": k, "count": v} for k, v in counts.items()]
         return {"status": "success", "data": data}
     except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Heatmap fetch failed for user {user_id}: {e}")
+        from app.core.logging import logger
+        logger.error("operation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/badges")
-async def get_badges(user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
+async def get_badges(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = user.user_id
     try:
         badges = []
         
         # Total Solved
-        supabase = get_supabase()
+        supabase = get_supabase_user(user.jwt)
         solved_res = supabase.table("session_events").select("problem_id").eq("student_id", user_id).eq("final_verdict", "Accepted").execute()
         unique_solved = len(set(e["problem_id"] for e in solved_res.data)) if solved_res.data else 0
         
@@ -130,6 +133,6 @@ async def get_badges(user_id: str = Depends(get_current_user)) -> Dict[str, Any]
             
         return {"status": "success", "data": badges}
     except Exception as e:
-        from app.core.config import logger
-        logger.error(f"Badges fetch failed for user {user_id}: {e}")
+        from app.core.logging import logger
+        logger.error("operation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal error occurred.")
