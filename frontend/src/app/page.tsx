@@ -75,7 +75,7 @@ export default function LandingPage() {
                       mastery={m.mastery}
                       solved={m.solved}
                       unlocked={m.unlocked}
-                      size={150}
+                      size={180}
                       onClick={() => m.unlocked
                         ? router.push(`/mastery#${c.id}`)
                         : toast('Locked — complete prerequisites first')}

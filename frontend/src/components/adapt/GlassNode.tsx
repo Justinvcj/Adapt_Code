@@ -17,8 +17,8 @@ type Props = {
  * The frosted glass look comes from backdrop-filter blur on the inner panel.
  */
 export default function GlassNode({ Icon, title, mastery, solved, unlocked, onClick, size = 140 }: Props) {
-  const RING_W = 9;                       // thick progress ring
-  const r      = size / 2 - RING_W / 2 - 4;
+  const RING_W = 13;                      // bold progress ring
+  const r      = size / 2 - RING_W / 2 - 3;
   const C      = 2 * Math.PI * r;
   const dash   = C * mastery;
   const pct    = Math.round(mastery * 100);
@@ -58,13 +58,13 @@ export default function GlassNode({ Icon, title, mastery, solved, unlocked, onCl
       <div className="glass-core">
         {unlocked ? (
           <>
-            <Icon size={size * 0.28} className="glass-icon" />
+            <Icon size={Math.round(size * 0.26)} className="glass-icon" strokeWidth={1.75} />
             <span className="glass-title">{title}</span>
-            <span className="glass-sub">{pct}% · {solved} solved</span>
+            <span className="glass-sub"><b>{pct}%</b> · {solved}</span>
           </>
         ) : (
           <>
-            <Lock size={size * 0.26} className="glass-lock" />
+            <Lock size={Math.round(size * 0.24)} className="glass-lock" strokeWidth={1.75} />
             <span className="glass-title">{title}</span>
             <span className="glass-sub">Locked</span>
           </>
