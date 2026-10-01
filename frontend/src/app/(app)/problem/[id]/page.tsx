@@ -6,10 +6,11 @@ import dynamic from 'next/dynamic';
 import {
   Menu, ChevronLeft, ChevronRight, Shuffle, Play, Check, FileText, Code2, Terminal,
   List, ThumbsUp, ThumbsDown, MessageSquare, Star, Share2, Info, Bookmark, Undo,
-  Maximize2, Settings, Grid3x3, Lock, ClipboardCheck, FileCode,
+  Maximize2, Settings, Grid3x3, Lock, ClipboardCheck, FileCode, Lightbulb,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CODE, LANG_NAMES } from '@/components/adapt/data';
+import HintsPanel from '@/components/adapt/HintsPanel';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -20,10 +21,23 @@ const MONACO_LANG: Record<string, string> = {
 export default function ProblemPage() {
   const params = useParams<{ id: string }>();
   const slug = params?.id || '';
-  const [pTab, setPTab] = useState<'desc' | 'editorial' | 'solutions' | 'submissions'>('desc');
+  const [pTab, setPTab] = useState<'desc' | 'hints' | 'editorial' | 'solutions' | 'submissions'>('desc');
+  useEffect(() => {
+    const h = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+    if (['desc', 'hints', 'editorial', 'solutions', 'submissions'].includes(h)) {
+      setPTab(h as typeof pTab);
+    }
+  }, []);
   const [cTab, setCTab] = useState<'tc' | 'result'>('tc');
   const [lang, setLang] = useState<string>('java');
   const [code, setCode] = useState<string>(CODE.java);
+  const [attemptCount, setAttemptCount] = useState(1);
+  const [compileErrors, setCompileErrors] = useState(0);
+  const [timeOnTask, setTimeOnTask] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTimeOnTask((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
   const [leftW, setLeftW] = useState(50);
   const [conBody, setConBody] = useState<React.ReactNode>(
     <>
@@ -68,6 +82,7 @@ export default function ProblemPage() {
   }
 
   const runCode = () => {
+    setAttemptCount((n) => n + 1);
     setCTab('result');
     setConBody(<div style={{ color: 'var(--tx-2)' }}>Running...</div>);
     setTimeout(() => {
@@ -112,7 +127,13 @@ export default function ProblemPage() {
       <div className="prob" ref={containerRef}>
         <div className="prob-l" style={{ width: `${leftW}%` }}>
           <div className="tabs">
-            {([['desc', 'Description', FileText], ['editorial', 'Editorial', List], ['solutions', 'Solutions', Code2], ['submissions', 'Submissions', Terminal]] as const).map(([k, l, Ic]) => (
+            {([
+              ['desc',        'Description',  FileText],
+              ['hints',       'Hints',        Lightbulb],
+              ['editorial',   'Editorial',    List],
+              ['solutions',   'Solutions',    Code2],
+              ['submissions', 'Submissions',  Terminal],
+            ] as const).map(([k, l, Ic]) => (
               <span key={k} className={`tab ${pTab === k ? 'act' : ''}`} onClick={() => setPTab(k)}><Ic /> {l}</span>
             ))}
           </div>
@@ -156,6 +177,17 @@ export default function ProblemPage() {
                   </div>
                 </div>
               </>
+            )}
+            {pTab === 'hints' && (
+              <HintsPanel
+                problemId="two-sum"
+                ctx={{
+                  attempt_count:        attemptCount,
+                  compile_errors:       compileErrors,
+                  time_on_task_seconds: timeOnTask,
+                  difficulty:           'Easy',
+                }}
+              />
             )}
             {pTab === 'solutions' && (
               <div style={{ padding: '4px 0' }}>
