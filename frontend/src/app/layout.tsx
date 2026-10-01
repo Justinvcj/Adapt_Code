@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
-const inter = Inter({
+const grotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: '--font-inter',
-  weight: ['400', '600', '700'],
+  variable: '--font-grotesk',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: '--font-jetbrains-mono',
-  weight: ['400'],
+  weight: ['400', '500'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${grotesk.variable} ${jetbrainsMono.variable} antialiased`}>
         <Toaster
           position="bottom-right"
           toastOptions={{
@@ -32,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               color: '#f7f8f8',
               border: '1px solid #34343a',
               fontSize: 13,
+              fontFamily: 'var(--font-grotesk)',
             },
           }}
         />

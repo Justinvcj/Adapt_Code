@@ -51,7 +51,7 @@ export default function LandingPage() {
                 <button className="btn btn-ghost" onClick={() => toast('Edit profile — Phase 4')}>
                   <Edit size={14} /> Edit
                 </button>
-                <button className="btn btn-learn" onClick={() => router.push(`/problem/two-sum`)}>
+                <button className="btn btn-learn" onClick={() => router.push('/learn')}>
                   <Play size={14} fill="currentColor" /> Learn
                 </button>
               </div>
@@ -75,7 +75,7 @@ export default function LandingPage() {
                       mastery={m.mastery}
                       solved={m.solved}
                       unlocked={m.unlocked}
-                      size={140}
+                      size={150}
                       onClick={() => m.unlocked
                         ? router.push(`/mastery#${c.id}`)
                         : toast('Locked — complete prerequisites first')}

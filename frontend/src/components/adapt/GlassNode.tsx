@@ -17,15 +17,17 @@ type Props = {
  * The frosted glass look comes from backdrop-filter blur on the inner panel.
  */
 export default function GlassNode({ Icon, title, mastery, solved, unlocked, onClick, size = 140 }: Props) {
-  const r      = size / 2 - 6;      // inner-ring radius
-  const C      = 2 * Math.PI * r;   // circumference
+  const RING_W = 9;                       // thick progress ring
+  const r      = size / 2 - RING_W / 2 - 4;
+  const C      = 2 * Math.PI * r;
   const dash   = C * mastery;
   const pct    = Math.round(mastery * 100);
-  const strokeColor = unlocked
-    ? mastery >= 0.75 ? 'var(--solved)'
-    : mastery >= 0.4  ? 'var(--accent)'
-    : 'var(--blue)'
-    : 'rgba(255,255,255,.1)';
+  const gradId = `gn-grad-${title.replace(/\s+/g, '-').toLowerCase()}`;
+  const stops  = unlocked
+    ? mastery >= 0.75 ? ['#2fe28a', '#27a644']
+    : mastery >= 0.4  ? ['#ffb867', '#ffa116']
+    : ['#828fff', '#5e6ad2']
+    : ['rgba(255,255,255,.08)', 'rgba(255,255,255,.08)'];
 
   return (
     <button
@@ -35,15 +37,21 @@ export default function GlassNode({ Icon, title, mastery, solved, unlocked, onCl
       aria-label={`${title} — ${pct}% mastery, ${solved} solved`}
     >
       <svg className="glass-rings" viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={stops[0]} />
+            <stop offset="100%" stopColor={stops[1]} />
+          </linearGradient>
+        </defs>
         {/* Outer thin ring */}
         <circle cx={size/2} cy={size/2} r={size/2 - 2} fill="none"
-          stroke="rgba(255,255,255,.08)" strokeWidth="1.5" />
+          stroke="rgba(255,255,255,.10)" strokeWidth="2" />
         {/* Inner track */}
         <circle cx={size/2} cy={size/2} r={r} fill="none"
-          stroke="rgba(255,255,255,.06)" strokeWidth="4" />
-        {/* Inner progress ring */}
+          stroke="rgba(255,255,255,.06)" strokeWidth={RING_W} />
+        {/* Inner progress ring — thick, gradient, rounded caps */}
         <circle cx={size/2} cy={size/2} r={r} fill="none"
-          stroke={strokeColor} strokeWidth="4" strokeLinecap="round"
+          stroke={`url(#${gradId})`} strokeWidth={RING_W} strokeLinecap="round"
           strokeDasharray={`${dash} ${C - dash}`}
           transform={`rotate(-90 ${size/2} ${size/2})`} />
       </svg>
