@@ -1,43 +1,41 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   variable: '--font-inter',
-  weight: ['400', '600', '700']
+  weight: ['400', '600', '700'],
 });
 
-const jetbrainsMono = JetBrains_Mono({ 
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: '--font-jetbrains-mono',
-  weight: ['400']
+  weight: ['400'],
 });
 
 export const metadata: Metadata = {
-  title: "AdaptCode Practice",
-  description: "Adaptive programming practice environment",
+  title: "AdaptCode — Learn by solving",
+  description: "A learning-first programming platform. Twelve concepts, prerequisite-gated progression, adaptive hints.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
-      <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
-      </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased min-h-screen flex flex-col`}>
-        <AuthProvider>
-          <Toaster position="bottom-right" toastOptions={{
-            style: { background: '#282A36', color: '#EFF1F6', border: '1px solid rgba(255, 255, 255, 0.08)' }
-          }} />
-          {children}
-        </AuthProvider>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: '#141516',
+              color: '#f7f8f8',
+              border: '1px solid #34343a',
+              fontSize: 13,
+            },
+          }}
+        />
+        {children}
       </body>
     </html>
   );
