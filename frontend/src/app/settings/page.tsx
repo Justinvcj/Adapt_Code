@@ -1,20 +1,29 @@
 "use client";
 import { useState } from 'react';
-import { User, Mail, Phone, Key } from 'lucide-react';
+import {
+  User, Mail, Phone, Key, GraduationCap, Palette, Target,
+  Lightbulb, Gauge, EyeOff, Eye,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/adapt/Navbar';
 import Sidebar from '@/components/adapt/Sidebar';
 import { GithubIcon } from '@/components/adapt/icons';
 import { USER } from '@/components/adapt/data';
+import { usePrefs } from '@/lib/profile-store';
 
-const TABS: [string, string][] = [
-  ['account', 'Account'], ['privacy', 'Privacy'], ['points', 'Points'],
-  ['orders', 'Orders'], ['notif', 'Notifications'], ['profile', 'Profile Settings'],
+type TabKey = 'account' | 'learning' | 'appearance' | 'notif' | 'privacy';
+
+const TABS: { k: TabKey; label: string; icon: typeof User }[] = [
+  { k: 'account',    label: 'Account',             icon: User          },
+  { k: 'learning',   label: 'Learning',            icon: GraduationCap },
+  { k: 'appearance', label: 'Appearance',          icon: Palette       },
+  { k: 'notif',      label: 'Notifications',       icon: Mail          },
+  { k: 'privacy',    label: 'Privacy',             icon: EyeOff        },
 ];
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState('account');
-  const label = TABS.find((t) => t[0] === tab)?.[1] || 'Settings';
+  const [tab, setTab] = useState<TabKey>('account');
+  const { prefs, update, reset } = usePrefs();
 
   return (
     <>
@@ -22,25 +31,26 @@ export default function SettingsPage() {
       <div className="app-wrap">
         <Sidebar active="settings" />
         <div className="set-wrap">
-          <div className="set-nav">
+          <nav className="set-nav">
             <h2>Settings</h2>
-            {TABS.map(([k, l]) => (
+            {TABS.map(({ k, label, icon: Ic }) => (
               <a key={k} className={`set-link ${tab === k ? 'act' : ''}`} onClick={() => setTab(k)}>
-                {l}{k === 'profile' ? ' ↗' : ''}
+                <Ic size={14} style={{ marginRight: 8, verticalAlign: -2 }} />
+                {label}
               </a>
             ))}
-          </div>
+          </nav>
           <div className="set-body">
-            {tab === 'account' ? (
+            {tab === 'account' && (
               <>
-                <h3>General</h3>
+                <h3>Account</h3>
                 <p className="set-sub">You can log in using your email, phone number, or AdaptCode ID.</p>
                 <div className="set-row"><div className="set-row-icon"><User /></div><div><div className="set-row-label">AdaptCode ID</div></div><div className="set-row-val">{USER.user}</div><div className="set-row-arrow">›</div></div>
                 <div className="set-row"><div className="set-row-icon"><Mail /></div><div><div className="set-row-label">Email</div></div><div className="set-row-val">23c****@drngpit.ac.in</div><div className="set-row-arrow">›</div></div>
-                <div className="set-row"><div className="set-row-icon"><Phone /></div><div><div className="set-row-label">Phone Number</div></div><div className="set-row-val"></div><div className="set-row-arrow">›</div></div>
+                <div className="set-row"><div className="set-row-icon"><Phone /></div><div><div className="set-row-label">Phone</div></div><div className="set-row-val">—</div><div className="set-row-arrow">›</div></div>
                 <div className="set-row"><div className="set-row-icon"><Key /></div><div><div className="set-row-label">Password</div></div><div className="set-row-val">••••••••</div><div className="set-row-arrow">›</div></div>
                 <div className="set-section">
-                  <h4>Social Accounts</h4>
+                  <h4>Social accounts</h4>
                   <p className="set-sub">Connect a social account to sign in to AdaptCode.</p>
                   <div className="social-row">
                     <div className="social-row-icon">
@@ -56,16 +66,171 @@ export default function SettingsPage() {
                   </div>
                   <div className="social-row">
                     <div className="social-row-icon"><GithubIcon size={18} /></div>
-                    <div className="social-row-name">Github</div>
+                    <div className="social-row-name">GitHub</div>
                     <button className="btn-disconnect" onClick={() => toast('Disconnect — demo')}>Disconnect</button>
                   </div>
                 </div>
               </>
-            ) : (
+            )}
+
+            {tab === 'learning' && (
               <>
-                <h3>{label}</h3>
-                <p className="set-sub">This section is available in the full version.</p>
-                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--tx-3)' }}>Settings content — demo only</div>
+                <h3>Learning</h3>
+                <p className="set-sub">How AdaptCode adapts to you.</p>
+
+                <div className="pref-group">
+                  <div className="pref-label">
+                    <Target size={14} /> Daily goal
+                    <span className="pref-help">How many problems per day you&apos;re aiming for.</span>
+                  </div>
+                  <div className="pref-chips">
+                    {[1, 3, 5, 10].map((n) => (
+                      <button
+                        key={n}
+                        className={`pref-chip ${prefs.daily_goal === n ? 'act' : ''}`}
+                        onClick={() => update({ daily_goal: n })}
+                      >
+                        {n} / day
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pref-group">
+                  <div className="pref-label">
+                    <Lightbulb size={14} /> Hint policy
+                    <span className="pref-help">When hints become available and how eagerly the UI surfaces them.</span>
+                  </div>
+                  <div className="pref-chips">
+                    {([
+                      ['strict',   'Strict',   'Only after you cross the thresholds'],
+                      ['standard', 'Standard', 'The default thresholds (recommended)'],
+                      ['eager',    'Eager',    'Surface hints sooner for easier practice'],
+                    ] as const).map(([v, label, desc]) => (
+                      <button
+                        key={v}
+                        className={`pref-chip pref-chip-wide ${prefs.hint_mode === v ? 'act' : ''}`}
+                        onClick={() => update({ hint_mode: v })}
+                      >
+                        <b>{label}</b><span>{desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pref-group">
+                  <div className="pref-label">
+                    <Gauge size={14} /> Default difficulty
+                    <span className="pref-help">Where the adaptive engine starts you for a new concept.</span>
+                  </div>
+                  <div className="pref-chips">
+                    {(['adaptive', 'Easy', 'Medium', 'Hard'] as const).map((d) => (
+                      <button
+                        key={d}
+                        className={`pref-chip ${prefs.default_difficulty === d ? 'act' : ''}`}
+                        onClick={() => update({ default_difficulty: d })}
+                      >
+                        {d === 'adaptive' ? 'Let AdaptCode choose' : d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pref-group">
+                  <div className="pref-label">
+                    <Eye size={14} /> Explanations
+                    <span className="pref-help">When to generate an AI explanation of your submission.</span>
+                  </div>
+                  <div className="pref-chips">
+                    {([
+                      ['on_wrong', 'On wrong answers'],
+                      ['always',   'Every submission'],
+                      ['never',    'Never'],
+                    ] as const).map(([v, label]) => (
+                      <button
+                        key={v}
+                        className={`pref-chip ${prefs.show_explanations === v ? 'act' : ''}`}
+                        onClick={() => update({ show_explanations: v })}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pref-foot">
+                  <button className="btn btn-ghost" onClick={() => { reset(); toast('Learning preferences reset'); }}>
+                    Reset to defaults
+                  </button>
+                  <span className="pref-saved">Changes save automatically</span>
+                </div>
+              </>
+            )}
+
+            {tab === 'appearance' && (
+              <>
+                <h3>Appearance</h3>
+                <p className="set-sub">Theme and motion preferences.</p>
+
+                <div className="pref-group">
+                  <div className="pref-label">
+                    <Palette size={14} /> Theme
+                    <span className="pref-help">Light theme is coming — dark is currently the only supported option.</span>
+                  </div>
+                  <div className="pref-chips">
+                    {(['dark', 'light'] as const).map((t) => (
+                      <button
+                        key={t}
+                        className={`pref-chip ${prefs.theme === t ? 'act' : ''}`}
+                        onClick={() => { if (t === 'light') toast('Light theme — coming soon'); else update({ theme: t }); }}
+                      >
+                        {t[0].toUpperCase() + t.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pref-group">
+                  <label className="pref-toggle">
+                    <input
+                      type="checkbox"
+                      checked={prefs.reduced_motion}
+                      onChange={(e) => update({ reduced_motion: e.target.checked })}
+                    />
+                    <span>
+                      <b>Reduce motion</b>
+                      <small>Dim transitions and disable logo pulse animations.</small>
+                    </span>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {tab === 'notif' && (
+              <>
+                <h3>Notifications</h3>
+                <p className="set-sub">Choose what you hear from AdaptCode.</p>
+                <div className="pref-group">
+                  <label className="pref-toggle"><input type="checkbox" defaultChecked /> <span><b>Daily streak reminder</b><small>Pings you if you haven&apos;t solved anything by evening.</small></span></label>
+                  <label className="pref-toggle"><input type="checkbox" defaultChecked /> <span><b>Weekly summary</b><small>Mastery deltas, longest streak, top concept each week.</small></span></label>
+                  <label className="pref-toggle"><input type="checkbox" /> <span><b>Contest reminders</b><small>Day-of ping for contests you joined.</small></span></label>
+                </div>
+              </>
+            )}
+
+            {tab === 'privacy' && (
+              <>
+                <h3>Privacy</h3>
+                <p className="set-sub">Who can see what you do on AdaptCode.</p>
+                <div className="pref-group">
+                  <label className="pref-toggle"><input type="checkbox" defaultChecked /> <span><b>Public profile</b><small>Your handle and solved count appear on the leaderboard.</small></span></label>
+                  <label className="pref-toggle"><input type="checkbox" /> <span><b>Public submissions</b><small>Others can see your code on accepted problems.</small></span></label>
+                  <label className="pref-toggle"><input type="checkbox" defaultChecked /> <span><b>Help improve AdaptCode</b><small>Share anonymised attempt patterns to tune the engine.</small></span></label>
+                </div>
+                <div className="pref-foot" style={{ marginTop: 16 }}>
+                  <button className="btn btn-ghost" style={{ color: 'var(--hard)' }} onClick={() => toast('Export — coming soon')}>Export my data</button>
+                  <button className="btn btn-ghost" style={{ color: 'var(--hard)' }} onClick={() => toast('Account deletion — coming soon')}>Delete account</button>
+                </div>
               </>
             )}
           </div>

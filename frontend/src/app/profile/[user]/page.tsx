@@ -1,12 +1,17 @@
 "use client";
-import { useMemo } from 'react';
-import { Edit } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Edit, Globe } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
-import { GithubIcon } from '@/components/adapt/icons';
+import Avatar from '@/components/adapt/Avatar';
+import EditProfileModal from '@/components/adapt/EditProfileModal';
+import { GithubIcon, TwitterIcon, LinkedinIcon } from '@/components/adapt/icons';
 import { USER } from '@/components/adapt/data';
+import { useProfile } from '@/lib/profile-store';
 
 export default function ProfilePage() {
   const u = USER;
+  const { profile, update } = useProfile();
+  const [editOpen, setEditOpen] = useState(false);
   const total = u.solved.easy + u.solved.medium + u.solved.hard;
   const allTotal = u.total.easy + u.total.medium + u.total.hard;
   const C = 2 * Math.PI * 55;
@@ -35,18 +40,49 @@ export default function ProfilePage() {
       <div className="prof">
         <div className="prof-top">
           <div className="prof-left">
-            <div className="prof-ava">JV</div>
+            <Avatar
+              name={profile.name}
+              dataUri={profile.avatar_data_uri}
+              editable
+              size={100}
+              onChange={(uri) => update({ avatar_data_uri: uri })}
+              className="prof-ava"
+            />
             <div>
-              <div className="prof-name">{u.name}</div>
-              <div className="prof-user">{u.user}</div>
+              <div className="prof-name">{profile.name}</div>
+              <div className="prof-user">@{profile.display_name}</div>
             </div>
+            {profile.bio && <div className="prof-bio">{profile.bio}</div>}
             <div className="prof-rank">Rank <b>{u.rank.toLocaleString()}</b></div>
             <div className="prof-follow">
               <span><b>{u.following}</b> Following</span> |
               <span><b>{u.followers}</b> Followers</span>
             </div>
-            <button className="btn btn-outline" style={{ width: '100%' }}><Edit size={14} /> Edit Profile</button>
-            <div className="prof-gh"><GithubIcon /> {u.user}</div>
+            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => setEditOpen(true)}>
+              <Edit size={14} /> Edit Profile
+            </button>
+            <div className="prof-socials">
+              {profile.socials.github && (
+                <a className="prof-social" href={`https://github.com/${profile.socials.github}`} target="_blank" rel="noreferrer">
+                  <GithubIcon /> {profile.socials.github}
+                </a>
+              )}
+              {profile.socials.linkedin && (
+                <a className="prof-social" href={`https://linkedin.com/in/${profile.socials.linkedin}`} target="_blank" rel="noreferrer">
+                  <LinkedinIcon size={14} /> {profile.socials.linkedin}
+                </a>
+              )}
+              {profile.socials.twitter && (
+                <a className="prof-social" href={`https://x.com/${profile.socials.twitter}`} target="_blank" rel="noreferrer">
+                  <TwitterIcon size={14} /> @{profile.socials.twitter}
+                </a>
+              )}
+              {profile.socials.website && (
+                <a className="prof-social" href={profile.socials.website} target="_blank" rel="noreferrer">
+                  <Globe size={14} /> Website
+                </a>
+              )}
+            </div>
             <div className="lang-card">
               <h4>Languages</h4>
               {[
@@ -201,6 +237,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />
     </>
   );
 }
