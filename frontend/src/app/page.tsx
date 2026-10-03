@@ -10,8 +10,9 @@ import SubmissionHeatmap from '@/components/adapt/SubmissionHeatmap';
 import Footer from '@/components/adapt/Footer';
 import Avatar from '@/components/adapt/Avatar';
 import EditProfileModal from '@/components/adapt/EditProfileModal';
+import Onboarding from '@/components/adapt/Onboarding';
 import { USER } from '@/components/adapt/data';
-import { CONCEPTS, MOCK_MASTERY } from '@/data/concepts';
+import { CONCEPTS, MOCK_MASTERY, CONCEPT_BY_ID } from '@/data/concepts';
 import { useProfile } from '@/lib/profile-store';
 import toast from 'react-hot-toast';
 
@@ -49,7 +50,7 @@ export default function LandingPage() {
                   <span className="pill">Rank #{USER.rank.toLocaleString()}</span>
                   <span className="pill learn">
                     <Sparkles size={11} style={{ marginRight: 4, verticalAlign: -1 }} />
-                    Learning: {weakestUnlocked.title}
+                    Up next · {weakestUnlocked.title}
                   </span>
                 </div>
                 {profile.bio && <div className="hero-bio">{profile.bio}</div>}
@@ -80,6 +81,11 @@ export default function LandingPage() {
               <div className="mastery-grid">
                 {CONCEPTS.map((c) => {
                   const m = MOCK_MASTERY[c.id];
+                  const isRecommended = c.id === weakestUnlocked.id;
+                  // Unlock progress for locked nodes = avg mastery of prereqs against the 0.5 threshold
+                  const unlockProgress = m.unlocked ? 0
+                    : c.prereqs.length === 0 ? 0
+                    : Math.min(1, c.prereqs.reduce((a, p) => a + (MOCK_MASTERY[p]?.mastery ?? 0), 0) / c.prereqs.length / 0.5);
                   return (
                     <GlassNode
                       key={c.id}
@@ -88,10 +94,12 @@ export default function LandingPage() {
                       mastery={m.mastery}
                       solved={m.solved}
                       unlocked={m.unlocked}
+                      recommended={isRecommended}
+                      unlockProgress={unlockProgress}
                       size={180}
                       onClick={() => m.unlocked
                         ? router.push(`/mastery#${c.id}`)
-                        : toast('Locked — complete prerequisites first')}
+                        : toast(`Unlock after reaching 50 % in ${c.prereqs.map((p) => CONCEPT_BY_ID[p].title).join(' & ')}`)}
                     />
                   );
                 })}
@@ -107,6 +115,7 @@ export default function LandingPage() {
         <Footer />
       </div>
       <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />
+      <Onboarding />
     </>
   );
 }

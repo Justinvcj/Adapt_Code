@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lightbulb, Lock, Unlock, Sparkles, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -11,14 +11,19 @@ import {
 type Props = {
   problemId: string;
   ctx: HintCtx;
+  onRevealedChange?: (revealed: HintTier[]) => void;
 };
 
 const ORDER: HintTier[] = ['nudge', 'scaffold', 'near_solution'];
 
-export default function HintsPanel({ problemId, ctx }: Props) {
+export default function HintsPanel({ problemId, ctx, onRevealedChange }: Props) {
   const data = getHints(problemId);
   const [revealed, setRevealed] = useState<Set<HintTier>>(new Set());
   const [confirmTier, setConfirmTier] = useState<HintTier | null>(null);
+
+  useEffect(() => {
+    onRevealedChange?.(ORDER.filter((t) => revealed.has(t)));
+  }, [revealed, onRevealedChange]);
 
   if (!data) {
     return (

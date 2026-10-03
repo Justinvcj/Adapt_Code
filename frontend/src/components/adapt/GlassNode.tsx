@@ -1,5 +1,5 @@
 "use client";
-import { Lock, type LucideIcon } from 'lucide-react';
+import { Lock, Check, type LucideIcon } from 'lucide-react';
 
 type Props = {
   Icon: LucideIcon;
@@ -9,6 +9,8 @@ type Props = {
   unlocked: boolean;
   onClick?: () => void;
   size?: number;          // outer size in px
+  recommended?: boolean;  // the engine's current "up next" concept
+  unlockProgress?: number;// 0..1 — how close a locked node is to unlocking
 };
 
 /**
@@ -16,7 +18,8 @@ type Props = {
  * whose stroke-dasharray fills clockwise to represent mastery (0..1).
  * The frosted glass look comes from backdrop-filter blur on the inner panel.
  */
-export default function GlassNode({ Icon, title, mastery, solved, unlocked, onClick, size = 140 }: Props) {
+export default function GlassNode({ Icon, title, mastery, solved, unlocked, onClick, size = 140, recommended = false, unlockProgress = 0 }: Props) {
+  const mastered = unlocked && mastery >= 0.9;
   const RING_W = 13;                      // bold progress ring
   const r      = size / 2 - RING_W / 2 - 3;
   const C      = 2 * Math.PI * r;
@@ -31,11 +34,12 @@ export default function GlassNode({ Icon, title, mastery, solved, unlocked, onCl
 
   return (
     <button
-      className={`glass-node ${unlocked ? '' : 'locked'}`}
+      className={`glass-node ${unlocked ? '' : 'locked'} ${recommended ? 'recommended' : ''} ${mastered ? 'mastered' : ''}`}
       style={{ width: size, height: size }}
       onClick={onClick}
-      aria-label={`${title} — ${pct}% mastery, ${solved} solved`}
+      aria-label={`${title} — ${unlocked ? `${pct}% mastery, ${solved} solved` : `locked, ${Math.round(unlockProgress * 100)}% toward unlock`}${recommended ? ' (recommended next)' : ''}`}
     >
+      {recommended && <span className="glass-rec-pill">Up next</span>}
       <svg className="glass-rings" viewBox={`0 0 ${size} ${size}`} aria-hidden>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
@@ -59,14 +63,21 @@ export default function GlassNode({ Icon, title, mastery, solved, unlocked, onCl
         {unlocked ? (
           <>
             <Icon size={Math.round(size * 0.26)} className="glass-icon" strokeWidth={1.75} />
+            {mastered && <span className="glass-check"><Check size={10} strokeWidth={3} /></span>}
             <span className="glass-title">{title}</span>
-            <span className="glass-sub"><b>{pct}%</b> · {solved}</span>
+            <span className="glass-sub">
+              {mastered ? 'Mastered' : <><b>{pct}%</b> · {solved}</>}
+            </span>
           </>
         ) : (
           <>
             <Lock size={Math.round(size * 0.24)} className="glass-lock" strokeWidth={1.75} />
             <span className="glass-title">{title}</span>
-            <span className="glass-sub">Locked</span>
+            <span className="glass-sub">
+              {unlockProgress > 0
+                ? <><b>{Math.round(unlockProgress * 100)}%</b> toward unlock</>
+                : 'Earn prerequisites first'}
+            </span>
           </>
         )}
       </div>

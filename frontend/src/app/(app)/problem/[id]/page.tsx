@@ -7,10 +7,13 @@ import {
   Menu, ChevronLeft, ChevronRight, Shuffle, Play, Check, FileText, Code2, Terminal,
   List, ThumbsUp, ThumbsDown, MessageSquare, Star, Share2, Info, Bookmark, Undo,
   Maximize2, Settings, Grid3x3, Lock, ClipboardCheck, FileCode, Lightbulb,
+  KeyRound, Timer, Sparkles, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CODE, LANG_NAMES } from '@/components/adapt/data';
 import HintsPanel from '@/components/adapt/HintsPanel';
+import ExplanationPanel, { type Submission } from '@/components/adapt/ExplanationPanel';
+import SubmissionsList from '@/components/adapt/SubmissionsList';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -21,10 +24,10 @@ const MONACO_LANG: Record<string, string> = {
 export default function ProblemPage() {
   const params = useParams<{ id: string }>();
   const slug = params?.id || '';
-  const [pTab, setPTab] = useState<'desc' | 'hints' | 'editorial' | 'solutions' | 'submissions'>('desc');
+  const [pTab, setPTab] = useState<'desc' | 'hints' | 'explanation' | 'solutions' | 'submissions'>('desc');
   useEffect(() => {
     const h = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-    if (['desc', 'hints', 'editorial', 'solutions', 'submissions'].includes(h)) {
+    if (['desc', 'hints', 'explanation', 'solutions', 'submissions'].includes(h)) {
       setPTab(h as typeof pTab);
     }
   }, []);
@@ -34,6 +37,9 @@ export default function ProblemPage() {
   const [attemptCount, setAttemptCount] = useState(1);
   const [compileErrors, setCompileErrors] = useState(0);
   const [timeOnTask, setTimeOnTask] = useState(0);
+  const [hintsRevealed, setHintsRevealed] = useState<('nudge'|'scaffold'|'near_solution')[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const latest = submissions[0];
   useEffect(() => {
     const t = setInterval(() => setTimeOnTask((s) => s + 1), 1000);
     return () => clearInterval(t);
@@ -99,8 +105,33 @@ export default function ProblemPage() {
   };
 
   const submitCode = () => {
-    toast('Submitting...');
-    setTimeout(() => toast.success('Accepted — 3ms runtime, beats 94.7%'), 1400);
+    toast('Submitting…');
+    setTimeout(() => {
+      // 70% accepted on first try after at least 2 runs, otherwise simulate failure path
+      const willPass = attemptCount >= 2 && Math.random() > 0.3;
+      const runtime  = Math.floor(2 + Math.random() * 8);
+      const mult     = hintsRevealed.includes('near_solution') ? 0.4
+                     : hintsRevealed.includes('scaffold')      ? 0.7
+                     : hintsRevealed.includes('nudge')         ? 0.9
+                     : 1.0;
+      const sub: Submission = {
+        id:       `${Date.now()}`,
+        at:       Date.now(),
+        verdict:  willPass ? 'Accepted' : 'Wrong Answer',
+        runtime_ms: willPass ? runtime : null,
+        language: LANG_NAMES[lang] ?? lang,
+        hints:    [...hintsRevealed],
+        mastery_delta: willPass ? 0.08 * mult : 0,
+      };
+      setSubmissions((prev) => [sub, ...prev]);
+      if (willPass) {
+        toast.success(`Accepted · ${runtime} ms`);
+        setPTab('explanation');
+      } else {
+        toast.error('Wrong answer — tap Explanation');
+        setPTab('explanation');
+      }
+    }, 1200);
   };
 
   return (
@@ -128,52 +159,61 @@ export default function ProblemPage() {
         <div className="prob-l" style={{ width: `${leftW}%` }}>
           <div className="tabs">
             {([
-              ['desc',        'Description',  FileText],
-              ['hints',       'Hints',        Lightbulb],
-              ['editorial',   'Editorial',    List],
-              ['solutions',   'Solutions',    Code2],
-              ['submissions', 'Submissions',  Terminal],
+              ['desc',         'Description',   FileText],
+              ['hints',        'Hints',         Lightbulb],
+              ['explanation',  'Explanation',   Sparkles],
+              ['solutions',    'Solutions',     Code2],
+              ['submissions',  'Submissions',   Terminal],
             ] as const).map(([k, l, Ic]) => (
-              <span key={k} className={`tab ${pTab === k ? 'act' : ''}`} onClick={() => setPTab(k)}><Ic /> {l}</span>
+              <span
+                key={k}
+                className={`tab ${pTab === k ? 'act' : ''} ${k === 'explanation' && latest ? 'tab-dot' : ''}`}
+                onClick={() => setPTab(k)}
+              >
+                <Ic /> {l}
+                {k === 'submissions' && submissions.length > 0 && <span className="tab-count">{submissions.length}</span>}
+              </span>
             ))}
           </div>
           <div className="prob-l-body">
             {pTab === 'desc' && (
               <>
                 <div className="p-title">
-                  <h2>1. Two Sum</h2>
-                  <span className="p-solved-tag"><Check size={14} /> Solved</span>
+                  <h2>Pair sum lookup</h2>
                 </div>
                 <div className="p-tags">
                   <span className="p-tag diff-e">Easy</span>
-                  <span className="p-tag">🏷 Topics</span>
-                  <span className="p-tag">🏢 Companies</span>
-                  <span className="p-tag">💡 Hint</span>
+                  <Link href="/mastery/hashing" className="p-tag concept"><KeyRound size={11} /> Hashing · teaches</Link>
+                  <span className="p-tag">⏱ ~ 8 min</span>
                 </div>
                 <div className="p-desc">
-                  <p>You are given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p>
-                  <p>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the <em>same</em> element twice.</p>
-                  <p>You can return the answer in any order.</p>
+                  <p><strong>The task.</strong> Walk an array of whole numbers and find the two positions whose values add up to a given <code>target</code>. Return those two positions.</p>
+                  <p><strong>What&apos;s promised.</strong> There is always exactly one valid pair in the input. You can&apos;t use the same position twice.</p>
+                  <p><strong>Order of your answer.</strong> Either index order works — the grader accepts <code>[i, j]</code> and <code>[j, i]</code> as the same answer.</p>
                   <div className="p-ex">
-                    <strong>Example 1:</strong>
-                    {'Input: nums = [2,7,11,15], target = 9\nOutput: [0,1]\nExplanation: Because nums[0] + nums[1] == 9, we return [0, 1].'}
+                    <strong>Walkthrough 1</strong>
+                    {'nums   = [2, 7, 11, 15]\ntarget = 9\n→ positions [0, 1]  because 2 + 7 = 9'}
                   </div>
                   <div className="p-ex">
-                    <strong>Example 2:</strong>
-                    {'Input: nums = [3,2,4], target = 6\nOutput: [1,2]'}
+                    <strong>Walkthrough 2</strong>
+                    {'nums   = [3, 2, 4]\ntarget = 6\n→ positions [1, 2]  because 2 + 4 = 6'}
                   </div>
                   <div className="p-ex">
-                    <strong>Example 3:</strong>
-                    {'Input: nums = [3,3], target = 6\nOutput: [0,1]'}
+                    <strong>Walkthrough 3 — same value twice</strong>
+                    {'nums   = [3, 3]\ntarget = 6\n→ positions [0, 1]  (the two 3s are at different positions, so this is allowed)'}
                   </div>
                   <div className="p-constraints">
-                    <h4>Constraints:</h4>
+                    <h4>Limits</h4>
                     <ul>
-                      <li>2 ≤ nums.length ≤ 10<sup>4</sup></li>
-                      <li>-10<sup>9</sup> ≤ nums[i] ≤ 10<sup>9</sup></li>
-                      <li>-10<sup>9</sup> ≤ target ≤ 10<sup>9</sup></li>
-                      <li>Only one valid answer exists.</li>
+                      <li>2 to 10 000 values in <code>nums</code></li>
+                      <li>Each value fits in a signed 32-bit integer</li>
+                      <li><code>target</code> fits in a signed 32-bit integer</li>
+                      <li>A valid pair is guaranteed; one, and only one, exists</li>
                     </ul>
+                  </div>
+                  <div className="p-teachbox">
+                    <div className="p-teachbox-head"><Lightbulb size={13} /> Why this problem is here</div>
+                    <p>The brute-force answer is a double loop, which runs in O(n²). The point of this problem is to notice that you can replace the inner loop with a hash-map lookup — turning the whole thing into one pass over the array. That trade (space for time, with a map) is the floor of the Hashing concept.</p>
                   </div>
                 </div>
               </>
@@ -187,6 +227,14 @@ export default function ProblemPage() {
                   time_on_task_seconds: timeOnTask,
                   difficulty:           'Easy',
                 }}
+                onRevealedChange={setHintsRevealed}
+              />
+            )}
+            {pTab === 'explanation' && (
+              <ExplanationPanel
+                latest={latest}
+                onGoToHints={() => setPTab('hints')}
+                hintsRevealed={hintsRevealed}
               />
             )}
             {pTab === 'solutions' && (
@@ -208,31 +256,16 @@ export default function ProblemPage() {
                 ))}
               </div>
             )}
-            {pTab === 'editorial' && (
-              <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--tx-2)' }}>Editorial content — demo only</div>
-            )}
             {pTab === 'submissions' && (
-              <div style={{ padding: '4px 0' }}>
-                <h3 style={{ fontSize: 14, marginBottom: 12 }}>Your Submissions</h3>
-                <table className="tbl">
-                  <thead><tr><th>Result</th><th>Language</th><th>Runtime</th><th>Submitted</th></tr></thead>
-                  <tbody>
-                    <tr><td style={{ color: 'var(--solved)', fontWeight: 500 }}>Accepted</td><td>Java</td><td>3 ms</td><td style={{ color: 'var(--tx-2)' }}>2 hours ago</td></tr>
-                    <tr><td style={{ color: 'var(--hard)', fontWeight: 500 }}>Wrong Answer</td><td>Java</td><td>—</td><td style={{ color: 'var(--tx-2)' }}>3 hours ago</td></tr>
-                    <tr><td style={{ color: 'var(--hard)', fontWeight: 500 }}>Wrong Answer</td><td>Java</td><td>—</td><td style={{ color: 'var(--tx-2)' }}>3 hours ago</td></tr>
-                  </tbody>
-                </table>
-              </div>
+              <SubmissionsList submissions={submissions} />
             )}
           </div>
           <div className="p-bottom">
-            <button><ThumbsUp /> <span className="count">69.7K</span></button>
-            <button><ThumbsDown /></button>
-            <button><MessageSquare /> <span className="count">2.1K</span></button>
-            <button onClick={() => toast.success('Bookmarked!')}><Star /></button>
-            <button onClick={() => toast.success('Link copied!')}><Share2 /></button>
-            <button><Info /></button>
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--solved)' }}>● 1005 Online</span>
+            <span className="p-session-stat"><Timer size={13} /> This session · <b>{Math.floor(timeOnTask / 60)}m {timeOnTask % 60}s</b></span>
+            <span className="p-session-stat">Attempt <b>{attemptCount}</b></span>
+            <span className="p-session-stat">Compile errors <b>{compileErrors}</b></span>
+            <button className="p-bottom-action" onClick={() => toast.success('Bookmarked')} title="Save for later"><Star size={14} /></button>
+            <button className="p-bottom-action" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success('Link copied'); }} title="Copy link"><Share2 size={14} /></button>
           </div>
         </div>
         <div

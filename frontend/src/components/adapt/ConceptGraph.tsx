@@ -48,7 +48,14 @@ function curvePath(a: Pos, b: Pos): string {
 
 export default function ConceptGraph() {
   const pos = useMemo(computeLayout, []);
-  const [hoverNode, setHoverNode] = useState<ConceptId | null>(null);
+  // Default-select the weakest unlocked concept so the sidecard isn't empty on load
+  const initialHover = useMemo<ConceptId | null>(() => {
+    const unlocked = CONCEPTS.filter((c) => MOCK_MASTERY[c.id].unlocked);
+    if (!unlocked.length) return null;
+    return unlocked.sort((a, b) => MOCK_MASTERY[a.id].mastery - MOCK_MASTERY[b.id].mastery)[0].id;
+  }, []);
+  const [hoverNode, setHoverNode] = useState<ConceptId | null>(initialHover);
+  const [pinnedNode, setPinnedNode] = useState<ConceptId | null>(initialHover);
   const [hoverEdge, setHoverEdge] = useState<EdgeKey | null>(null);
 
   const hoverEdgeInfo = hoverEdge ? (() => {
@@ -69,6 +76,12 @@ export default function ConceptGraph() {
 
   return (
     <div className="cg-wrap">
+      <div className="cg-legend">
+        <span><i className="dot earned" /> Mastered</span>
+        <span><i className="dot progress" /> In progress</span>
+        <span><i className="dot weak" /> Low mastery</span>
+        <span><i className="dot locked" /> Locked</span>
+      </div>
       <svg className="cg-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="cg-edge" x1="0" y1="0" x2="0" y2="1">
@@ -156,7 +169,8 @@ export default function ConceptGraph() {
                 opacity={dim ? 0.35 : 1}
                 style={{ transition: 'opacity .18s' }}
                 onMouseEnter={() => setHoverNode(c.id)}
-                onMouseLeave={() => setHoverNode(null)}
+                onMouseLeave={() => setHoverNode(pinnedNode)}
+                onClick={() => setPinnedNode(c.id)}
               >
                 {/* Glass fill */}
                 <circle r={NODE_R - 2} fill="url(#cg-node-glass)" stroke="rgba(255,255,255,.08)" strokeWidth="1" />

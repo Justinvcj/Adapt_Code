@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import {
   User, Mail, Phone, Key, GraduationCap, Palette, Target,
-  Lightbulb, Gauge, EyeOff, Eye,
+  Lightbulb, Gauge, EyeOff, Eye, Bell,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/adapt/Navbar';
-import Sidebar from '@/components/adapt/Sidebar';
+import Footer from '@/components/adapt/Footer';
 import { GithubIcon } from '@/components/adapt/icons';
 import { USER } from '@/components/adapt/data';
 import { usePrefs } from '@/lib/profile-store';
@@ -17,7 +17,7 @@ const TABS: { k: TabKey; label: string; icon: typeof User }[] = [
   { k: 'account',    label: 'Account',             icon: User          },
   { k: 'learning',   label: 'Learning',            icon: GraduationCap },
   { k: 'appearance', label: 'Appearance',          icon: Palette       },
-  { k: 'notif',      label: 'Notifications',       icon: Mail          },
+  { k: 'notif',      label: 'Notifications',       icon: Bell          },
   { k: 'privacy',    label: 'Privacy',             icon: EyeOff        },
 ];
 
@@ -28,8 +28,7 @@ export default function SettingsPage() {
   return (
     <>
       <Navbar active="settings" />
-      <div className="app-wrap">
-        <Sidebar active="settings" />
+      <div className="land">
         <div className="set-wrap">
           <nav className="set-nav">
             <h2>Settings</h2>
@@ -235,6 +234,7 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
+        <Footer />
       </div>
     </>
   );
