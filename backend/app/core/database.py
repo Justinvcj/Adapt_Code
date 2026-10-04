@@ -13,3 +13,7 @@ def get_supabase_user(jwt: str) -> Client:
     client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
     client.postgrest.auth(jwt)
     return client
+
+# Backwards-compat alias used by internal services (bkt, gemini) that run
+# without a user JWT and need admin-level access.
+get_supabase = get_supabase_admin
