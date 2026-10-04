@@ -7,6 +7,9 @@ import Navbar from '@/components/adapt/Navbar';
 import Sidebar from '@/components/adapt/Sidebar';
 import Calendar from '@/components/adapt/Calendar';
 import { PROBLEMS, TAGS } from '@/components/adapt/data';
+import { PROBLEM_LIST } from '@/data/problems';
+
+const SLUG_BY_ID: Record<number, string> = PROBLEM_LIST.reduce((acc, p) => { acc[p.id] = p.slug; return acc; }, {} as Record<number, string>);
 
 export default function ProblemsPage() {
   const [search, setSearch] = useState('');
@@ -80,7 +83,7 @@ export default function ProblemsPage() {
                       <td>{p.st === 'solved' ? <span className="solved-icon">✓</span> : p.st === 'attempted' ? <span className="attempted-icon">○</span> : ''}</td>
                       <td style={{ color: 'var(--tx-2)' }}>{p.id}.</td>
                       <td className="t-link">
-                        <Link href={`/problem/${p.id === 1 ? 'two-sum' : 'coming-soon'}`} style={{ color: 'inherit' }}>{p.title}</Link>
+                        <Link href={`/problem/${SLUG_BY_ID[p.id] ?? 'coming-soon'}`} style={{ color: 'inherit' }}>{p.title}</Link>
                       </td>
                       <td>{p.acc}%</td>
                       <td><span className={`diff diff-${dc}`}>{p.diff}</span></td>

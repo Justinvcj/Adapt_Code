@@ -10,7 +10,9 @@ import {
   KeyRound, Timer, Sparkles, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { CODE, LANG_NAMES } from '@/components/adapt/data';
+import { LANG_NAMES } from '@/components/adapt/data';
+import { PROBLEM_BANK } from '@/data/problems';
+import { CONCEPT_BY_ID } from '@/data/concepts';
 import HintsPanel from '@/components/adapt/HintsPanel';
 import ExplanationPanel, { type Submission } from '@/components/adapt/ExplanationPanel';
 import SubmissionsList from '@/components/adapt/SubmissionsList';
@@ -24,6 +26,8 @@ const MONACO_LANG: Record<string, string> = {
 export default function ProblemPage() {
   const params = useParams<{ id: string }>();
   const slug = params?.id || '';
+  const problem = PROBLEM_BANK[slug];
+  const concept = problem ? CONCEPT_BY_ID[problem.concept] : undefined;
   const [pTab, setPTab] = useState<'desc' | 'hints' | 'explanation' | 'solutions' | 'submissions'>('desc');
   useEffect(() => {
     const h = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
@@ -33,7 +37,8 @@ export default function ProblemPage() {
   }, []);
   const [cTab, setCTab] = useState<'tc' | 'result'>('tc');
   const [lang, setLang] = useState<string>('java');
-  const [code, setCode] = useState<string>(CODE.java);
+  const starter = (l: string) => problem?.starter[l as 'java' | 'python' | 'javascript' | 'cpp'] ?? '';
+  const [code, setCode] = useState<string>(starter('java'));
   const [attemptCount, setAttemptCount] = useState(1);
   const [compileErrors, setCompileErrors] = useState(0);
   const [timeOnTask, setTimeOnTask] = useState(0);
@@ -45,18 +50,22 @@ export default function ProblemPage() {
     return () => clearInterval(t);
   }, []);
   const [leftW, setLeftW] = useState(50);
+  const defaultInput = problem?.defaultTestcase.input ?? {};
+  const defaultExpected = problem?.defaultTestcase.expected ?? '';
   const [conBody, setConBody] = useState<React.ReactNode>(
     <>
-      <div className="cl">nums =</div>
-      <div className="cv" style={{ color: 'var(--tx)' }}>[2, 7, 11, 15]</div>
-      <div className="cl">target =</div>
-      <div className="cv" style={{ color: 'var(--tx)' }}>9</div>
+      {Object.entries(defaultInput).map(([k, v]) => (
+        <div key={k}>
+          <div className="cl">{k} =</div>
+          <div className="cv" style={{ color: 'var(--tx)' }}>{v}</div>
+        </div>
+      ))}
     </>
   );
   const dragRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setCode(CODE[lang] || ''); }, [lang]);
+  useEffect(() => { setCode(starter(lang)); }, [lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
@@ -71,16 +80,18 @@ export default function ProblemPage() {
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
   }, []);
 
-  if (slug !== 'two-sum') {
+  if (!problem) {
     return (
       <>
         <div className="prob-nav">
-          <Link href="/" className="logo" style={{ marginRight: 4 }}>&lt;/&gt;</Link>
+          <Link href="/" className="prob-nav-logo" style={{ marginRight: 4 }}>
+            <img src="/logo.webp" alt="" width={22} height={22} />
+          </Link>
           <Link className="pn-item" href="/problems"><Menu /> Problem List</Link>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-h))', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ fontSize: 16 }}>Problem Not Available</h2>
-          <p style={{ color: 'var(--tx-2)', fontSize: 13 }}>Only Two Sum is loaded in this demo.</p>
+          <p style={{ color: 'var(--tx-2)', fontSize: 13 }}>This problem is in the catalogue but not in the practice bank yet.</p>
           <Link className="btn btn-outline" href="/problems"><ChevronLeft /> Back to Problems</Link>
         </div>
       </>
@@ -92,12 +103,13 @@ export default function ProblemPage() {
     setCTab('result');
     setConBody(<div style={{ color: 'var(--tx-2)' }}>Running...</div>);
     setTimeout(() => {
+      const inputLine = Object.entries(defaultInput).map(([k, v]) => `${k} = ${v}`).join(', ');
       setConBody(
         <>
           <div style={{ color: 'var(--solved)', fontWeight: 600, marginBottom: 8 }}>✓ All test cases passed</div>
-          <div className="cl">Input</div><div className="cv">nums = [2, 7, 11, 15], target = 9</div>
-          <div className="cl">Output</div><div className="cv" style={{ color: 'var(--tx)' }}>[0, 1]</div>
-          <div className="cl">Expected</div><div className="cv" style={{ color: 'var(--tx)' }}>[0, 1]</div>
+          <div className="cl">Input</div><div className="cv">{inputLine}</div>
+          <div className="cl">Output</div><div className="cv" style={{ color: 'var(--tx)' }}>{defaultExpected}</div>
+          <div className="cl">Expected</div><div className="cv" style={{ color: 'var(--tx)' }}>{defaultExpected}</div>
         </>
       );
       toast.success('All test cases passed');
@@ -137,11 +149,15 @@ export default function ProblemPage() {
   return (
     <>
       <div className="prob-nav">
-        <Link href="/" className="logo" style={{ marginRight: 10 }}>&lt;/&gt;</Link>
-        <Link className="pn-item" href="/mastery"><Menu size={14} /> All concepts</Link>
-        <Link className="pn-item pn-item-concept" href="/mastery/hashing">
-          <KeyRound size={13} /> Hashing
+        <Link href="/" className="prob-nav-logo" style={{ marginRight: 10 }}>
+          <img src="/logo.webp" alt="" width={22} height={22} />
         </Link>
+        <Link className="pn-item" href="/mastery"><Menu size={14} /> All concepts</Link>
+        {concept && (
+          <Link className="pn-item pn-item-concept" href={`/mastery/${concept.id}`}>
+            <KeyRound size={13} /> {concept.title}
+          </Link>
+        )}
         <div className="pn-right">
           <button className="pn-run" onClick={runCode} title="Run against the visible testcase (Ctrl/Cmd+Enter)">
             <Play size={12} fill="currentColor" /> Run
@@ -184,53 +200,45 @@ export default function ProblemPage() {
             {pTab === 'desc' && (
               <>
                 <div className="p-title">
-                  <h2>Pair sum lookup</h2>
+                  <h2>{problem.title}</h2>
                 </div>
                 <div className="p-tags">
-                  <span className="p-tag diff-e">Easy</span>
-                  <Link href="/mastery/hashing" className="p-tag concept"><KeyRound size={11} /> Hashing · teaches</Link>
-                  <span className="p-tag">⏱ ~ 8 min</span>
+                  <span className={`p-tag diff-${problem.difficulty === 'Easy' ? 'e' : problem.difficulty === 'Medium' ? 'm' : 'h'}`}>{problem.difficulty}</span>
+                  {concept && (
+                    <Link href={`/mastery/${concept.id}`} className="p-tag concept">
+                      <KeyRound size={11} /> {concept.title} · teaches
+                    </Link>
+                  )}
                 </div>
                 <div className="p-desc">
-                  <p><strong>The task.</strong> Walk an array of whole numbers and find the two positions whose values add up to a given <code>target</code>. Return those two positions.</p>
-                  <p><strong>What&apos;s promised.</strong> There is always exactly one valid pair in the input. You can&apos;t use the same position twice.</p>
-                  <p><strong>Order of your answer.</strong> Either index order works — the grader accepts <code>[i, j]</code> and <code>[j, i]</code> as the same answer.</p>
-                  <div className="p-ex">
-                    <strong>Walkthrough 1</strong>
-                    {'nums   = [2, 7, 11, 15]\ntarget = 9\n→ positions [0, 1]  because 2 + 7 = 9'}
-                  </div>
-                  <div className="p-ex">
-                    <strong>Walkthrough 2</strong>
-                    {'nums   = [3, 2, 4]\ntarget = 6\n→ positions [1, 2]  because 2 + 4 = 6'}
-                  </div>
-                  <div className="p-ex">
-                    <strong>Walkthrough 3 — same value twice</strong>
-                    {'nums   = [3, 3]\ntarget = 6\n→ positions [0, 1]  (the two 3s are at different positions, so this is allowed)'}
-                  </div>
+                  <p>{problem.description}</p>
+                  {problem.examples.map((ex, i) => (
+                    <div className="p-ex" key={i}>
+                      <strong>Example {i + 1}</strong>
+                      {`${ex.input}\n→ ${ex.output}${ex.explanation ? `\n(${ex.explanation})` : ''}`}
+                    </div>
+                  ))}
                   <div className="p-constraints">
-                    <h4>Limits</h4>
-                    <ul>
-                      <li>2 to 10 000 values in <code>nums</code></li>
-                      <li>Each value fits in a signed 32-bit integer</li>
-                      <li><code>target</code> fits in a signed 32-bit integer</li>
-                      <li>A valid pair is guaranteed; one, and only one, exists</li>
-                    </ul>
+                    <h4>Constraints</h4>
+                    <ul>{problem.constraints.map((c, i) => <li key={i}>{c}</li>)}</ul>
                   </div>
-                  <div className="p-teachbox">
-                    <div className="p-teachbox-head"><Lightbulb size={13} /> Why this problem is here</div>
-                    <p>The brute-force answer is a double loop, which runs in O(n²). The point of this problem is to notice that you can replace the inner loop with a hash-map lookup — turning the whole thing into one pass over the array. That trade (space for time, with a map) is the floor of the Hashing concept.</p>
-                  </div>
+                  {concept && (
+                    <div className="p-teachbox">
+                      <div className="p-teachbox-head"><Lightbulb size={13} /> Why this problem is here</div>
+                      <p>{concept.long}</p>
+                    </div>
+                  )}
                 </div>
               </>
             )}
             {pTab === 'hints' && (
               <HintsPanel
-                problemId="two-sum"
+                problemId={problem.slug}
                 ctx={{
                   attempt_count:        attemptCount,
                   compile_errors:       compileErrors,
                   time_on_task_seconds: timeOnTask,
-                  difficulty:           'Easy',
+                  difficulty:           problem.difficulty,
                 }}
                 onRevealedChange={setHintsRevealed}
               />
@@ -238,6 +246,7 @@ export default function ProblemPage() {
             {pTab === 'explanation' && (
               <ExplanationPanel
                 latest={latest}
+                concept={problem.concept}
                 onGoToHints={() => setPTab('hints')}
                 hintsRevealed={hintsRevealed}
               />
@@ -281,14 +290,14 @@ export default function ProblemPage() {
           <div className="ed-head">
             <span className="ed-label"><FileCode size={14} /> Code</span>
             <select className="lang-sel" value={lang} onChange={(e) => setLang(e.target.value)}>
-              {Object.keys(CODE).map((k) => <option key={k} value={k}>{LANG_NAMES[k]}</option>)}
+              {Object.keys(problem.starter).map((k) => <option key={k} value={k}>{LANG_NAMES[k]}</option>)}
             </select>
             <span className="ed-auto"><Lock size={11} /> Autosaved</span>
             <div className="ed-icons">
               <button
                 className="ed-icon"
                 title="Reset to starter code"
-                onClick={() => { setCode(CODE[lang]); toast('Reset to starter code'); }}
+                onClick={() => { setCode(starter(lang)); toast('Reset to starter code'); }}
               ><Undo size={14} /></button>
             </div>
           </div>
@@ -321,10 +330,12 @@ export default function ProblemPage() {
             <div className="con-body">
               {cTab === 'tc' ? (
                 <>
-                  <div className="cl">nums =</div>
-                  <div className="cv" style={{ color: 'var(--tx)' }}>[2, 7, 11, 15]</div>
-                  <div className="cl">target =</div>
-                  <div className="cv" style={{ color: 'var(--tx)' }}>9</div>
+                  {Object.entries(defaultInput).map(([k, v]) => (
+                    <div key={k}>
+                      <div className="cl">{k} =</div>
+                      <div className="cv" style={{ color: 'var(--tx)' }}>{v}</div>
+                    </div>
+                  ))}
                 </>
               ) : conBody}
             </div>

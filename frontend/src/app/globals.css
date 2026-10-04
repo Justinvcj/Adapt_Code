@@ -247,6 +247,8 @@ ul,ol { list-style:none; }
 /* Problem page */
 .prob-nav{display:flex;align-items:center;height:var(--nav-h);padding:0 12px;background:var(--bg-sf);border-bottom:1px solid var(--border);gap:4px}
 .prob-nav .logo{width:28px;height:28px;border-radius:6px;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#010102;font-family:var(--mono);cursor:pointer;box-shadow:0 2px 8px rgba(var(--accent-rgb),.3)}
+.prob-nav-logo{display:flex;align-items:center;justify-content:center;width:28px;height:28px;cursor:pointer}
+.prob-nav-logo img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(var(--accent-rgb),.35))}
 .pn-item{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:var(--r);font-size:13px;color:var(--tx-1);cursor:pointer;transition:all var(--t)}
 .pn-item:hover{background:var(--bg-hover);color:var(--tx)}
 .pn-item svg{width:16px;height:16px}
@@ -1050,6 +1052,14 @@ ul,ol { list-style:none; }
 .expl-link:hover{color:var(--blue-h)}
 
 .expl-hints-used{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:var(--r);background:rgba(255,161,22,.08);border:1px solid rgba(255,161,22,.2);font-size:12px;color:var(--accent);align-self:flex-start;margin-top:4px}
+.expl-sibling-list{list-style:none;margin:10px 0 4px;padding:0;display:flex;flex-direction:column;gap:6px}
+.expl-sibling-list a{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:var(--r);background:var(--bg-sf);border:1px solid var(--border);color:var(--tx);font-size:13px;transition:border-color var(--t),background var(--t)}
+.expl-sibling-list a:hover{border-color:rgba(var(--accent-rgb),.5);background:var(--bg-hover)}
+.expl-sibling-title{font-weight:500}
+.expl-sibling-diff{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+.expl-sibling-diff.diff-e{background:rgba(39,166,68,.14);color:var(--easy)}
+.expl-sibling-diff.diff-m{background:rgba(255,161,22,.14);color:var(--med)}
+.expl-sibling-diff.diff-h{background:rgba(255,45,85,.14);color:var(--hard)}
 
 /* Submissions list */
 .subs{padding:4px 0}

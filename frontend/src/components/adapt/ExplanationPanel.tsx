@@ -1,6 +1,9 @@
 "use client";
+import Link from 'next/link';
 import { Lightbulb, Sparkles, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { TIER_LABEL, type HintTier } from '@/data/hints';
+import { CONCEPT_BY_ID, type ConceptId } from '@/data/concepts';
+import { CONCEPT_TEACHING, PROBLEMS_BY_CONCEPT, PROBLEM_BANK } from '@/data/problems';
 
 export type Submission = {
   id: string;
@@ -14,16 +17,21 @@ export type Submission = {
 
 type Props = {
   latest?: Submission;
+  concept: ConceptId;
   hintsRevealed: HintTier[];
   onGoToHints: () => void;
 };
 
 /**
  * Explanation panel — the post-submit teaching moment.
- * Three sections: what went wrong, why the approach fails, what to review.
- * On accepted, pat on the back + what the mastery multiplier settled at.
+ * Teaching copy is driven by the problem's concept so every concept speaks
+ * in its own voice instead of the generic hashing lesson.
  */
-export default function ExplanationPanel({ latest, hintsRevealed, onGoToHints }: Props) {
+export default function ExplanationPanel({ latest, concept, hintsRevealed, onGoToHints }: Props) {
+  const c = CONCEPT_BY_ID[concept];
+  const teaching = CONCEPT_TEACHING[concept];
+  const sibling = (PROBLEMS_BY_CONCEPT[concept] ?? []).slice(0, 3);
+
   if (!latest) {
     return (
       <div className="expl-empty">
@@ -42,7 +50,7 @@ export default function ExplanationPanel({ latest, hintsRevealed, onGoToHints }:
           <div>
             <h3>Accepted · {latest.runtime_ms ?? '—'} ms</h3>
             <p>
-              Mastery for <b>Hashing</b> went up by <b>{(latest.mastery_delta * 100).toFixed(1)} pts</b>
+              Mastery for <b>{c?.title ?? concept}</b> went up by <b>{(latest.mastery_delta * 100).toFixed(1)} pts</b>
               {hintsRevealed.length > 0 && (
                 <> (multiplier applied for {hintsRevealed.length} hint{hintsRevealed.length > 1 ? 's' : ''})</>
               )}
@@ -52,22 +60,37 @@ export default function ExplanationPanel({ latest, hintsRevealed, onGoToHints }:
         </div>
 
         <section className="expl-card">
-          <h4>What your solution did well</h4>
-          <p>You used a hash map to look up the complement of each number as you walked the array. That turns the problem into one pass, O(n) time, O(n) space. Clean trade.</p>
+          <h4>What this problem rehearsed</h4>
+          <p>{teaching.idiom}</p>
         </section>
 
         <section className="expl-card">
           <h4>Where to go next</h4>
-          <p>Hashing patterns show up again in Sliding Window and Longest Consecutive Sequence. The lookup-by-key habit you just built is the same primitive — different shape.</p>
-          <a className="btn btn-ghost btn-sm expl-link" onClick={onGoToHints}>
-            See similar problems <ArrowRight size={12} />
-          </a>
+          <p>The <b>{teaching.nextTopic}</b> concept builds directly on this one. If you want more reps on {c?.title ?? concept} first, these problems share the same idea in a different shape:</p>
+          {sibling.length > 0 && (
+            <ul className="expl-sibling-list">
+              {sibling.map((slug) => {
+                const p = PROBLEM_BANK[slug];
+                if (!p) return null;
+                return (
+                  <li key={slug}>
+                    <Link href={`/problem/${slug}`}>
+                      <span className="expl-sibling-title">{p.title}</span>
+                      <span className={`expl-sibling-diff diff-${p.difficulty === 'Easy' ? 'e' : p.difficulty === 'Medium' ? 'm' : 'h'}`}>{p.difficulty}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <Link className="btn btn-ghost btn-sm expl-link" href={`/mastery/${concept}`}>
+            Go to {c?.title ?? concept} <ArrowRight size={12} />
+          </Link>
         </section>
       </div>
     );
   }
 
-  // Any failed verdict — the real teaching moment
   const problemText = {
     'Wrong Answer':   'The grader expected a different output.',
     'Runtime Error':  'Your code crashed before finishing.',
@@ -88,17 +111,17 @@ export default function ExplanationPanel({ latest, hintsRevealed, onGoToHints }:
       <section className="expl-card">
         <div className="expl-card-head">
           <span className="expl-chip">1</span>
-          <h4>What went wrong</h4>
+          <h4>What usually goes wrong here</h4>
         </div>
-        <p>Your code returned <code>[0, 1]</code> for <code>nums = [3, 2, 4], target = 6</code>. The grader expected <code>[1, 2]</code>. Your loop started matching the first number it saw against itself; the complement check needs to look at numbers you&apos;ve already *passed*, not at <code>i</code>.</p>
+        <p>{teaching.commonMistake}</p>
       </section>
 
       <section className="expl-card">
         <div className="expl-card-head">
           <span className="expl-chip">2</span>
-          <h4>Why that approach doesn&apos;t work</h4>
+          <h4>The idea this problem rehearses</h4>
         </div>
-        <p>A single-pass lookup needs a store of "numbers I have seen so far". If you insert the current number into the map <em>before</em> checking for its complement, you&apos;ll find the number itself and declare a false match. The order has to be: check for the complement first, then insert.</p>
+        <p>{teaching.idiom}</p>
       </section>
 
       <section className="expl-card">
@@ -106,10 +129,15 @@ export default function ExplanationPanel({ latest, hintsRevealed, onGoToHints }:
           <span className="expl-chip">3</span>
           <h4>What to review</h4>
         </div>
-        <p>Hashing — specifically the <b>one-pass lookup</b> idiom. The pattern is: iterate, derive the key you&apos;re looking for from the current element, probe the map, then insert. Try the first two problems in <b>Hashing</b> on the Mastery page to lock it in.</p>
-        <a className="btn btn-ghost btn-sm expl-link" onClick={onGoToHints}>
-          Reveal a hint <ArrowRight size={12} />
-        </a>
+        <p>Open the <b>{c?.title ?? concept}</b> concept and work through its first problems — the shape of the idea becomes obvious once you&apos;ve seen it in two different problems.</p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-ghost btn-sm expl-link" onClick={onGoToHints}>
+            Reveal a hint <ArrowRight size={12} />
+          </button>
+          <Link className="btn btn-ghost btn-sm expl-link" href={`/mastery/${concept}`}>
+            Open {c?.title ?? concept} <ArrowRight size={12} />
+          </Link>
+        </div>
       </section>
 
       {hintsRevealed.length > 0 && (
