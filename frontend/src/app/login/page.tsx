@@ -4,12 +4,16 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { GithubIcon } from '@/components/adapt/icons';
+import { useAuth } from '@/lib/auth-context';
+import { ApiError, ApiOffline, API_ENABLED } from '@/lib/api';
 
 type Mode = 'signin' | 'signup';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, register } = useAuth();
   const [mode, setMode] = useState<Mode>('signin');
+  const [busy, setBusy] = useState(false);
   const done = (msg: string) => { toast.success(msg); router.push('/'); };
 
   const copy = mode === 'signin'
@@ -76,27 +80,55 @@ export default function LoginPage() {
 
           <form
             className="auth-form"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              done(mode === 'signin' ? 'Signed in' : 'Account created');
+              if (busy) return;
+              const fd = new FormData(e.currentTarget);
+              const email = String(fd.get('email') || '').trim();
+              const password = String(fd.get('password') || '');
+              const name = String(fd.get('name') || '').trim();
+              // Offline / preview mode: no backend, keep the demo flow
+              if (!API_ENABLED) {
+                done(mode === 'signin' ? 'Signed in (demo)' : 'Account created (demo)');
+                return;
+              }
+              setBusy(true);
+              try {
+                if (mode === 'signin') await login(email, password);
+                else await register(email, password, name || undefined);
+                done(mode === 'signin' ? 'Signed in' : 'Account created');
+              } catch (err) {
+                if (err instanceof ApiOffline) {
+                  done(mode === 'signin' ? 'Signed in (demo)' : 'Account created (demo)');
+                } else if (err instanceof ApiError) {
+                  const msg = typeof err.detail === 'string' ? err.detail : (mode === 'signin' ? 'Invalid email or password' : 'Could not create account');
+                  toast.error(msg);
+                } else {
+                  toast.error('Network error — try again');
+                }
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             {mode === 'signup' && (
               <div className="l-field">
                 <label>Your name</label>
-                <input type="text" placeholder="e.g. Justin Varghese" required />
+                <input name="name" type="text" placeholder="e.g. Justin Varghese" required />
               </div>
             )}
             <div className="l-field">
               <label>Email</label>
-              <input type="email" placeholder="you@example.com" required />
+              <input name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
             </div>
             <div className="l-field">
               <label>Password</label>
               <input
+                name="password"
                 type="password"
                 placeholder={mode === 'signup' ? 'at least 8 characters' : ''}
                 minLength={8}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 required
               />
             </div>
@@ -108,8 +140,9 @@ export default function LoginPage() {
             <button
               type="submit"
               className="btn btn-primary auth-submit"
+              disabled={busy}
             >
-              {mode === 'signin' ? 'Sign in' : 'Create account'}
+              {busy ? (mode === 'signin' ? 'Signing in…' : 'Creating account…') : (mode === 'signin' ? 'Sign in' : 'Create account')}
             </button>
           </form>
 

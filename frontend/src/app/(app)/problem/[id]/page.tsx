@@ -16,6 +16,7 @@ import { CONCEPT_BY_ID } from '@/data/concepts';
 import HintsPanel from '@/components/adapt/HintsPanel';
 import ExplanationPanel, { type Submission } from '@/components/adapt/ExplanationPanel';
 import SubmissionsList from '@/components/adapt/SubmissionsList';
+import { problemsAPI, API_ENABLED, ApiError, ApiOffline } from '@/lib/api';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -116,34 +117,76 @@ export default function ProblemPage() {
     }, 800);
   };
 
-  const submitCode = () => {
-    toast('Submitting…');
-    setTimeout(() => {
-      // 70% accepted on first try after at least 2 runs, otherwise simulate failure path
-      const willPass = attemptCount >= 2 && Math.random() > 0.3;
-      const runtime  = Math.floor(2 + Math.random() * 8);
-      const mult     = hintsRevealed.includes('near_solution') ? 0.4
-                     : hintsRevealed.includes('scaffold')      ? 0.7
-                     : hintsRevealed.includes('nudge')         ? 0.9
-                     : 1.0;
+  // Map backend verdicts (snake_case) to the UI's display verdicts.
+  const VERDICT_UI: Record<string, Submission['verdict']> = {
+    accepted: 'Accepted',
+    wrong_answer: 'Wrong Answer',
+    runtime_error: 'Runtime Error',
+    compile_error: 'Compile Error',
+    tle: 'TLE',
+  };
+
+  const simulateSubmission = (): Submission => {
+    const willPass = attemptCount >= 2 && Math.random() > 0.3;
+    const runtime  = Math.floor(2 + Math.random() * 8);
+    const mult     = hintsRevealed.includes('near_solution') ? 0.4
+                   : hintsRevealed.includes('scaffold')      ? 0.7
+                   : hintsRevealed.includes('nudge')         ? 0.9
+                   : 1.0;
+    return {
+      id: `${Date.now()}`,
+      at: Date.now(),
+      verdict: willPass ? 'Accepted' : 'Wrong Answer',
+      runtime_ms: willPass ? runtime : null,
+      language: LANG_NAMES[lang] ?? lang,
+      hints: [...hintsRevealed],
+      mastery_delta: willPass ? 0.08 * mult : 0,
+    };
+  };
+
+  const applySubmission = (sub: Submission) => {
+    setSubmissions((prev) => [sub, ...prev]);
+    setPTab('explanation');
+    if (sub.verdict === 'Accepted') toast.success(`Accepted · ${sub.runtime_ms ?? '—'} ms`);
+    else toast.error(`${sub.verdict} — tap Explanation`);
+  };
+
+  const submitCode = async () => {
+    if (!problem) return;
+    const t = toast.loading('Submitting…');
+    // Offline / no backend: keep the simulator.
+    if (!API_ENABLED) {
+      setTimeout(() => { toast.dismiss(t); applySubmission(simulateSubmission()); }, 900);
+      return;
+    }
+    try {
+      const res = await problemsAPI.submit({
+        problem_id: problem.slug,
+        code,
+        language: lang,
+      });
+      toast.dismiss(t);
       const sub: Submission = {
-        id:       `${Date.now()}`,
-        at:       Date.now(),
-        verdict:  willPass ? 'Accepted' : 'Wrong Answer',
-        runtime_ms: willPass ? runtime : null,
+        id: res.event_id,
+        at: Date.now(),
+        verdict: VERDICT_UI[res.verdict] ?? 'Wrong Answer',
+        runtime_ms: res.runtime_ms,
         language: LANG_NAMES[lang] ?? lang,
-        hints:    [...hintsRevealed],
-        mastery_delta: willPass ? 0.08 * mult : 0,
+        hints: [...hintsRevealed],
+        mastery_delta: res.mastery_delta ?? 0,
       };
-      setSubmissions((prev) => [sub, ...prev]);
-      if (willPass) {
-        toast.success(`Accepted · ${runtime} ms`);
-        setPTab('explanation');
+      applySubmission(sub);
+    } catch (err) {
+      toast.dismiss(t);
+      if (err instanceof ApiOffline) {
+        applySubmission(simulateSubmission());
+      } else if (err instanceof ApiError && err.status === 401) {
+        toast.error('Sign in to submit for grading');
       } else {
-        toast.error('Wrong answer — tap Explanation');
-        setPTab('explanation');
+        toast.error('Grader unreachable — falling back to local check');
+        applySubmission(simulateSubmission());
       }
-    }, 1200);
+    }
   };
 
   return (

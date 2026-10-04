@@ -5,10 +5,12 @@ import { Search, Bell, Star, List, Code2, Settings, User, LogOut } from 'lucide-
 import toast from 'react-hot-toast';
 import SearchModal from './SearchModal';
 import { USER } from './data';
+import { useAuth } from '@/lib/auth-context';
 
 export default function Navbar({ active, loggedIn = true }: { active?: string; loggedIn?: boolean }) {
   const [smOpen, setSmOpen] = useState(false);
   const [ddOpen, setDdOpen] = useState(false);
+  const { logout } = useAuth();
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -83,7 +85,7 @@ export default function Navbar({ active, loggedIn = true }: { active?: string; l
                     <Link className="dd-item" href="/settings"><Settings /> Settings</Link>
                     <div className="dd-sep" />
                     <Link className="dd-item" href="/profile/Justinvcj"><User /> Profile</Link>
-                    <button className="dd-item danger" onClick={() => { toast.success('Signed out'); window.location.href = '/'; }}>
+                    <button className="dd-item danger" onClick={async () => { await logout(); toast.success('Signed out'); window.location.href = '/'; }}>
                       <LogOut /> Sign Out
                     </button>
                   </div>
