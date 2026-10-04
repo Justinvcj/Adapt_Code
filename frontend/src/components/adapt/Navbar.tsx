@@ -35,7 +35,8 @@ export default function Navbar({ active, loggedIn = true }: { active?: string; l
       <nav className="nav">
         <div className="nav-inner">
           <Link className="nav-brand" href="/">
-            <span className="logo">&lt;/&gt;</span> AdaptCode
+            <img src="/logo.webp" alt="" className="brand-mark" width={28} height={28} />
+            AdaptCode
           </Link>
           <div className="nav-links">
             <Link className={`nav-link ${active === 'home' ? 'act' : ''}`} href="/">Home</Link>

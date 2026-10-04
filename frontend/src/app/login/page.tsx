@@ -21,7 +21,7 @@ export default function LoginPage() {
       {/* minimal top strip — no learning nav for signed-out visitors */}
       <header className="auth-top">
         <Link className="auth-brand" href="/">
-          <span className="logo">&lt;/&gt;</span>
+          <img src="/logo.webp" alt="" className="brand-mark" width={28} height={28} />
           <span>AdaptCode</span>
         </Link>
         <button
@@ -34,6 +34,17 @@ export default function LoginPage() {
 
       <main className="auth-main">
         <aside className="auth-pitch">
+          <div className="auth-pitch-hero">
+            <video
+              className="auth-pitch-video"
+              src="/logo-anim.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              aria-hidden="true"
+            />
+          </div>
           <h1>Learn by solving. Earn by practising.</h1>
           <p>Twelve programming concepts, each one gated by what came before. Progress is a ring that fills; a concept isn&apos;t unlocked until the previous one is understood.</p>
           <ul className="auth-pitch-list">

@@ -24,6 +24,10 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "AdaptCode — Learn by solving",
   description: "A learning-first programming platform. Twelve concepts, prerequisite-gated progression, adaptive hints.",
+  icons: {
+    icon: [{ url: "/logo.webp", type: "image/webp" }],
+    apple: [{ url: "/logo.webp" }],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
