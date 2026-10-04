@@ -14,12 +14,14 @@ export type Profile = {
   };
 };
 
+export type Theme = 'dark' | 'light' | 'violet';
+
 export type LearningPrefs = {
   daily_goal: number;                       // problems/day target
   hint_mode: 'strict' | 'standard' | 'eager';
   default_difficulty: 'adaptive' | 'Easy' | 'Medium' | 'Hard';
   show_explanations: 'on_wrong' | 'always' | 'never';
-  theme: 'dark' | 'light';
+  theme: Theme;
   reduced_motion: boolean;
 };
 

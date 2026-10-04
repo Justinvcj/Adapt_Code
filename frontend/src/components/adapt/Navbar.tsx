@@ -35,14 +35,13 @@ export default function Navbar({ active, loggedIn = true }: { active?: string; l
       <nav className="nav">
         <div className="nav-inner">
           <Link className="nav-brand" href="/">
-            <span className="logo" style={{ background: 'linear-gradient(135deg,#ffb867,#ffa116)' }}>&lt;/&gt;</span> AdaptCode
+            <span className="logo">&lt;/&gt;</span> AdaptCode
           </Link>
           <div className="nav-links">
             <Link className={`nav-link ${active === 'home' ? 'act' : ''}`} href="/">Home</Link>
             <Link className={`nav-link ${active === 'mastery' ? 'act' : ''}`} href="/mastery">Mastery</Link>
             <Link className={`nav-link ${active === 'graph' ? 'act' : ''}`} href="/graph">Graph</Link>
             <Link className={`nav-link ${active === 'problems' ? 'act' : ''}`} href="/problems">Practice</Link>
-            <button className="nav-link" onClick={() => notify('Discuss coming soon')}>Discuss</button>
           </div>
           <div className="nav-acts">
             <button className="nav-search" onClick={() => setSmOpen(true)}>

@@ -21,6 +21,37 @@ const TABS: { k: TabKey; label: string; icon: typeof User }[] = [
   { k: 'privacy',    label: 'Privacy',             icon: EyeOff        },
 ];
 
+/** Tiny visual swatch for each theme card. */
+function ThemePreview({ theme }: { theme: 'dark' | 'light' | 'violet' }) {
+  const palettes = {
+    dark:   { bg: '#010102', card: '#141516', ring: '#ffa116', dot: '#27a644' },
+    light:  { bg: '#fafaf7', card: '#ffffff', ring: '#d47300', dot: '#1f8f3a' },
+    violet: { bg: '#000000', card: '#13131f', ring: '#8b7cff', dot: '#34d399' },
+  };
+  const p = palettes[theme];
+  const stroke = theme === 'light' ? '#e4e2db' : 'rgba(255,255,255,.08)';
+  return (
+    <div className="theme-preview" style={{ background: p.bg, borderColor: stroke }}>
+      <div className="theme-preview-nav" style={{ borderColor: stroke }}>
+        <span style={{ background: p.ring }} />
+        <i style={{ background: stroke }} />
+        <i style={{ background: stroke }} />
+      </div>
+      <div className="theme-preview-row">
+        <svg viewBox="0 0 36 36" width="28" height="28">
+          <circle cx="18" cy="18" r="14" fill="none" stroke={stroke} strokeWidth="3" />
+          <circle cx="18" cy="18" r="14" fill="none" stroke={p.ring} strokeWidth="3" strokeDasharray="60 100" strokeLinecap="round" transform="rotate(-90 18 18)" />
+        </svg>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <i style={{ height: 5, borderRadius: 2, background: stroke, width: '70%' }} />
+          <i style={{ height: 4, borderRadius: 2, background: stroke, width: '45%', opacity: 0.6 }} />
+        </div>
+        <span className="theme-preview-dot" style={{ background: p.dot }} />
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [tab, setTab] = useState<TabKey>('account');
   const { prefs, update, reset } = usePrefs();
@@ -169,21 +200,30 @@ export default function SettingsPage() {
             {tab === 'appearance' && (
               <>
                 <h3>Appearance</h3>
-                <p className="set-sub">Theme and motion preferences.</p>
+                <p className="set-sub">Three themes. Pick the one that lets you focus.</p>
 
                 <div className="pref-group">
                   <div className="pref-label">
                     <Palette size={14} /> Theme
-                    <span className="pref-help">Light theme is coming — dark is currently the only supported option.</span>
+                    <span className="pref-help">Applies instantly, remembered across sessions.</span>
                   </div>
-                  <div className="pref-chips">
-                    {(['dark', 'light'] as const).map((t) => (
+                  <div className="theme-cards">
+                    {([
+                      { k: 'dark',   label: 'Dark',   sub: 'Near-black + warm amber' },
+                      { k: 'light',  label: 'Light',  sub: 'Paper white + muted copper' },
+                      { k: 'violet', label: 'Violet', sub: 'Pure black + indigo accent' },
+                    ] as const).map(({ k, label, sub }) => (
                       <button
-                        key={t}
-                        className={`pref-chip ${prefs.theme === t ? 'act' : ''}`}
-                        onClick={() => { if (t === 'light') toast('Light theme — coming soon'); else update({ theme: t }); }}
+                        key={k}
+                        className={`theme-card ${prefs.theme === k ? 'act' : ''}`}
+                        onClick={() => update({ theme: k })}
+                        aria-pressed={prefs.theme === k}
                       >
-                        {t[0].toUpperCase() + t.slice(1)}
+                        <ThemePreview theme={k} />
+                        <div className="theme-card-meta">
+                          <b>{label}</b>
+                          <span>{sub}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -198,7 +238,7 @@ export default function SettingsPage() {
                     />
                     <span>
                       <b>Reduce motion</b>
-                      <small>Dim transitions and disable logo pulse animations.</small>
+                      <small>Dim transitions and disable the pulse animations.</small>
                     </span>
                   </label>
                 </div>

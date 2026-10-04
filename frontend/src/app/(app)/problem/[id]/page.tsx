@@ -137,22 +137,27 @@ export default function ProblemPage() {
   return (
     <>
       <div className="prob-nav">
-        <Link href="/" className="logo" style={{ marginRight: 4 }}>&lt;/&gt;</Link>
-        <Link className="pn-item" href="/problems"><Menu /> Problem List</Link>
-        <button className="pn-item" onClick={() => toast('Previous problem — demo')}><ChevronLeft /></button>
-        <button className="pn-item" onClick={() => toast('Next problem — demo')}><ChevronRight /></button>
-        <button className="pn-item" onClick={() => toast('Random — demo')}><Shuffle /></button>
+        <Link href="/" className="logo" style={{ marginRight: 10 }}>&lt;/&gt;</Link>
+        <Link className="pn-item" href="/mastery"><Menu size={14} /> All concepts</Link>
+        <Link className="pn-item pn-item-concept" href="/mastery/hashing">
+          <KeyRound size={13} /> Hashing
+        </Link>
         <div className="pn-right">
-          <button className="pn-run" onClick={runCode}><Play size={12} /> Run</button>
-          <button className="pn-submit" onClick={submitCode}><ClipboardCheck /> Submit</button>
-          <button className="pn-icon" onClick={() => toast.success('Copied — demo')} title="Copy"><FileText /></button>
-          <button className="pn-icon" title="AI Assistant" onClick={() => toast('AI Assistant — demo')}>✨</button>
+          <button className="pn-run" onClick={runCode} title="Run against the visible testcase (Ctrl/Cmd+Enter)">
+            <Play size={12} fill="currentColor" /> Run
+          </button>
+          <button className="pn-submit" onClick={submitCode} title="Submit for grading">
+            <ClipboardCheck size={14} /> Submit
+          </button>
           <span className="pn-sep" />
-          <button className="pn-icon" title="Layout"><Grid3x3 /></button>
-          <button className="pn-icon" title="Settings"><Settings /></button>
-          <button className="pn-icon" title="Like" style={{ display: 'flex', gap: 4, width: 'auto', padding: '0 8px' }}><ThumbsUp /><span style={{ fontSize: 12 }}>0</span></button>
-          <span className="pn-sep" />
-          <button className="pn-icon" title="Fullscreen"><Maximize2 /></button>
+          <button className="pn-icon" onClick={() => {
+            navigator.clipboard?.writeText(code);
+            toast.success('Code copied');
+          }} title="Copy code"><FileText size={14} /></button>
+          <button className="pn-icon" onClick={() => {
+            if (document.fullscreenElement) document.exitFullscreen();
+            else document.documentElement.requestFullscreen?.();
+          }} title="Toggle fullscreen"><Maximize2 size={14} /></button>
         </div>
       </div>
       <div className="prob" ref={containerRef}>
@@ -274,16 +279,17 @@ export default function ProblemPage() {
         />
         <div className="prob-r" style={{ flex: 'none', width: `${100 - leftW - 0.3}%` }}>
           <div className="ed-head">
-            <span className="ed-label"><FileCode /> Code</span>
+            <span className="ed-label"><FileCode size={14} /> Code</span>
             <select className="lang-sel" value={lang} onChange={(e) => setLang(e.target.value)}>
               {Object.keys(CODE).map((k) => <option key={k} value={k}>{LANG_NAMES[k]}</option>)}
             </select>
-            <span className="ed-auto"><Lock /> Auto</span>
+            <span className="ed-auto"><Lock size={11} /> Autosaved</span>
             <div className="ed-icons">
-              <button className="ed-icon" title="Format" onClick={() => toast('Format — demo')}><Menu /></button>
-              <button className="ed-icon" title="Bookmark" onClick={() => toast('Bookmark — demo')}><Bookmark /></button>
-              <button className="ed-icon" title="Reset" onClick={() => setCode(CODE[lang])}><Undo /></button>
-              <button className="ed-icon" title="Fullscreen"><Maximize2 /></button>
+              <button
+                className="ed-icon"
+                title="Reset to starter code"
+                onClick={() => { setCode(CODE[lang]); toast('Reset to starter code'); }}
+              ><Undo size={14} /></button>
             </div>
           </div>
           <div className="ed-area">

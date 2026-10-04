@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Edit, Play, Sparkles } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
 import Calendar from '@/components/adapt/Calendar';
-import GlassNode from '@/components/adapt/GlassNode';
+import ConceptRow from '@/components/adapt/ConceptRow';
 import SubmissionHeatmap from '@/components/adapt/SubmissionHeatmap';
 import Footer from '@/components/adapt/Footer';
 import Avatar from '@/components/adapt/Avatar';
@@ -74,32 +74,26 @@ export default function LandingPage() {
             <section className="mastery-panel">
               <div className="section-h">
                 <div>
-                  <h2>Your 12 concepts</h2>
+                  <h2>Your twelve concepts</h2>
+                  <p className="section-sub">{unlockedCount} unlocked · scroll to see all</p>
                 </div>
-                <Link href="/mastery">View all →</Link>
+                <Link href="/mastery" className="section-h-link">Full catalogue <span>→</span></Link>
               </div>
-              <div className="mastery-grid">
+              <div className="crow-list-wrap">
                 {CONCEPTS.map((c) => {
                   const m = MOCK_MASTERY[c.id];
                   const isRecommended = c.id === weakestUnlocked.id;
-                  // Unlock progress for locked nodes = avg mastery of prereqs against the 0.5 threshold
-                  const unlockProgress = m.unlocked ? 0
-                    : c.prereqs.length === 0 ? 0
-                    : Math.min(1, c.prereqs.reduce((a, p) => a + (MOCK_MASTERY[p]?.mastery ?? 0), 0) / c.prereqs.length / 0.5);
+                  const blockedBy = c.prereqs
+                    .filter((p) => (MOCK_MASTERY[p]?.mastery ?? 0) < 0.5)
+                    .map((p) => CONCEPT_BY_ID[p].title)
+                    .join(' & ');
                   return (
-                    <GlassNode
+                    <ConceptRow
                       key={c.id}
-                      Icon={c.icon}
-                      title={c.title}
-                      mastery={m.mastery}
-                      solved={m.solved}
-                      unlocked={m.unlocked}
+                      concept={c}
+                      mastery={m}
+                      unlockBlockedBy={blockedBy || undefined}
                       recommended={isRecommended}
-                      unlockProgress={unlockProgress}
-                      size={180}
-                      onClick={() => m.unlocked
-                        ? router.push(`/mastery#${c.id}`)
-                        : toast(`Unlock after reaching 50 % in ${c.prereqs.map((p) => CONCEPT_BY_ID[p].title).join(' & ')}`)}
                     />
                   );
                 })}
