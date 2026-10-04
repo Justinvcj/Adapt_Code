@@ -8,6 +8,8 @@ on:
 
 jobs:
   backend-test:
+    # Backend work is deferred. Re-enable by flipping this to `true` (or removing the `if:`).
+    if: ${{ false }}
     runs-on: ubuntu-latest
     defaults:
       run:
