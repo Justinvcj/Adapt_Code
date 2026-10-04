@@ -4,9 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Edit, Play, Sparkles } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
-import Calendar from '@/components/adapt/Calendar';
+import ActivityRail from '@/components/adapt/ActivityRail';
 import ConceptRow from '@/components/adapt/ConceptRow';
-import SubmissionHeatmap from '@/components/adapt/SubmissionHeatmap';
 import Footer from '@/components/adapt/Footer';
 import Avatar from '@/components/adapt/Avatar';
 import EditProfileModal from '@/components/adapt/EditProfileModal';
@@ -101,10 +100,7 @@ export default function LandingPage() {
             </section>
           </div>
 
-          <aside className="land-right">
-            <Calendar />
-            <SubmissionHeatmap />
-          </aside>
+          <ActivityRail />
         </main>
         <Footer />
       </div>

@@ -1,20 +1,30 @@
 "use client";
 import { useMemo, useState } from 'react';
-import { Edit, Globe } from 'lucide-react';
+import { Edit, Globe, Trophy, TrendingUp, Flame, Calendar } from 'lucide-react';
+import Link from 'next/link';
 import Navbar from '@/components/adapt/Navbar';
+import Footer from '@/components/adapt/Footer';
 import Avatar from '@/components/adapt/Avatar';
 import EditProfileModal from '@/components/adapt/EditProfileModal';
 import { GithubIcon, TwitterIcon, LinkedinIcon } from '@/components/adapt/icons';
 import { USER } from '@/components/adapt/data';
 import { useProfile } from '@/lib/profile-store';
 
+type Skill = { name: string; count: number };
+
+const SKILLS_ADVANCED: Skill[]   = [{ name: 'Dynamic Programming', count: 6 }, { name: 'Divide and Conquer', count: 2 }, { name: 'Trie', count: 1 }];
+const SKILLS_INTERMEDIATE: Skill[]= [{ name: 'Hash Table', count: 24 }, { name: 'Math', count: 18 }, { name: 'Two Pointers', count: 12 }, { name: 'Binary Search', count: 9 }, { name: 'Sorting', count: 8 }, { name: 'Greedy', count: 7 }];
+const SKILLS_FUNDAMENTAL: Skill[]= [{ name: 'Array', count: 62 }, { name: 'String', count: 41 }, { name: 'Linked List', count: 11 }, { name: 'Recursion', count: 6 }, { name: 'Simulation', count: 4 }];
+
 export default function ProfilePage() {
   const u = USER;
   const { profile, update } = useProfile();
   const [editOpen, setEditOpen] = useState(false);
-  const total = u.solved.easy + u.solved.medium + u.solved.hard;
+
+  const total    = u.solved.easy + u.solved.medium + u.solved.hard;
   const allTotal = u.total.easy + u.total.medium + u.total.hard;
-  const C = 2 * Math.PI * 55;
+  const R = 70;
+  const C = 2 * Math.PI * R;
   const eL = C * (u.solved.easy / allTotal);
   const mL = C * (u.solved.medium / allTotal);
   const hL = C * (u.solved.hard / allTotal);
@@ -34,34 +44,46 @@ export default function ProfilePage() {
     return weeks;
   }, []);
 
+  const renderSkill = (s: Skill) => {
+    const earned  = s.count >= 10;
+    const trophy  = s.count >= 25;
+    return (
+      <span key={s.name} className={`skill-chip ${earned ? 'earned' : ''} ${trophy ? 'trophy' : ''}`}>
+        {trophy && <Trophy size={11} />} {s.name}<span className="n">×{s.count}</span>
+      </span>
+    );
+  };
+
   return (
     <>
       <Navbar active="profile" />
-      <div className="prof">
-        <div className="prof-top">
-          <div className="prof-left">
-            <Avatar
-              name={profile.name}
-              dataUri={profile.avatar_data_uri}
-              editable
-              size={100}
-              onChange={(uri) => update({ avatar_data_uri: uri })}
-              className="prof-ava"
-            />
-            <div>
-              <div className="prof-name">{profile.name}</div>
-              <div className="prof-user">@{profile.display_name}</div>
-            </div>
-            {profile.bio && <div className="prof-bio">{profile.bio}</div>}
-            <div className="prof-rank">Rank <b>{u.rank.toLocaleString()}</b></div>
-            <div className="prof-follow">
-              <span><b>{u.following}</b> Following</span> |
-              <span><b>{u.followers}</b> Followers</span>
-            </div>
-            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => setEditOpen(true)}>
-              <Edit size={14} /> Edit Profile
-            </button>
-            <div className="prof-socials">
+      <div className="prof2">
+        <aside className="prof2-side">
+          <Avatar
+            name={profile.name}
+            dataUri={profile.avatar_data_uri}
+            editable
+            size={120}
+            onChange={(uri) => update({ avatar_data_uri: uri })}
+          />
+          <div>
+            <div className="prof2-name">{profile.name}</div>
+            <div className="prof2-user">@{profile.display_name}</div>
+          </div>
+          {profile.bio && <p className="prof2-bio">{profile.bio}</p>}
+
+          <div className="prof2-stat-row">
+            <div><b>{u.following}</b><span>Following</span></div>
+            <div><b>{u.followers}</b><span>Followers</span></div>
+            <div><b>#{u.rank.toLocaleString()}</b><span>Rank</span></div>
+          </div>
+
+          <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => setEditOpen(true)}>
+            <Edit size={14} /> Edit profile
+          </button>
+
+          {(profile.socials.github || profile.socials.linkedin || profile.socials.twitter || profile.socials.website) && (
+            <div className="prof2-socials">
               {profile.socials.github && (
                 <a className="prof-social" href={`https://github.com/${profile.socials.github}`} target="_blank" rel="noreferrer">
                   <GithubIcon /> {profile.socials.github}
@@ -83,160 +105,135 @@ export default function ProfilePage() {
                 </a>
               )}
             </div>
-            <div className="lang-card">
-              <h4>Languages</h4>
-              {[
-                { n: 'Java', c: 142 },
-                { n: 'Python 3', c: 38 },
-                { n: 'C++', c: 5 },
-                { n: 'JavaScript', c: 1 },
-              ].map((l) => (
-                <div key={l.n} className="lang-row">
-                  <span className="lang-pill">{l.n}</span>
-                  <span className="lang-count"><b style={{ color: 'var(--tx)' }}>{l.c}</b> problems solved</span>
-                </div>
-              ))}
+          )}
+
+          <div className="prof2-card">
+            <h4>Languages</h4>
+            {[
+              { n: 'Java', c: 142 },
+              { n: 'Python 3', c: 38 },
+              { n: 'C++', c: 5 },
+              { n: 'JavaScript', c: 1 },
+            ].map((l) => (
+              <div key={l.n} className="lang-row">
+                <span className="lang-pill">{l.n}</span>
+                <span className="lang-count"><b>{l.c}</b> solved</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="prof2-card">
+            <h4>Skills</h4>
+            <div className="skill-group" style={{ ['--dot' as string]: 'var(--hard)' }}>
+              <h5>Advanced</h5>
+              <div className="skill-chips">{SKILLS_ADVANCED.map(renderSkill)}</div>
             </div>
-            <div className="lang-card">
-              <h4>Skills</h4>
-              <div className="skill-group" style={{ ['--dot' as string]: 'var(--hard)' }}>
-                <h5>Advanced</h5>
-                <div className="skill-chips">
-                  {[['Dynamic Programming', 6], ['Divide and Conquer', 2], ['Trie', 1]].map(([n, c]) => (
-                    <span key={n as string} className="skill-chip">{n}<span className="n">×{c}</span></span>
-                  ))}
-                </div>
-              </div>
-              <div className="skill-group" style={{ ['--dot' as string]: 'var(--med)' }}>
-                <h5>Intermediate</h5>
-                <div className="skill-chips">
-                  {[['Hash Table', 24], ['Math', 18], ['Two Pointers', 12], ['Binary Search', 9], ['Sorting', 8], ['Greedy', 7]].map(([n, c]) => (
-                    <span key={n as string} className="skill-chip">{n}<span className="n">×{c}</span></span>
-                  ))}
-                </div>
-              </div>
-              <div className="skill-group" style={{ ['--dot' as string]: 'var(--easy)' }}>
-                <h5>Fundamental</h5>
-                <div className="skill-chips">
-                  {[['Array', 62], ['String', 41], ['Linked List', 11], ['Recursion', 6], ['Simulation', 4]].map(([n, c]) => (
-                    <span key={n as string} className="skill-chip">{n}<span className="n">×{c}</span></span>
-                  ))}
-                </div>
-              </div>
+            <div className="skill-group" style={{ ['--dot' as string]: 'var(--med)' }}>
+              <h5>Intermediate</h5>
+              <div className="skill-chips">{SKILLS_INTERMEDIATE.map(renderSkill)}</div>
             </div>
-            <div className="comm-stats">
-              <h4>Community Stats</h4>
-              {[
-                { ic: '👁', label: 'Views', bg: 'rgba(94,106,210,.15)', color: 'var(--blue)' },
-                { ic: '☑', label: 'Solution', bg: 'var(--easy-bg)', color: 'var(--easy)' },
-                { ic: '💬', label: 'Discuss', bg: 'var(--med-bg)', color: 'var(--med)' },
-                { ic: '⭐', label: 'Reputation', bg: 'rgba(255,161,22,.15)', color: 'var(--accent)' },
-              ].map((s) => (
-                <div key={s.label} className="cs-item">
-                  <span className="cs-icon" style={{ background: s.bg, color: s.color }}>{s.ic}</span>
-                  {s.label} <b>0</b>
-                  <span className="cs-sub">Last week 0</span>
-                </div>
-              ))}
+            <div className="skill-group" style={{ ['--dot' as string]: 'var(--easy)' }}>
+              <h5>Fundamental</h5>
+              <div className="skill-chips">{SKILLS_FUNDAMENTAL.map(renderSkill)}</div>
             </div>
           </div>
-          <div className="prof-right">
-            <div className="solved-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1 }}>
-                <div className="donut-w">
-                  <svg viewBox="0 0 140 140">
-                    <circle cx="70" cy="70" r="55" fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="10" />
-                    <circle cx="70" cy="70" r="55" fill="none" stroke="var(--easy)" strokeWidth="10" strokeDasharray={`${eL} ${C - eL}`} strokeDashoffset="0" strokeLinecap="round" />
-                    <circle cx="70" cy="70" r="55" fill="none" stroke="var(--med)" strokeWidth="10" strokeDasharray={`${mL} ${C - mL}`} strokeDashoffset={-eL} strokeLinecap="round" />
-                    <circle cx="70" cy="70" r="55" fill="none" stroke="var(--hard)" strokeWidth="10" strokeDasharray={`${hL} ${C - hL}`} strokeDashoffset={-(eL + mL)} strokeLinecap="round" />
-                  </svg>
-                  <div className="donut-c">
-                    <div className="big">{total}<span className="slash">/{allTotal}</span></div>
-                    <div className="sub">✓ Solved</div>
-                    <div className="sub" style={{ fontSize: 11 }}>{u.attempting} Attempting</div>
+        </aside>
+
+        <main className="prof2-main">
+          {/* Hero: donut + difficulty bars — enlarged */}
+          <section className="prof2-progress">
+            <div className="prof2-donut">
+              <svg viewBox="0 0 180 180" width="180" height="180">
+                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--bg-sf)" strokeWidth="12" />
+                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--easy)" strokeWidth="12" strokeDasharray={`${eL} ${C - eL}`} strokeDashoffset="0" strokeLinecap="round" transform="rotate(-90 90 90)" />
+                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--med)"  strokeWidth="12" strokeDasharray={`${mL} ${C - mL}`} strokeDashoffset={-eL} strokeLinecap="round" transform="rotate(-90 90 90)" />
+                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--hard)" strokeWidth="12" strokeDasharray={`${hL} ${C - hL}`} strokeDashoffset={-(eL + mL)} strokeLinecap="round" transform="rotate(-90 90 90)" />
+              </svg>
+              <div className="prof2-donut-c">
+                <b>{total}</b>
+                <span>of {allTotal} solved</span>
+                {u.attempting > 0 && <span className="prof2-donut-attempting">· {u.attempting} attempting</span>}
+              </div>
+            </div>
+
+            <div className="prof2-progress-bars">
+              {([
+                ['Easy',   u.solved.easy,   u.total.easy,   'e'],
+                ['Medium', u.solved.medium, u.total.medium, 'm'],
+                ['Hard',   u.solved.hard,   u.total.hard,   'h'],
+              ] as const).map(([lbl, val, tot, cls]) => (
+                <div key={lbl} className={`prof2-pbar prof2-pbar-${cls}`}>
+                  <div className="prof2-pbar-head">
+                    <span>{lbl}</span>
+                    <b>{val}<i> / {tot}</i></b>
                   </div>
+                  <div className="prof2-pbar-track"><div className="prof2-pbar-fill" style={{ width: `${(val / tot * 100).toFixed(1)}%` }} /></div>
                 </div>
-                <div className="solved-side">
-                  {([
-                    ['Easy', u.solved.easy, u.total.easy, 'var(--easy)'],
-                    ['Med.', u.solved.medium, u.total.medium, 'var(--med)'],
-                    ['Hard', u.solved.hard, u.total.hard, 'var(--hard)'],
-                  ] as const).map(([lbl, val, tot, color]) => (
-                    <div key={lbl} className="sv-row">
-                      <span className="sv-label" style={{ color }}>{lbl}</span>
-                      <div className="sv-bar"><div className="sv-fill" style={{ width: `${(val / tot * 100).toFixed(0)}%`, background: color }} /></div>
-                      <span className="sv-count">{val}/{tot}</span>
+              ))}
+            </div>
+          </section>
+
+          {/* Promoted heatmap */}
+          <section className="prof2-heatmap-card">
+            <header>
+              <div className="prof2-heatmap-title">
+                <h3>{u.subs} submissions in the last year</h3>
+                <div className="prof2-heatmap-stats">
+                  <span><Flame size={12} /> Streak <b>{u.streak}</b></span>
+                  <span><Calendar size={12} /> Active <b>{u.days}</b> days</span>
+                  <span><TrendingUp size={12} /> This week <b>12</b></span>
+                </div>
+              </div>
+            </header>
+            <div className="prof2-heatmap">
+              <div className="prof2-heatmap-months">
+                {['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'].map((m) => <span key={m}>{m}</span>)}
+              </div>
+              <div className="prof2-heatmap-grid">
+                <div className="prof2-heatmap-days">
+                  <span /><span>Mon</span><span /><span>Wed</span><span /><span>Fri</span><span />
+                </div>
+                <div className="prof2-heatmap-weeks">
+                  {heatmap.map((week, i) => (
+                    <div key={i} className="prof2-heatmap-week">
+                      {week.map((lvl, j) => <div key={j} className={`prof2-heatmap-cell lvl-${lvl}`} />)}
                     </div>
                   ))}
                 </div>
               </div>
+              <footer>
+                <span>Less</span>
+                <i className="lvl-0" /><i className="lvl-1" /><i className="lvl-2" /><i className="lvl-3" /><i className="lvl-4" />
+                <span>More</span>
+              </footer>
             </div>
-            <div className="badges-card">
-              <h4>Badges <span style={{ fontSize: 20, marginLeft: 4 }}>0</span></h4>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 13, color: 'var(--tx-2)' }}>
-                <span style={{ fontSize: 24 }}>🔒</span>
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--tx-3)' }}>Locked Badge</div>
-                  Aug AdaptCoding Challenge
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="activity">
-          <div className="act-head">
-            <h3><span style={{ fontWeight: 700 }}>{u.subs}</span> submissions in the past one year ⓘ</h3>
-            <div className="act-stats">
-              <span>Total active days: <b>{u.days}</b></span>
-              <span>Max streak: <b>{u.streak}</b></span>
-              <select style={{ padding: '2px 6px', borderRadius: 'var(--r)', border: '1px solid var(--border)', background: 'var(--bg-el)', color: 'var(--tx)', fontSize: 12 }}>
-                <option>Current</option>
-              </select>
-            </div>
-          </div>
-          <div className="hm-card">
-            <div className="hm-months">
-              {['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'].map((m) => <span key={m}>{m}</span>)}
-            </div>
-            <div className="hm-grid">
-              <div className="hm-days">
-                <span /><span>Mon</span><span /><span>Wed</span><span /><span>Fri</span><span />
-              </div>
-              <div className="hm-weeks">
-                {heatmap.map((week, i) => (
-                  <div key={i} className="hm-week">
-                    {week.map((lvl, j) => <div key={j} className={`hm-cell h${lvl}`} />)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="prof-tabs" style={{ marginTop: 20 }}>
-          <div className="prof-tabs-head">
-            <div className="tabs" style={{ border: 'none' }}>
-              {[['Recent AC', '📊'], ['List', '📋'], ['Solutions', '✅'], ['Discuss', '💬']].map(([l, ic], i) => (
-                <span key={l} className={`tab ${i === 0 ? 'act' : ''}`}>{ic} {l}</span>
+          </section>
+
+          {/* Recent AC submissions */}
+          <section className="prof2-recent">
+            <header>
+              <h3>Recent accepted</h3>
+              <Link href="/problems" className="section-h-link">All submissions <span>→</span></Link>
+            </header>
+            <ul>
+              {[
+                ['Reverse String II',    'Strings',  '15 days ago'],
+                ['Two Sum',              'Hashing',  '18 days ago'],
+                ['Valid Parentheses',    'Arrays',   '20 days ago'],
+                ['Maximum Subarray',     'Arrays',   '22 days ago'],
+                ['Climbing Stairs',      'Recursion','25 days ago'],
+              ].map(([n, concept, t]) => (
+                <li key={n}>
+                  <span className="prof2-recent-name">{n}</span>
+                  <span className="prof2-recent-concept">{concept}</span>
+                  <span className="prof2-recent-time">{t}</span>
+                </li>
               ))}
-            </div>
-            <a style={{ fontSize: 12, color: 'var(--tx-2)' }}>View all submissions ›</a>
-          </div>
-          <div className="sub-list">
-            {[
-              ['Reverse String II', '15 days ago'],
-              ['Two Sum', '18 days ago'],
-              ['Valid Parentheses', '20 days ago'],
-              ['Maximum Subarray', '22 days ago'],
-              ['Climbing Stairs', '25 days ago'],
-            ].map(([n, t]) => (
-              <div key={n} className="sub-item">
-                <span className="s-name">{n}</span>
-                <span className="s-time">{t}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+            </ul>
+          </section>
+        </main>
       </div>
+      <Footer />
       <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />
     </>
   );

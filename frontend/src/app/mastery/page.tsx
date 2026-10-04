@@ -52,14 +52,17 @@ export default function MasteryPage() {
               const m = MOCK_MASTERY[c.id];
               const Icon = c.icon;
               const total = c.problems.easy + c.problems.medium + c.problems.hard;
-              const fillCls = !m.unlocked ? '' : m.mastery >= 0.75 ? 'done' : m.mastery < 0.4 ? 'weak' : '';
+              const tier = !m.unlocked ? 'locked'
+                         : m.mastery >= 0.75 ? 'done'
+                         : m.mastery < 0.4  ? 'weak'
+                         : 'progress';
               const blockedBy = c.prereqs.filter((p) => (MOCK_MASTERY[p]?.mastery ?? 0) < 0.5);
 
               return (
                 <button
                   key={c.id}
                   id={c.id}
-                  className={`mast-tile ${m.unlocked ? '' : 'locked'}`}
+                  className={`mast-tile mast-tile-${tier} ${m.unlocked ? '' : 'locked'}`}
                   onClick={() => m.unlocked
                     ? router.push(`/mastery/${c.id}`)
                     : toast(`Locked — reach 50% in ${blockedBy.map((b) => CONCEPT_BY_ID[b].title).join(', ')}`)}
@@ -67,17 +70,18 @@ export default function MasteryPage() {
                   <div className="mast-tile-head">
                     <div className="mast-tile-icon">
                       {m.unlocked
-                        ? <Icon size={22} color="var(--accent)" strokeWidth={1.75} />
-                        : <Lock size={20} color="var(--tx-3)" strokeWidth={1.75} />}
+                        ? <Icon size={22} strokeWidth={1.75} />
+                        : <Lock size={20} strokeWidth={1.75} />}
                     </div>
                     <div>
                       <div className="mast-tile-title">{c.title}</div>
                       <div className="mast-tile-short">{c.short}</div>
                     </div>
+                    {tier === 'done' && <span className="mast-tile-badge">Mastered</span>}
                   </div>
 
                   <div className="mast-tile-bar">
-                    <div className={`mast-tile-fill ${fillCls}`} style={{ width: `${m.mastery * 100}%` }} />
+                    <div className={`mast-tile-fill ${tier}`} style={{ width: `${m.mastery * 100}%` }} />
                   </div>
 
                   <div className="mast-tile-meta">
