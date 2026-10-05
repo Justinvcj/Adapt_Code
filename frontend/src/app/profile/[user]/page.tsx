@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Edit, Globe, Trophy, TrendingUp, Flame, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '@/components/adapt/Navbar';
@@ -9,6 +9,7 @@ import EditProfileModal from '@/components/adapt/EditProfileModal';
 import { GithubIcon, TwitterIcon, LinkedinIcon } from '@/components/adapt/icons';
 import { USER } from '@/components/adapt/data';
 import { useProfile } from '@/lib/profile-store';
+import { statsAPI, API_ENABLED, type ApiStatsSummary } from '@/lib/api';
 
 type Skill = { name: string; count: number };
 
@@ -17,9 +18,41 @@ const SKILLS_INTERMEDIATE: Skill[]= [{ name: 'Hash Table', count: 24 }, { name: 
 const SKILLS_FUNDAMENTAL: Skill[]= [{ name: 'Array', count: 62 }, { name: 'String', count: 41 }, { name: 'Linked List', count: 11 }, { name: 'Recursion', count: 6 }, { name: 'Simulation', count: 4 }];
 
 export default function ProfilePage() {
-  const u = USER;
+  const uFallback = USER;
   const { profile, update } = useProfile();
   const [editOpen, setEditOpen] = useState(false);
+  const [liveStats, setLiveStats] = useState<ApiStatsSummary | null>(null);
+
+  useEffect(() => {
+    if (!API_ENABLED) return;
+    (async () => {
+      try {
+        const r = await statsAPI.summary();
+        setLiveStats(r.data);
+      } catch { /* keep fallback */ }
+    })();
+  }, []);
+
+  // Blend: real backend values when available, static fallback otherwise.
+  // Keeps the easy/medium/hard breakdown mocked for now (backend only returns totals).
+  const u = useMemo(() => {
+    if (!liveStats) return uFallback;
+    const totalSolved = liveStats.total_problems_solved;
+    // Distribute live total across difficulty tiers proportionally to the mock shape,
+    // falling back to all-easy if the mock totals are zero.
+    const mSum = uFallback.solved.easy + uFallback.solved.medium + uFallback.solved.hard || 1;
+    const scale = totalSolved / mSum;
+    return {
+      ...uFallback,
+      solved: {
+        easy:   Math.round(uFallback.solved.easy   * scale),
+        medium: Math.round(uFallback.solved.medium * scale),
+        hard:   Math.round(uFallback.solved.hard   * scale),
+      },
+      streak: liveStats.current_streak,
+      subs: totalSolved,
+    };
+  }, [liveStats, uFallback]);
 
   const total    = u.solved.easy + u.solved.medium + u.solved.hard;
   const allTotal = u.total.easy + u.total.medium + u.total.hard;
