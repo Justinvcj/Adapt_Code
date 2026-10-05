@@ -158,69 +158,7 @@ async def select_next_problem(jwt: str, action: str, current_concept: str, curre
 @router.post("/submit", response_model=SubmitResponse)
 @limiter.limit("20/minute")
 async def submit_code(request: Request, req: SubmitRequest, background_tasks: BackgroundTasks, user: CurrentUser = Depends(get_current_user)):
-    import os
     user_id = user.user_id
-
-    # ---- DEMO MODE: skip Piston + the broken helper chain, return a plausible verdict ----
-    # Documented in docs/DEMO_MODE.md. Flip TEST_MODE=false in backend/.env to revert.
-    if os.environ.get("TEST_MODE", "").lower() == "true":
-        admin = get_supabase_admin()
-        prob_res = admin.table("problems").select("concept_tag, difficulty_level").eq("problem_id", req.problem_id).limit(1).execute()
-        concept = (prob_res.data[0]["concept_tag"] if prob_res.data else "general")
-        difficulty = (prob_res.data[0]["difficulty_level"] if prob_res.data else "medium")
-
-        looks_ok = "return" in (req.code or "").lower()
-        verdict = "accepted" if looks_ok else "wrong_answer"
-        mapped = "Accepted" if looks_ok else "Wrong Answer"
-        total_tc = 5
-        passed_tc = total_tc if looks_ok else 0
-
-        # Persist a session_event so mastery/stats/history still look alive.
-        event_id = None
-        try:
-            ev = admin.table("session_events").insert({
-                "student_id": user_id,
-                "problem_id": req.problem_id,
-                "concept_tag": concept,
-                "difficulty_level": difficulty,
-                "compile_errors": req.compile_error_count,
-                "time_on_task_seconds": int(req.time_on_task_seconds),
-                "hint_used": req.hint_used,
-                "attempt_count": req.attempt_count,
-                "abandoned": False,
-                "final_verdict": mapped,
-                "reward_signal": 1.0 if looks_ok else 0.0,
-            }).execute()
-            event_id = ev.data[0]["event_id"] if ev.data else None
-        except Exception:
-            pass
-
-        # Bump mastery crudely so the UI reacts.
-        mastery_delta = 0.08 if looks_ok else -0.03
-        try:
-            cur = admin.table("mastery_scores").select("mastery_probability").eq("student_id", user_id).eq("concept_tag", concept).limit(1).execute()
-            old = float(cur.data[0]["mastery_probability"]) if cur.data else 0.3
-            new = max(0.0, min(1.0, old + mastery_delta))
-            admin.table("mastery_scores").upsert({
-                "student_id": user_id, "concept_tag": concept, "mastery_probability": new
-            }, on_conflict="student_id,concept_tag").execute()
-        except Exception:
-            new = 0.3 + mastery_delta
-
-        user_mastery = {concept: new}
-
-        return SubmitResponse(
-            verdict=verdict,
-            test_cases_passed=passed_tc,
-            test_cases_total=total_tc,
-            mastery=user_mastery,
-            next_problem={},
-            effective_weight=1.0 if looks_ok else 0.0,
-            explanation_status="not_needed" if looks_ok else "pending",
-            event_id=event_id,
-        )
-    # ---- /DEMO MODE ----
-
     supabase = get_supabase_user(user.jwt)
     problem = await get_problem(user.jwt, req.problem_id)
     user_mastery = await get_mastery_vector(user.jwt, user_id)
