@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { LANG_NAMES } from '@/components/adapt/data';
-import { PROBLEM_BANK } from '@/data/problems';
-import { CONCEPT_BY_ID } from '@/data/concepts';
+import { PROBLEM_BANK, type Problem } from '@/data/problems';
+import { CONCEPT_BY_ID, type ConceptId } from '@/data/concepts';
 import HintsPanel from '@/components/adapt/HintsPanel';
 import ExplanationPanel, { type Submission } from '@/components/adapt/ExplanationPanel';
 import SubmissionsList from '@/components/adapt/SubmissionsList';
@@ -24,10 +24,69 @@ const MONACO_LANG: Record<string, string> = {
   java: 'java', python: 'python', javascript: 'javascript', cpp: 'cpp',
 };
 
+type MinimalBackendProblem = {
+  problem_id?: string;
+  title: string;
+  description: string;
+  concept_tag: string;
+  difficulty_level: 'easy' | 'medium' | 'hard';
+  test_cases?: Array<{ input: string; expected_output: string; is_hidden?: boolean }>;
+  hint_text?: string | null;
+  starter_code?: Record<string, unknown>;
+};
+
+function adaptBackendProblem(b: MinimalBackendProblem, slug: string, fallback?: Problem): Problem {
+  const diff = (b.difficulty_level.charAt(0).toUpperCase() + b.difficulty_level.slice(1)) as 'Easy' | 'Medium' | 'Hard';
+  const starter: Record<string, string> = {
+    java: typeof b.starter_code?.java === 'string' ? b.starter_code!.java as string : (fallback?.starter.java ?? ''),
+    python: typeof b.starter_code?.python === 'string' ? b.starter_code!.python as string : (fallback?.starter.python ?? ''),
+    javascript: typeof b.starter_code?.javascript === 'string' ? b.starter_code!.javascript as string : (fallback?.starter.javascript ?? ''),
+    cpp: typeof b.starter_code?.cpp === 'string' ? b.starter_code!.cpp as string : (fallback?.starter.cpp ?? ''),
+  };
+  const firstVisible = (b.test_cases ?? []).find((t) => !t.is_hidden) ?? b.test_cases?.[0];
+  return {
+    slug,
+    id: fallback?.id ?? 0,
+    title: b.title,
+    concept: (b.concept_tag as ConceptId) ?? fallback?.concept ?? 'arrays',
+    difficulty: diff,
+    acceptance: fallback?.acceptance ?? 55,
+    summary: fallback?.summary ?? (b.description || '').split('\n')[0]?.slice(0, 180) || b.title,
+    description: b.description,
+    examples: fallback?.examples ?? [],
+    constraints: fallback?.constraints ?? [],
+    starter: starter as Problem['starter'],
+    solution: fallback?.solution ?? { java: '', python: '', javascript: '', cpp: '' },
+    defaultTestcase: fallback?.defaultTestcase ?? {
+      input: { stdin: firstVisible?.input ?? '' },
+      expected: firstVisible?.expected_output ?? '',
+    },
+  };
+}
+
 export default function ProblemPage() {
   const params = useParams<{ id: string }>();
   const slug = params?.id || '';
-  const problem = PROBLEM_BANK[slug];
+  const staticFallback = PROBLEM_BANK[slug];
+  const [problem, setProblem] = useState<Problem | undefined>(staticFallback);
+
+  useEffect(() => {
+    if (!API_ENABLED || !slug) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await problemsAPI.get(slug);
+        if (!cancelled && r.problem) {
+          setProblem(adaptBackendProblem(r.problem as MinimalBackendProblem, slug, staticFallback));
+        }
+      } catch {
+        // Keep static fallback (or undefined → 404 renders below)
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
+
   const concept = problem ? CONCEPT_BY_ID[problem.concept] : undefined;
   const [pTab, setPTab] = useState<'desc' | 'hints' | 'explanation' | 'solutions' | 'submissions'>('desc');
   useEffect(() => {
