@@ -42,10 +42,15 @@ async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
                 logger.error("register_user RPC failed; falling back to users upsert", exc_info=True)
             if not rpc_ok:
                 try:
+                    # Supabase Auth owns the real password. Our legacy users table has a
+                    # NOT NULL hashed_password column — insert a sentinel so the row writes.
                     supabase.table("users").upsert({
                         "user_id": user_id,
                         "email": req.email,
                         "display_name": req.display_name or "User",
+                        "hashed_password": "supabase-auth-managed",
+                        "role": "student",
+                        "is_pro": False,
                     }, on_conflict="user_id").execute()
                 except Exception:
                     logger.error("users upsert fallback also failed", exc_info=True)

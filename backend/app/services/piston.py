@@ -6,13 +6,18 @@ from app.core.config import settings
 PISTON_BASE_URL = getattr(settings, "PISTON_URL", "http://localhost:2000").rstrip("/")
 PISTON_EXECUTE_URL = f"{PISTON_BASE_URL}/api/v2/execute"
 
+# Piston rejects a request if "version" does not match an installed runtime.
+# "*" tells Piston to pick the latest installed version — robust across runtime upgrades.
 LANGUAGE_MAP = {
-    "python": {"language": "python", "version": "3.10"},
-    "python3": {"language": "python", "version": "3.10"},
-    "java": {"language": "java", "version": "15"},
-    "c": {"language": "c", "version": "10"},
-    "cpp": {"language": "c++", "version": "10"},
-    "javascript": {"language": "javascript", "version": "18.15.0"},
+    "python":     {"language": "python",     "version": "*"},
+    "python3":    {"language": "python",     "version": "*"},
+    "java":       {"language": "java",       "version": "*"},
+    "c":          {"language": "c",          "version": "*"},
+    "cpp":        {"language": "c++",        "version": "*"},
+    "c++":        {"language": "c++",        "version": "*"},
+    "javascript": {"language": "javascript", "version": "*"},
+    "js":         {"language": "javascript", "version": "*"},
+    "node":       {"language": "javascript", "version": "*"},
 }
 
 async def execute_on_piston(code: str, language: str, stdin: str = "") -> dict:
@@ -24,14 +29,21 @@ async def execute_on_piston(code: str, language: str, stdin: str = "") -> dict:
         "version": lang_config["version"],
         "files": [{"content": code}],
         "stdin": stdin,
-        "run_timeout": 5000,       # 5 seconds
-        "compile_timeout": 10000,  # 10 seconds
-        "run_memory_limit": 128_000_000,  # 128 MB
+        # Our EC2 Piston instance caps run_timeout at 3000ms and compile_timeout at 10000ms.
+        # Memory limit also capped — omit to use the instance default rather than guess.
+        "run_timeout": 3000,
+        "compile_timeout": 10000,
     }
-    
+
     async with httpx.AsyncClient(timeout=15.0) as client:
         response = await client.post(PISTON_EXECUTE_URL, json=payload)
-        response.raise_for_status()
+        if response.status_code >= 400:
+            # Surface Piston's own error message so debugging isn't blind.
+            raise httpx.HTTPStatusError(
+                f"Piston {response.status_code}: {response.text[:400]}",
+                request=response.request,
+                response=response,
+            )
         return response.json()
 
 async def run_test_cases(code: str, language: str, test_cases: List[Dict[str, Any]]) -> dict:
