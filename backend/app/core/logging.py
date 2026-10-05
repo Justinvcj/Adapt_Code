@@ -15,8 +15,10 @@ class RedactingFormatter(logging.Formatter):
             "msg":    record.getMessage(),
         }
         if record.exc_info:
+            import traceback as _tb
             payload["exc_type"] = record.exc_info[0].__name__
-            # intentionally no exc value / traceback
+            payload["exc_value"] = str(record.exc_info[1])
+            payload["traceback"] = _tb.format_exception(*record.exc_info)
         return json.dumps(payload)
 
 logger = logging.getLogger("uvicorn")

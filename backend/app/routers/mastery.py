@@ -30,7 +30,8 @@ async def get_mastery(user: CurrentUser = Depends(get_current_user)) -> Dict[str
             prereqs = PREREQUISITE_GRAPH.get(c, [])
             
             bkt_params = get_bkt_params(c)
-            concept_L0 = bkt_params["L0"]
+            # get_bkt_params returns (L0, p_t, p_g, p_s); index 0 is L0.
+            concept_L0 = bkt_params[0] if isinstance(bkt_params, tuple) else bkt_params.get("L0", 0.3)
             
             result.append({
                 "concept_tag": c,

@@ -6,7 +6,7 @@ from fastapi import Request, HTTPException, Depends
 from app.core.config import settings
 from app.core.database import get_supabase_admin
 
-JWKS_URL = f"{settings.SUPABASE_URL}/auth/v1/keys"
+JWKS_URL = f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json"
 _JWKS_CACHE: dict = {"keys": None, "fetched_at": 0}
 _JWKS_TTL   = 3600  # 1 hour
 
@@ -14,8 +14,12 @@ async def _get_jwks():
     now = time.time()
     if _JWKS_CACHE["keys"] and now - _JWKS_CACHE["fetched_at"] < _JWKS_TTL:
         return _JWKS_CACHE["keys"]
-    async with httpx.AsyncClient(timeout=3.0) as client:
-        r = await client.get(JWKS_URL)
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        # Supabase's /auth/v1/keys endpoint requires an API key header.
+        r = await client.get(JWKS_URL, headers={
+            "apikey": settings.SUPABASE_KEY,
+            "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+        })
         r.raise_for_status()
         _JWKS_CACHE["keys"] = r.json()
         _JWKS_CACHE["fetched_at"] = now

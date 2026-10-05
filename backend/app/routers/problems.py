@@ -156,8 +156,7 @@ async def select_next_problem(action: str, current_concept: str, current_difficu
     return selected
 
 @router.post("/submit", response_model=SubmitResponse)
-@limiter.limit("20/minute", key_func=lambda r: r.cookies.get("adaptcode_session", "unknown"))
-@limiter.limit("200/day", key_func=lambda r: r.cookies.get("adaptcode_session", "unknown"))
+@limiter.limit("20/minute")
 async def submit_code(request: Request, req: SubmitRequest, background_tasks: BackgroundTasks, user: CurrentUser = Depends(get_current_user)):
     import os
     user_id = user.user_id
