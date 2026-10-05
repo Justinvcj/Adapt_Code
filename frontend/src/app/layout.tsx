@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import ThemeApplier from "@/components/adapt/ThemeApplier";
+import SplashScreen from "@/components/adapt/SplashScreen";
 import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className={`${grotesk.variable} ${jetbrainsMono.variable} antialiased`}>
         <ThemeApplier />
+        <SplashScreen />
         <AuthProvider>
           <Toaster
             position="bottom-right"
