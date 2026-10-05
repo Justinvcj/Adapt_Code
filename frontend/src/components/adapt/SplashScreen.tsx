@@ -61,10 +61,8 @@ export default function SplashScreen() {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg, #0b0b0e)",
+        background: "#000",
+        overflow: "hidden",
         opacity: phase === "fading" ? 0 : 1,
         transition: "opacity 420ms cubic-bezier(.22,.61,.36,1)",
         pointerEvents: phase === "fading" ? "none" : "auto",
@@ -78,10 +76,10 @@ export default function SplashScreen() {
         playsInline
         preload="auto"
         style={{
-          width: "min(360px, 60vw)",
-          height: "auto",
-          borderRadius: 24,
-          boxShadow: "0 20px 60px rgba(255, 161, 22, 0.25), 0 0 0 1px rgba(255,255,255,0.04)",
+          width: "100vw",
+          height: "100vh",
+          objectFit: "cover",
+          display: "block",
         }}
       />
     </div>
