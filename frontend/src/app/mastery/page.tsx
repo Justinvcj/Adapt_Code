@@ -1,16 +1,47 @@
 "use client";
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
 import Footer from '@/components/adapt/Footer';
-import { CONCEPTS, MOCK_MASTERY, CONCEPT_BY_ID } from '@/data/concepts';
+import { CONCEPTS, MOCK_MASTERY, CONCEPT_BY_ID, type ConceptId } from '@/data/concepts';
+import { masteryAPI, API_ENABLED } from '@/lib/api';
 import toast from 'react-hot-toast';
+
+type MasteryMap = Record<string, { mastery: number; solved: number; unlocked: boolean }>;
 
 export default function MasteryPage() {
   const router = useRouter();
-  const unlockedCount = Object.values(MOCK_MASTERY).filter((m) => m.unlocked).length;
-  const avgMastery = Object.values(MOCK_MASTERY).reduce((a, b) => a + b.mastery, 0) / 12;
-  const totalSolved = Object.values(MOCK_MASTERY).reduce((a, b) => a + b.solved, 0);
+  const [mastery, setMastery] = useState<MasteryMap>(MOCK_MASTERY as MasteryMap);
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    if (!API_ENABLED) return;
+    (async () => {
+      try {
+        const res = await masteryAPI.list();
+        const next: MasteryMap = {};
+        for (const row of res.data) {
+          next[row.concept_tag] = {
+            mastery: row.mastery_probability,
+            solved: row.problems_solved,
+            unlocked: row.is_unlocked,
+          };
+        }
+        // Keep mocks for any concept the backend didn't return (shouldn't happen,
+        // but survives partial responses without a blank grid).
+        for (const c of CONCEPTS) if (!next[c.id]) next[c.id] = MOCK_MASTERY[c.id as ConceptId];
+        setMastery(next);
+        setIsLive(true);
+      } catch {
+        // keep mock fallback
+      }
+    })();
+  }, []);
+
+  const unlockedCount = useMemo(() => Object.values(mastery).filter((m) => m.unlocked).length, [mastery]);
+  const avgMastery = useMemo(() => Object.values(mastery).reduce((a, b) => a + b.mastery, 0) / Math.max(1, Object.keys(mastery).length), [mastery]);
+  const totalSolved = useMemo(() => Object.values(mastery).reduce((a, b) => a + b.solved, 0), [mastery]);
 
   const C = 2 * Math.PI * 28;
   const dash = C * avgMastery;
@@ -49,14 +80,14 @@ export default function MasteryPage() {
 
           <div className="mast-cat-grid">
             {CONCEPTS.map((c) => {
-              const m = MOCK_MASTERY[c.id];
+              const m = mastery[c.id] ?? MOCK_MASTERY[c.id];
               const Icon = c.icon;
               const total = c.problems.easy + c.problems.medium + c.problems.hard;
               const tier = !m.unlocked ? 'locked'
                          : m.mastery >= 0.75 ? 'done'
                          : m.mastery < 0.4  ? 'weak'
                          : 'progress';
-              const blockedBy = c.prereqs.filter((p) => (MOCK_MASTERY[p]?.mastery ?? 0) < 0.5);
+              const blockedBy = c.prereqs.filter((p) => (mastery[p]?.mastery ?? MOCK_MASTERY[p]?.mastery ?? 0) < 0.5);
 
               return (
                 <button

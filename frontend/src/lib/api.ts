@@ -103,7 +103,54 @@ export type SubmitResponse = {
 };
 
 export const problemsAPI = {
-  start:  (problem_id: string) => api.post<{ status: string }>('/api/start', { problem_id }),
-  submit: (req: SubmitRequest) => api.post<SubmitResponse>('/api/submit', req),
-  next:   () => api.get<{ problem_id: string }>('/api/next-problem'),
+  start:    (problem_id: string) => api.post<{ status: string }>('/api/start', { problem_id }),
+  abandon:  (problem_id: string) => api.post<{ status: string }>('/api/abandon', { problem_id }),
+  submit:   (req: SubmitRequest) => api.post<SubmitResponse>('/api/submit', req),
+  next:     () => api.get<{ problem_id: string }>('/api/next-problem'),
+  list:     () => api.get<{ status: string; data: ApiProblemSummary[] }>('/api/problems'),
+  get:      (id: string) => api.get<{ status: string; problem: ApiProblem }>(`/api/problems/${id}`),
+};
+
+export type ApiProblemSummary = {
+  id: string;
+  title: string;
+  difficulty_level: 'easy' | 'medium' | 'hard';
+  concept_tag: string;
+};
+
+export type ApiProblem = ApiProblemSummary & {
+  problem_id: string;
+  description: string;
+  test_cases: Array<{ input: string; expected_output: string }>;
+  hint_text?: string;
+  starter_code?: Record<string, string>;
+};
+
+// ---- mastery + stats ----
+
+export type ApiMasteryEntry = {
+  concept_tag: string;
+  mastery_probability: number;
+  is_unlocked: boolean;
+  prerequisites: string[];
+  problems_attempted: number;
+  problems_solved: number;
+};
+
+export const masteryAPI = {
+  list: () => api.get<{ status: string; data: ApiMasteryEntry[] }>('/api/mastery'),
+};
+
+export type ApiStatsSummary = {
+  total_problems_solved: number;
+  total_sessions: number;
+  current_streak: number;
+  strongest_concept: string | null;
+  weakest_concept: string | null;
+  avg_mastery: number;
+};
+
+export const statsAPI = {
+  summary: () => api.get<{ status: string; data: ApiStatsSummary }>('/api/stats'),
+  heatmap: () => api.get<{ status: string; data: Array<{ date: string; count: number }> }>('/api/stats/heatmap'),
 };
