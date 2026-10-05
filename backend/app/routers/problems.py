@@ -32,7 +32,7 @@ async def start_problem(req: StartRequest, user: CurrentUser = Depends(get_curre
     supabase = get_supabase_user(user.jwt)
     supabase.table("active_problem_state").upsert({
         "student_id": user_id,
-        "problem_id": req.problem_id,
+        "problem_id": _resolve_problem_id(req.problem_id),
         "start_time": time.time(),
         "hint_used": False
     }).execute()
@@ -65,9 +65,23 @@ class AbandonRequest(BaseModel):
     attempt_count: int = 0
     hint_used: bool = False
 
+import uuid as _uuid
+
+def _resolve_problem_id(problem_id_or_slug: str) -> str:
+    """Problems are stored by UUID. The frontend references them by slug
+    (e.g. 'two-sum'). Treat anything that's not a valid UUID as a slug and
+    derive the deterministic uuid5 the seeder used."""
+    try:
+        _uuid.UUID(problem_id_or_slug)
+        return problem_id_or_slug
+    except Exception:
+        return str(_uuid.uuid5(_uuid.NAMESPACE_DNS, f"adaptcode.problem.{problem_id_or_slug}"))
+
+
 async def get_problem(jwt: str, problem_id: str):
+    pid = _resolve_problem_id(problem_id)
     supabase = get_supabase_user(jwt)
-    res = supabase.table("problems").select("*").eq("problem_id", problem_id).execute()
+    res = supabase.table("problems").select("*").eq("problem_id", pid).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Problem not found")
     return res.data[0]
@@ -159,14 +173,20 @@ async def select_next_problem(jwt: str, action: str, current_concept: str, curre
 @limiter.limit("20/minute")
 async def submit_code(request: Request, req: SubmitRequest, background_tasks: BackgroundTasks, user: CurrentUser = Depends(get_current_user)):
     user_id = user.user_id
+    # Frontend may send a slug ("two-sum"); every downstream column is uuid-typed,
+    # so normalize once at the top and reuse everywhere.
+    problem_uuid = _resolve_problem_id(req.problem_id)
+    req.problem_id = problem_uuid
     supabase = get_supabase_user(user.jwt)
-    problem = await get_problem(user.jwt, req.problem_id)
+    problem = await get_problem(user.jwt, problem_uuid)
     user_mastery = await get_mastery_vector(user.jwt, user_id)
     recent_events = await get_recent_events(user.jwt, user_id, limit=5)
     
-    # 1. Execute via Piston
+    # 1. Execute via Piston (harness wraps function-style code for function-based problems)
     test_cases = problem.get("test_cases", [])
-    execution = await run_test_cases(req.code, req.language, test_cases)
+    starter = problem.get("starter_code") or {}
+    function_meta = starter.get("_meta") if isinstance(starter, dict) else None
+    execution = await run_test_cases(req.code, req.language, test_cases, function_meta=function_meta)
     
     # 2. Compute effective correctness
     result_binary = 1 if execution["verdict"] == "accepted" else 0
@@ -317,6 +337,7 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
 @router.post("/abandon")
 async def abandon_problem(req: AbandonRequest, user: CurrentUser = Depends(get_current_user)):
     user_id = user.user_id
+    req.problem_id = _resolve_problem_id(req.problem_id)
     supabase = get_supabase_user(user.jwt)
     problem = await get_problem(user.jwt, req.problem_id)
     concept = problem["concept_tag"]
@@ -424,8 +445,9 @@ async def get_all_problems():
 
 @router.get("/problems/{problem_id}")
 async def get_single_problem(problem_id: str):
+    pid = _resolve_problem_id(problem_id)
     supabase = get_supabase_admin()
-    res = supabase.table("problems").select("*").eq("problem_id", problem_id).execute()
+    res = supabase.table("problems").select("*").eq("problem_id", pid).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Problem not found")
     return {"status": "success", "problem": res.data[0]}
