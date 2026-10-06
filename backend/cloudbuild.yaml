@@ -1,0 +1,70 @@
+# Google Cloud Build config. Triggered either manually (`gcloud builds submit`)
+# or from a Cloud Build trigger wired to the GitHub repo.
+#
+# Build steps:
+#   1. Build the backend image with Tailscale baked in.
+#   2. Push to Artifact Registry.
+#   3. Deploy to Cloud Run with env vars + secrets.
+#
+# Required substitutions (set at trigger time or via --substitutions):
+#   _REGION           e.g. asia-southeast1
+#   _REPO             Artifact Registry repo name, e.g. adaptcode
+#   _SERVICE          Cloud Run service name, e.g. adaptcode-backend
+#   _FRONTEND_URL     e.g. https://adaptcode.vercel.app
+#
+# Required secrets in Secret Manager (same names as the env vars):
+#   SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY,
+#   GEMINI_API_KEY, TS_AUTHKEY
+
+substitutions:
+  _REGION: asia-southeast1
+  _REPO: adaptcode
+  _SERVICE: adaptcode-backend
+  _FRONTEND_URL: https://adaptcode.vercel.app
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:latest
+      - -f
+      - backend/Dockerfile
+      - backend
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --allow-unauthenticated
+      - --cpu=1
+      - --memory=1Gi
+      - --min-instances=0
+      - --max-instances=5
+      - --concurrency=40
+      - --port=8080
+      - --timeout=60
+      - --set-env-vars=ENV=production,PISTON_URL=http://100.114.155.33:2000,TS_HOSTNAME=${_SERVICE},FRONTEND_URL=${_FRONTEND_URL},TRUSTED_PROXY_CIDRS=35.191.0.0/16;130.211.0.0/22
+      - --set-secrets=SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_KEY=SUPABASE_KEY:latest,SUPABASE_SERVICE_KEY=SUPABASE_SERVICE_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,TS_AUTHKEY=TS_AUTHKEY:latest
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:latest

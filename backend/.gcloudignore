@@ -1,0 +1,23 @@
+# Ship only what Cloud Build needs to produce the image.
+.git/
+.gitignore
+.pytest_cache/
+__pycache__/
+venv/
+.venv/
+*.pyc
+*.pyo
+.env
+.env.*
+tests/
+test_*.py
+research/
+migrations/
+apply_migrations.py
+apply_rls.sql
+schema.sql
+clean_schema.sql
+pretrain.py
+simulator.py
+seed_db.py
+scripts/
