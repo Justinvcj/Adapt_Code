@@ -6,6 +6,7 @@ import secrets
 import hmac
 from app.core.config import settings
 from app.core.database import get_supabase_admin, get_supabase_user
+from app.services.audit import log_event as audit_log
 from app.models.schemas import RegisterRequest, LoginRequest
 from app.core.dependencies import get_current_user, CurrentUser
 from app.core.rate_limit import limiter, get_real_ip
@@ -92,11 +93,8 @@ async def login(request: Request, req: LoginRequest, response: Response) -> Any:
     except Exception:
         logger.error("users lookup failed", exc_info=True)
 
-    # 3) best-effort audit — missing table must not break login
-    try:
-        supabase.table("audit_log").insert({"actor": user_id, "action": "login_success"}).execute()
-    except Exception:
-        logger.error("audit_log insert failed", exc_info=True)
+    # 3) best-effort audit via direct Postgres (bypasses PostgREST role drift)
+    audit_log("login_success", actor=user_id)
 
     # 4) issue the session cookie
     json_resp = JSONResponse({
@@ -105,13 +103,17 @@ async def login(request: Request, req: LoginRequest, response: Response) -> Any:
         "display_name": display_name,
         "is_pro": is_pro,
     })
+    # samesite=lax works locally when backend+frontend share localhost;
+    # in prod the two services sit on different domains (Vercel ↔ Cloud Run),
+    # which requires samesite=none + secure for the cookie to flow at all.
+    _is_prod = settings.ENV in {"production", "staging"}
     json_resp.set_cookie(
         key="adaptcode_session",
         value=access_token,
         max_age=60 * 60,
         httponly=True,
-        secure=settings.ENV in {"production", "staging"},
-        samesite="lax",
+        secure=_is_prod,
+        samesite="none" if _is_prod else "lax",
         path="/",
     )
     return json_resp
@@ -121,7 +123,7 @@ async def logout(response: Response, user: CurrentUser = Depends(get_current_use
     try:
         supabase = get_supabase_admin()
         supabase.auth.sign_out(user.jwt)
-        supabase.table("audit_log").insert({"actor": user.user_id, "action": "logout"}).execute()
+        audit_log("logout", actor=user.user_id)
     except Exception as e:
         pass
     resp = JSONResponse({"status": "success"})

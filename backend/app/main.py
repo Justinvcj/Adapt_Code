@@ -44,8 +44,12 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 from urllib.parse import urlparse
 
-# Configure CORS
-allowed = [settings.FRONTEND_URL]
+# Configure CORS.
+# FRONTEND_URL may be a single origin or a comma-separated list, so prod can
+# include the main domain + Vercel preview URLs without a code change.
+# A regex can be set via FRONTEND_URL_REGEX for Vercel's preview subdomains
+# (e.g. "^https://adaptcode-[a-z0-9-]+\.vercel\.app$").
+allowed: list[str] = [o.strip() for o in (settings.FRONTEND_URL or "").split(",") if o.strip()]
 if settings.ENV not in {"production", "staging"}:
     if "http://localhost:3000" not in allowed:
         allowed.append("http://localhost:3000")
@@ -57,9 +61,12 @@ for origin in allowed:
     assert parsed.scheme == "https" or settings.ENV not in {"production", "staging"}, f"Insecure CORS origin: {origin}"
     assert parsed.netloc, f"Malformed CORS origin: {origin}"
 
+_frontend_url_regex = os.environ.get("FRONTEND_URL_REGEX", "")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed,
+    allow_origin_regex=_frontend_url_regex or None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS", "PUT"],
     allow_headers=["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-Id"],
