@@ -31,28 +31,51 @@ from app.core.database import get_supabase_admin  # noqa: E402
 
 PROBLEMS_JSON = BACKEND.parent / "problems_db" / "final_problems_db.json"
 
-# Our 12 concept slugs → list of LeetCode topic names (any match counts).
-# Order matters only for display; selection is first-match.
+# Our 12 concept slugs → LeetCode topic names.
+#
+# Order is a priority list — specialized concepts match FIRST so a problem
+# tagged "Dynamic Programming + Array" lands in `dynamic_programming` instead
+# of being swallowed by the general `arrays` bucket. General fallback concepts
+# (arrays, basic_syntax) come last so they absorb whatever's left over.
+#
+# A problem is assigned to exactly ONE concept (first match wins across this
+# iteration order), so no concept dilutes another.
 CONCEPT_TOPIC_MAP: Dict[str, List[str]] = {
-    "basic_syntax":        ["Math", "Counting", "Simulation"],
-    "loops":               ["Simulation", "Counting", "Enumeration"],
-    "strings":             ["String"],
-    "arrays":              ["Array"],
-    "hashing":             ["Hash Table", "Hash Function"],
-    "two_pointers":        ["Two Pointers"],
-    "sliding_window":      ["Sliding Window"],
-    "recursion":           ["Recursion", "Divide and Conquer"],
+    # Specialized techniques first — they're what the concept actually names.
     "backtracking":        ["Backtracking"],
+    "dynamic_programming": ["Dynamic Programming", "Greedy", "Memoization"],
     "binary_search":       ["Binary Search"],
-    "trees":               ["Tree", "Binary Tree", "Binary Search Tree", "Trie"],
-    "dynamic_programming": ["Dynamic Programming"],
+    "sliding_window":      ["Sliding Window"],
+    "two_pointers":        ["Two Pointers"],
+    "recursion":           ["Recursion", "Divide and Conquer"],
+    # Data-structure-ish concepts next.
+    "trees":               ["Tree", "Binary Tree", "Binary Search Tree", "Trie",
+                            "Depth-First Search", "Breadth-First Search",
+                            "Graph", "Heap (Priority Queue)", "Ordered Set"],
+    "hashing":             ["Hash Table", "Hash Function"],
+    # Fundamentals — anything tagged primarily with these falls here.
+    "loops":               ["Simulation", "Counting", "Enumeration", "Iterator"],
+    "strings":             ["String"],
+    "arrays":              ["Array", "Matrix", "Stack", "Queue", "Linked List",
+                            "Sorting", "Prefix Sum", "Monotonic Stack",
+                            "Monotonic Queue", "Design"],
+    "basic_syntax":        ["Math", "Bit Manipulation", "Number Theory",
+                            "Combinatorics", "Probability and Statistics"],
 }
+
+MIN_PER_TIER = 5  # floor per {concept × difficulty} — no upper cap.
 
 DIFF_MAP = {"Easy": "easy", "Medium": "medium", "Hard": "hard"}
 NAMESPACE = uuid.NAMESPACE_DNS
 
 
-def slug_to_uuid(slug: str) -> str:
+def slug_to_uuid(slug: str, concept: str | None = None) -> str:
+    """Deterministic UUID per problem. When `concept` is given we namespace by
+    concept too — needed when a problem is shared across multiple concept
+    buckets (floor backfill) so each copy has its own primary key.
+    """
+    if concept:
+        return str(uuid.uuid5(NAMESPACE, f"adaptcode.problem.{concept}.{slug}"))
     return str(uuid.uuid5(NAMESPACE, f"adaptcode.problem.{slug}"))
 
 
@@ -80,31 +103,79 @@ def normalize_test_cases(raw: List[dict]) -> List[Dict[str, Any]]:
 
 
 def pick_problems(all_problems: List[dict]) -> Dict[str, List[dict]]:
-    """Return {concept_tag: [problems...]} with up to 5 of each difficulty."""
-    # Pre-index for fast topic lookup.
+    """Return {concept_tag: [problems...]}.
+
+    No upper cap: every problem whose topics match a concept is assigned (first
+    concept in iteration order wins across concepts, so each problem lands in
+    exactly one bucket). After the first pass, if any {concept × difficulty}
+    tier has fewer than MIN_PER_TIER problems, we backfill from unassigned
+    problems — ignoring the topic match — so no tier is ever starved below the
+    floor you asked for.
+    """
     chosen_slugs: set[str] = set()
     out: Dict[str, List[dict]] = defaultdict(list)
 
+    usable = [p for p in all_problems if (p.get("parsed_function") or {}).get("test_cases")]
+
+    # ---- Pass 1: topic-matched assignment, no upper limit ----
     for concept, topics in CONCEPT_TOPIC_MAP.items():
         topic_set = set(topics)
-        buckets: Dict[str, List[dict]] = {"Easy": [], "Medium": [], "Hard": []}
-        for p in all_problems:
+        for p in usable:
             if p["problem_slug"] in chosen_slugs:
-                continue
-            pf = p.get("parsed_function") or {}
-            if not pf.get("test_cases"):
                 continue
             if not any(t in topic_set for t in p.get("topics") or []):
                 continue
-            diff = p.get("difficulty")
-            if diff not in buckets or len(buckets[diff]) >= 5:
+            if p.get("difficulty") not in ("Easy", "Medium", "Hard"):
                 continue
-            buckets[diff].append(p)
-
-        selected = buckets["Easy"] + buckets["Medium"] + buckets["Hard"]
-        for p in selected:
             chosen_slugs.add(p["problem_slug"])
             out[concept].append(p)
+
+    # ---- Pass 2: backfill tiers below the floor.
+    # First try genuinely unassigned problems; if those run out for a given
+    # difficulty, borrow from already-assigned problems (same problem can
+    # appear in multiple concepts — the seeder gives each copy a concept-
+    # scoped UUID so Supabase sees them as distinct rows).
+    unassigned = [p for p in usable if p["problem_slug"] not in chosen_slugs]
+
+    def pick_from(pool: List[dict], diff: str, concept: str, taken_in_concept: set, n: int) -> List[dict]:
+        out_: List[dict] = []
+        for p in pool:
+            if len(out_) >= n:
+                break
+            if p.get("difficulty") != diff:
+                continue
+            if p["problem_slug"] in taken_in_concept:
+                continue
+            out_.append(p)
+        return out_
+
+    for concept in CONCEPT_TOPIC_MAP:
+        counts: Dict[str, int] = defaultdict(int)
+        for p in out[concept]:
+            counts[p["difficulty"]] += 1
+        taken_in_concept = {p["problem_slug"] for p in out[concept]}
+
+        for diff in ("Easy", "Medium", "Hard"):
+            needed = MIN_PER_TIER - counts[diff]
+            if needed <= 0:
+                continue
+
+            # (a) prefer never-assigned problems first.
+            picks = pick_from(unassigned, diff, concept, taken_in_concept, needed)
+            for p in picks:
+                chosen_slugs.add(p["problem_slug"])
+                taken_in_concept.add(p["problem_slug"])
+                out[concept].append(p)
+            needed -= len(picks)
+            unassigned = [p for p in unassigned if p["problem_slug"] not in chosen_slugs]
+            if needed <= 0:
+                continue
+
+            # Borrowing across concepts is intentionally skipped so each problem
+            # lives in exactly one row keyed by its canonical slug UUID. If a
+            # tier can't be filled from unassigned problems, we accept the
+            # shortfall rather than duplicate rows and confuse the slug→row
+            # resolver downstream.
 
     return out
 
@@ -144,6 +215,8 @@ def to_supabase_row(concept: str, p: dict) -> Dict[str, Any]:
     if hints:
         hint_text = "\n\n".join(h for h in hints[:3] if isinstance(h, str))
 
+    # Deliberately slug-only (not concept-scoped) — the public URL /problem/<slug>
+    # must map to a single stable row for /api/submit's resolver to find it.
     return {
         "problem_id": slug_to_uuid(p["problem_slug"]),
         "title": p.get("title") or p["problem_slug"],

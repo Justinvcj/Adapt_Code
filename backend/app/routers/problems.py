@@ -440,7 +440,23 @@ async def get_all_problems():
     # Problems are public catalogue data — admin client, no per-user JWT needed.
     supabase = get_supabase_admin()
     res = supabase.table("problems").select("problem_id, title, difficulty_level, concept_tag").execute()
-    data = [{"id": p["problem_id"], "title": p["title"], "difficulty_level": p["difficulty_level"], "concept_tag": p["concept_tag"]} for p in (res.data or [])]
+    # Dedupe by title — earlier seeder iterations left orphan rows with
+    # concept-scoped UUIDs; the canonical slug-UUID row is the one students
+    # actually land on via /problem/<slug>. Keep the first occurrence per title
+    # so the list shows each problem exactly once.
+    seen: set = set()
+    data = []
+    for p in (res.data or []):
+        title = (p.get("title") or "").strip()
+        if not title or title in seen:
+            continue
+        seen.add(title)
+        data.append({
+            "id": p["problem_id"],
+            "title": title,
+            "difficulty_level": p["difficulty_level"],
+            "concept_tag": p["concept_tag"],
+        })
     return {"status": "success", "data": data}
 
 @router.get("/problems/{problem_id}")
