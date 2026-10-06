@@ -3,6 +3,7 @@ node_modules/
 .next/
 out/
 build/
+dist/
 .DS_Store
 
 # Python
@@ -18,9 +19,11 @@ pip-log.txt
 pip-delete-this-directory.txt
 .pytest_cache/
 .coverage
+coverage/
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+*.egg-info/
 
 # Environment
 .env
@@ -29,5 +32,28 @@ htmlcov/
 .env.test.local
 .env.production.local
 
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+__MACOSX/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Local UI Backups
 ui_duplicate/
+
+# Temporary
+tmp/
+*.tmp
