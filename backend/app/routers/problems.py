@@ -444,10 +444,21 @@ async def get_all_problems():
     return {"status": "success", "data": data}
 
 @router.get("/problems/{problem_id}")
-async def get_single_problem(problem_id: str):
+async def get_single_problem(problem_id: str, user: CurrentUser = Depends(get_current_user)):
+    """Return a problem for the signed-in student.
+
+    Hidden test cases are stripped before the response leaves the server — a
+    student with the hidden inputs/outputs could trivially hard-code a
+    stdin→stdout lookup and bypass the grader. Only visible example cases
+    (used to describe the problem) are returned.
+    """
     pid = _resolve_problem_id(problem_id)
     supabase = get_supabase_admin()
     res = supabase.table("problems").select("*").eq("problem_id", pid).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Problem not found")
-    return {"status": "success", "problem": res.data[0]}
+    problem = dict(res.data[0])
+    tcs = problem.get("test_cases") or []
+    if isinstance(tcs, list):
+        problem["test_cases"] = [tc for tc in tcs if not (isinstance(tc, dict) and tc.get("is_hidden"))]
+    return {"status": "success", "problem": problem}
