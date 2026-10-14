@@ -15,7 +15,7 @@
     "@supabase/supabase-js": "^2.117.2",
     "framer-motion": "^13.1.0",
     "gsap": "^3.15.0",
-    "lucide-react": "^1.27.0",
+    "lucide-react": "^1.55.0",
     "motion": "^13.1.1",
     "next": "14.2.35",
     "ogl": "^1.0.11",
