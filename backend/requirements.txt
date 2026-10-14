@@ -12,7 +12,7 @@ packaging==26.2
 pluggy==1.6.0
 postgrest==0.16.11
 propcache==0.5.2
-proto-plus==1.28.2
+proto-plus==1.29.0
 protobuf==5.29.6
 psycopg2-binary==2.9.12
 pyasn1==0.6.4
