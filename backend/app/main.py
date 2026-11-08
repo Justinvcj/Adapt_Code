@@ -92,16 +92,19 @@ import httpx
 @app.get("/health")
 async def health_check():
     piston_ok = False
+    piston_err = None
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             r = await client.get(f"{settings.PISTON_URL}/api/v2/runtimes")
             piston_ok = r.status_code == 200
-    except Exception:
+    except Exception as e:
         piston_ok = False
+        piston_err = f"{type(e).__name__}: {str(e)}"
 
     return {
         "status": "ok",
         "piston_reachable": piston_ok,
+        "piston_error": piston_err,
         "gemini_configured": bool(settings.GEMINI_API_KEY),
         "supabase_configured": bool(settings.SUPABASE_URL and settings.SUPABASE_SERVICE_KEY),
     }
