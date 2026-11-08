@@ -11,8 +11,9 @@ import Avatar from '@/components/adapt/Avatar';
 import EditProfileModal from '@/components/adapt/EditProfileModal';
 import Onboarding from '@/components/adapt/Onboarding';
 import { USER } from '@/components/adapt/data';
-import { CONCEPTS, MOCK_MASTERY, CONCEPT_BY_ID } from '@/data/concepts';
+import { CONCEPTS, CONCEPT_BY_ID } from '@/data/concepts';
 import { useProfile } from '@/lib/profile-store';
+import { useLiveMastery, useLiveStats, pickWeakestUnlocked } from '@/lib/live-data';
 import toast from 'react-hot-toast';
 
 export default function LandingPage() {
@@ -20,13 +21,20 @@ export default function LandingPage() {
   const { profile, update } = useProfile();
   const [editOpen, setEditOpen] = useState(false);
 
-  const totalSolved = Object.values(MOCK_MASTERY).reduce((a, b) => a + b.solved, 0);
-  const avgMastery = Object.values(MOCK_MASTERY).reduce((a, b) => a + b.mastery, 0) / 12;
-  const unlockedCount = Object.values(MOCK_MASTERY).filter((m) => m.unlocked).length;
+  // Live mastery + stats; both fall back to the mock when the API is offline
+  // or the user is anonymous so the hero never shows NaN.
+  const { mastery } = useLiveMastery();
+  const { stats } = useLiveStats();
 
-  const weakestUnlocked = CONCEPTS
-    .filter((c) => MOCK_MASTERY[c.id].unlocked)
-    .sort((a, b) => MOCK_MASTERY[a.id].mastery - MOCK_MASTERY[b.id].mastery)[0];
+  const totalSolved = stats?.total_problems_solved
+    ?? Object.values(mastery).reduce((a, b) => a + b.solved, 0);
+  const avgMastery = stats?.avg_mastery
+    ?? Object.values(mastery).reduce((a, b) => a + b.mastery, 0) / 12;
+  const unlockedCount = Object.values(mastery).filter((m) => m.unlocked).length;
+  const streakValue = stats?.current_streak ?? USER.streak;
+
+  const weakestUnlockedId = pickWeakestUnlocked(mastery);
+  const weakestUnlocked = CONCEPT_BY_ID[weakestUnlockedId] ?? CONCEPTS[0];
 
   return (
     <>
@@ -57,7 +65,7 @@ export default function LandingPage() {
                   <div className="hero-stat"><b>{totalSolved}</b><span>Solved</span></div>
                   <div className="hero-stat"><b>{(avgMastery * 100).toFixed(0)}%</b><span>Mastery</span></div>
                   <div className="hero-stat"><b>{unlockedCount}/12</b><span>Unlocked</span></div>
-                  <div className="hero-stat"><b>{USER.streak}</b><span>Day streak</span></div>
+                  <div className="hero-stat"><b>{streakValue}</b><span>Day streak</span></div>
                 </div>
               </div>
               <div className="hero-cta">
@@ -80,10 +88,10 @@ export default function LandingPage() {
               </div>
               <div className="crow-list-wrap">
                 {CONCEPTS.map((c) => {
-                  const m = MOCK_MASTERY[c.id];
+                  const m = mastery[c.id];
                   const isRecommended = c.id === weakestUnlocked.id;
                   const blockedBy = c.prereqs
-                    .filter((p) => (MOCK_MASTERY[p]?.mastery ?? 0) < 0.5)
+                    .filter((p) => (mastery[p]?.mastery ?? 0) < 0.5)
                     .map((p) => CONCEPT_BY_ID[p].title)
                     .join(' & ');
                   return (

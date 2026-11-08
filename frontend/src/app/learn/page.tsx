@@ -2,37 +2,65 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { CONCEPTS, MOCK_MASTERY } from '@/data/concepts';
+import { CONCEPT_BY_ID } from '@/data/concepts';
+import { problemsAPI, API_ENABLED, ApiOffline, ApiError } from '@/lib/api';
+import { useLiveMastery, pickWeakestUnlocked } from '@/lib/live-data';
 
 /**
  * /learn — adaptive-path dispatcher.
- * Reads the user's mastery vector (mock for now, /api/me/mastery later),
- * finds the weakest unlocked concept, and routes to a problem in that concept.
- * Once a per-concept problem corpus is wired, this picks the next unseen problem
- * at the right difficulty based on BKT state.
+ *
+ * Reads the student's real mastery vector from /api/mastery, finds the
+ * weakest unlocked concept, then hands the final pick to /api/next-problem
+ * (which runs LinUCB on the server). Falls back to local-mock routing
+ * when the backend is unreachable.
  */
 export default function LearnDispatcher() {
   const router = useRouter();
+  const { mastery, live, loading } = useLiveMastery();
 
   useEffect(() => {
-    const weakest = CONCEPTS
-      .filter((c) => MOCK_MASTERY[c.id].unlocked)
-      .sort((a, b) => MOCK_MASTERY[a.id].mastery - MOCK_MASTERY[b.id].mastery)[0];
-
+    if (loading) return;
+    const weakestId = pickWeakestUnlocked(mastery);
+    const weakest = CONCEPT_BY_ID[weakestId];
     if (!weakest) {
       router.replace('/mastery');
       return;
     }
 
-    toast(`Next up: ${weakest.title} — ${Math.round(MOCK_MASTERY[weakest.id].mastery * 100)}% mastery`, {
+    const weakestPct = Math.round(mastery[weakestId].mastery * 100);
+    toast(`Next up: ${weakest.title} — ${weakestPct}% mastery`, {
       icon: '🎯',
-      duration: 2500,
+      duration: 2200,
     });
 
-    // Until a per-concept problem corpus lands, every path leads to Two Sum.
-    // Later: query a /api/me/next-problem?concept=<id> endpoint and route to the slug it returns.
-    setTimeout(() => router.replace(`/problem/two-sum`), 400);
-  }, [router]);
+    (async () => {
+      // Backend picks the actual problem via LinUCB. On any failure (anon,
+      // offline, 5xx) we fall back to the legacy hardcoded two-sum route so
+      // the button never leads to a dead end.
+      if (!API_ENABLED) {
+        setTimeout(() => router.replace('/problem/two-sum'), 400);
+        return;
+      }
+      try {
+        const next = await problemsAPI.next();
+        const slug = (next as { problem_id?: string; id?: string; slug?: string })
+          ?.problem_id
+          ?? (next as { slug?: string })?.slug
+          ?? (next as { id?: string })?.id
+          ?? '';
+        if (slug) {
+          router.replace(`/problem/${slug}`);
+        } else {
+          router.replace('/problem/two-sum');
+        }
+      } catch (err) {
+        if (!(err instanceof ApiOffline || err instanceof ApiError)) {
+          console.warn('[learn] next-problem failed', err);
+        }
+        router.replace('/problem/two-sum');
+      }
+    })();
+  }, [loading, mastery, router]);
 
   return (
     <div style={{
@@ -46,7 +74,7 @@ export default function LearnDispatcher() {
       fontSize: 14,
     }}>
       <div className="learn-pulse" />
-      <span>Picking the right problem for you…</span>
+      <span>{live ? 'Picking the right problem for you…' : 'Loading your path…'}</span>
       <style jsx>{`
         .learn-pulse {
           width: 48px; height: 48px; border-radius: 50%;

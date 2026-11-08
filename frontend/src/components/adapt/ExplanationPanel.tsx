@@ -1,9 +1,11 @@
 "use client";
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Lightbulb, Sparkles, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { TIER_LABEL, type HintTier } from '@/data/hints';
 import { CONCEPT_BY_ID, type ConceptId } from '@/data/concepts';
 import { CONCEPT_TEACHING, PROBLEMS_BY_CONCEPT, PROBLEM_BANK } from '@/data/problems';
+import { api, API_ENABLED, ApiError, ApiOffline } from '@/lib/api';
 
 export type Submission = {
   id: string;
@@ -14,6 +16,51 @@ export type Submission = {
   hints: HintTier[];
   mastery_delta: number;
 };
+
+type GeminiExplanation = {
+  status: 'pending' | 'completed' | 'failed';
+  what_went_wrong?: string;
+  why_approach_fails?: string;
+  concept_to_review?: string;
+};
+
+/**
+ * Poll /api/explanation/{event_id} for the Gemini diagnostic that the backend
+ * generates as a background task after a failed submission. Returns the final
+ * explanation (or null on timeout). Polls every 1.2s for up to ~24s.
+ */
+function useGeminiExplanation(eventId: string | undefined, enabled: boolean): GeminiExplanation | null {
+  const [state, setState] = useState<GeminiExplanation | null>(null);
+  useEffect(() => {
+    if (!enabled || !eventId || !API_ENABLED) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let ticks = 0;
+    const MAX_TICKS = 20; // ~24s
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const r = await api.get<GeminiExplanation>(`/api/explanation/${eventId}`);
+        if (cancelled) return;
+        setState(r);
+        if (r.status === 'completed' || r.status === 'failed') return;
+      } catch (err) {
+        if (!(err instanceof ApiOffline || err instanceof ApiError)) {
+          console.warn('[explanation] poll failed', err);
+        }
+        // Keep trying — the row may not exist yet right after submit.
+      }
+      ticks += 1;
+      if (ticks < MAX_TICKS) timer = setTimeout(tick, 1200);
+    };
+    tick();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [eventId, enabled]);
+  return state;
+}
 
 type Props = {
   latest?: Submission;
@@ -31,6 +78,13 @@ export default function ExplanationPanel({ latest, concept, hintsRevealed, onGoT
   const c = CONCEPT_BY_ID[concept];
   const teaching = CONCEPT_TEACHING[concept];
   const sibling = (PROBLEMS_BY_CONCEPT[concept] ?? []).slice(0, 3);
+
+  // Poll the backend for the Gemini explanation on failed submissions.
+  // `latest.id` is the event_id the server returned from /api/submit.
+  const gemini = useGeminiExplanation(
+    latest?.id,
+    Boolean(latest && latest.verdict !== 'Accepted'),
+  );
 
   if (!latest) {
     return (
@@ -108,20 +162,30 @@ export default function ExplanationPanel({ latest, concept, hintsRevealed, onGoT
         </div>
       </div>
 
+      {gemini?.status === 'pending' && (
+        <div className="expl-gemini-status">
+          <Sparkles size={13} /> AI tutor is reviewing your code…
+        </div>
+      )}
+
       <section className="expl-card">
         <div className="expl-card-head">
           <span className="expl-chip">1</span>
-          <h4>What usually goes wrong here</h4>
+          <h4>What went wrong</h4>
         </div>
-        <p>{teaching.commonMistake}</p>
+        <p>{gemini?.status === 'completed' && gemini.what_went_wrong
+          ? gemini.what_went_wrong
+          : teaching.commonMistake}</p>
       </section>
 
       <section className="expl-card">
         <div className="expl-card-head">
           <span className="expl-chip">2</span>
-          <h4>The idea this problem rehearses</h4>
+          <h4>Why this approach fails</h4>
         </div>
-        <p>{teaching.idiom}</p>
+        <p>{gemini?.status === 'completed' && gemini.why_approach_fails
+          ? gemini.why_approach_fails
+          : teaching.idiom}</p>
       </section>
 
       <section className="expl-card">
@@ -129,7 +193,9 @@ export default function ExplanationPanel({ latest, concept, hintsRevealed, onGoT
           <span className="expl-chip">3</span>
           <h4>What to review</h4>
         </div>
-        <p>Open the <b>{c?.title ?? concept}</b> concept and work through its first problems — the shape of the idea becomes obvious once you&apos;ve seen it in two different problems.</p>
+        <p>{gemini?.status === 'completed' && gemini.concept_to_review
+          ? gemini.concept_to_review
+          : <>Open the <b>{c?.title ?? concept}</b> concept and work through its first problems — the shape of the idea becomes obvious once you&apos;ve seen it in two different problems.</>}</p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-ghost btn-sm expl-link" onClick={onGoToHints}>
             Reveal a hint <ArrowRight size={12} />

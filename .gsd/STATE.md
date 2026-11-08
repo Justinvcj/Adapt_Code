@@ -1,19 +1,30 @@
 # Session State
 
 **Updated:** 2026-11-08
-**Current phase:** Phase A — audit, cleanup, docs sync (in progress).
+**Current phase:** Phase B — frontend wiring (7 of 8 steps complete; B6 OAuth deferred to Phase C).
 **Resumable plan:** [.gsd/PLAN.md](PLAN.md) — if a credit window closes, read that first.
 
 ## This session's work
 
+### Phase A — audit, cleanup, docs sync (done)
 - ✅ Full repo audit vs pasted dossier — findings in `.gsd/PLAN.md` §0.
 - ✅ Verified ground-truth numbers: 518 problems in JSON, 442 seeded by `seed_problems_from_db.py`, 3,339 test cases across usable problems.
 - ✅ Verified Gemini model is `gemini-2.5-flash` (dossier's "3.5" was wrong).
 - ✅ Wrote [docs/API.md](../docs/API.md) — complete backend route reference.
 - ✅ Rewrote [README.md](../README.md) to match reality.
-- ✅ Fixed `/api/leaderboard` NameError (undefined `user.jwt`) in `backend/app/routers/leaderboard.py`.
-- ⏸ Dead-file cleanup (see "Needs user approval" below).
-- ⏸ Phase B (frontend wiring) — not started.
+- ✅ Fixed `/api/leaderboard` NameError (undefined `user.jwt`).
+- ✅ Deleted 9 dead paths (see "Cleanup completed" below).
+
+### Phase B — frontend wiring (7 / 8)
+- ✅ B1 /learn — live mastery + `/api/next-problem`, offline fallback.
+- ✅ B2 Homepage — `useLiveMastery` + `useLiveStats` replace `MOCK_MASTERY`.
+- ✅ B3 Problem page — `/api/start` on mount, `/api/abandon` on unmount.
+- ✅ B4 ExplanationPanel — polls `/api/explanation/{event_id}` every 1.2s, renders Gemini output when ready.
+- ✅ B7 Accept toast carries real `mastery_delta` points.
+- ✅ B8 /onboarding page — new, calls `/api/onboarding/complete`.
+- ✅ New `src/lib/live-data.ts` hooks; `src/lib/supabase.ts` browser client (for Phase C OAuth).
+- ⏸ B5 Profile heatmap wiring — profile page has inline heatmap generation; defer to Phase F polish.
+- ⏸ B6 Google OAuth — frontend half ready (`src/lib/supabase.ts`), but needs backend endpoint to exchange Supabase JWT → `adaptcode_session` cookie. Moved to Phase C.
 
 ## 🚨 Open action items for the user
 

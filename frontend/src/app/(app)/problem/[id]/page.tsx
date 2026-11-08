@@ -51,7 +51,7 @@ function adaptBackendProblem(b: MinimalBackendProblem, slug: string, fallback?: 
     concept: (b.concept_tag as ConceptId) ?? fallback?.concept ?? 'arrays',
     difficulty: diff,
     acceptance: fallback?.acceptance ?? 55,
-    summary: fallback?.summary ?? (b.description || '').split('\n')[0]?.slice(0, 180) || b.title,
+    summary: fallback?.summary ?? ((b.description || '').split('\n')[0]?.slice(0, 180) || b.title),
     description: b.description,
     examples: fallback?.examples ?? [],
     constraints: fallback?.constraints ?? [],
@@ -85,6 +85,25 @@ export default function ProblemPage() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
+
+  // Server-side timer: POST /api/start when the page mounts, POST /api/abandon
+  // if the student navigates away without submitting. The backend uses the
+  // start_time it stores to clamp client-reported time_on_task_seconds in
+  // /api/submit (prevents spoofing the reward signal).
+  const submittedRef = useRef(false);
+  useEffect(() => {
+    if (!API_ENABLED || !slug) return;
+    let cancelled = false;
+    (async () => {
+      try { await problemsAPI.start(slug); } catch { /* 401 anon, or offline — fine */ }
+    })();
+    return () => {
+      cancelled = true;
+      if (submittedRef.current) return;
+      // Fire-and-forget: the page is unmounting; we don't need to await.
+      problemsAPI.abandon(slug).catch(() => { /* ignore */ });
+    };
   }, [slug]);
 
   const concept = problem ? CONCEPT_BY_ID[problem.concept] : undefined;
@@ -206,8 +225,13 @@ export default function ProblemPage() {
   const applySubmission = (sub: Submission) => {
     setSubmissions((prev) => [sub, ...prev]);
     setPTab('explanation');
-    if (sub.verdict === 'Accepted') toast.success(`Accepted · ${sub.runtime_ms ?? '—'} ms`);
-    else toast.error(`${sub.verdict} — tap Explanation`);
+    submittedRef.current = true;
+    if (sub.verdict === 'Accepted') {
+      const pts = (sub.mastery_delta * 100).toFixed(1);
+      toast.success(`Accepted · ${sub.runtime_ms ?? '—'} ms · +${pts} pts mastery`, { duration: 4000 });
+    } else {
+      toast.error(`${sub.verdict} — tap Explanation`);
+    }
   };
 
   const submitCode = async () => {
