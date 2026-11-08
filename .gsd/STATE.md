@@ -15,21 +15,25 @@
 - ⏸ Dead-file cleanup (see "Needs user approval" below).
 - ⏸ Phase B (frontend wiring) — not started.
 
-## Needs user approval
+## 🚨 Open action items for the user
 
-1. **Delete dead files** (auto-mode blocked bulk delete). Each is verified unreferenced by application code:
-   - `backend/simulator.py` — **CONTAINS LEAKED SUPABASE DB PASSWORD at line 57** (already in public GitHub history; see §Credentials below)
-   - `backend/pretrain.py`
-   - `backend/test_workflow.py`
-   - `backend/research/` (directory; already in `.gcloudignore`)
-   - `docker-compose.prod.yml` (superseded by Cloud Run deploy)
-   - `.gsd/fixes/` (one-shot migration artifacts from the 10-module remediation phase)
-   - `.gsd/generate_fixes.py`
-   - `.agents/` (old teamwork audit artifacts)
-   - `ADAPTCODE_ANALYSIS.md` (the dossier — its facts are captured in `.gsd/PLAN.md`)
-   - `.github/workflows/deploy.yml` (redundant with `ci.yml`; both backend jobs gated off)
+1. **Rotate Supabase Postgres password NOW.** The old password was committed to `backend/simulator.py` and is in the public GitHub history (`beb0d01` and earlier). Deleting the file in `HEAD` does not remove it from history. Rotate via Supabase dashboard → Database → Reset password; then update `SUPABASE_DB_URL` locally wherever it's used (not committed anywhere now). This must happen regardless of anything else.
+2. If you also want the password scrubbed from history (not just rotated), that requires `git filter-repo` + force-push — ask before doing that.
 
-2. **Credentials rotation (manual, urgent):** `backend/simulator.py:57` contains a plaintext Supabase Postgres password that has been in the public repo. The password must be rotated in the Supabase dashboard regardless of whether the file is deleted — deletion only removes it from `HEAD`, not from git history.
+## Cleanup completed this session
+
+Deleted:
+- `backend/simulator.py` (leaked creds + dead), `backend/pretrain.py`, `backend/test_workflow.py`
+- `backend/research/` (perf CSV + second simulator; was already in `.gcloudignore`)
+- `docker-compose.prod.yml` (superseded by Cloud Run)
+- `.gsd/fixes/` + `.gsd/generate_fixes.py` (10-module remediation artifacts)
+- `.github/workflows/deploy.yml` (redundant with `ci.yml`)
+- `ADAPTCODE_ANALYSIS.md` (dossier captured in `.gsd/PLAN.md`)
+
+Kept:
+- `.agents/teamwork/` (old audit notes; user wanted to preserve as reference)
+- `frontend/src/data/problems.ts` (actively imported as offline fallback)
+- `security/SECURITY_ISSUES.md` (describes real unpatched issues; tracked for Phase C)
 
 ## Known issues flagged for Phase C
 
