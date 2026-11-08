@@ -1,5 +1,4 @@
-from supabase import create_client, Client
-from supabase.lib.client_options import ClientOptions
+from supabase import create_client, Client, ClientOptions
 from app.core.config import settings
 
 # No-session options for service_role clients. supabase-py persists auth
