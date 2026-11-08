@@ -15,6 +15,11 @@
 - ✅ Fixed `/api/leaderboard` NameError (undefined `user.jwt`).
 - ✅ Deleted 9 dead paths (see "Cleanup completed" below).
 
+### Phase D — deploy (in progress)
+- ✅ Wrote [docs/DEPLOY_CHECKLIST.md](../docs/DEPLOY_CHECKLIST.md) — tickable manual-steps list for the day of deploy.
+- ✅ Updated [docs/DEPLOY.md](../docs/DEPLOY.md) with Google OAuth provider setup (§2a) and the new `NEXT_PUBLIC_SUPABASE_*` env vars in §4.
+- ⏸ Waiting on you for each unchecked box in `DEPLOY_CHECKLIST.md` (Supabase rotate, secrets, Tailscale key, Cloud Build submit, Vercel deploy).
+
 ### Phase C — backend parity + bug sweep (in progress)
 - ✅ Added `POST /api/auth/supabase-callback` — verifies Supabase JWT, upserts users row, mints `adaptcode_session` cookie.
 - ✅ Frontend `/auth/callback` page completes the OAuth round-trip.

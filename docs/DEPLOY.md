@@ -65,6 +65,21 @@ echo -n "<value>" | gcloud secrets create TS_AUTHKEY            --data-file=-
 
 Rotate later with: `echo -n "<new>" | gcloud secrets versions add <NAME> --data-file=-`
 
+### 2a. Supabase Google OAuth (one-time, for the Google sign-in button)
+
+1. **Google Cloud Console → APIs & Services → Credentials** → create a new OAuth client ID (type: Web).
+   - Authorized redirect URI: `https://<REF>.supabase.co/auth/v1/callback`
+2. Copy the client ID + secret.
+3. **Supabase dashboard → Authentication → Providers → Google** → enable, paste both.
+4. **Supabase dashboard → Authentication → URL Configuration → Redirect URLs** — add:
+   - `http://localhost:3000/auth/callback`
+   - `https://<your-vercel-domain>.vercel.app/auth/callback`
+   - Any preview-branch domains you expect (`https://adaptcode-*-<team>.vercel.app/auth/callback`).
+
+Frontend needs these env vars (public — safe to ship to the browser; see §4):
+- `NEXT_PUBLIC_SUPABASE_URL` = `https://<REF>.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon key
+
 ---
 
 ## 3. Deploy the backend
@@ -101,6 +116,8 @@ In Vercel:
 2. **Framework preset:** Next.js. **Root directory:** `frontend`.
 3. **Environment variables** (Production + Preview):
    - `NEXT_PUBLIC_API_URL` = the Cloud Run service URL from step 3 (no trailing slash).
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://<REF>.supabase.co` (only needed for the Google OAuth button; unset → button falls back to demo mode)
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Supabase anon key
 4. Deploy.
 
 Grab the Vercel URL (e.g. `https://adaptcode.vercel.app` and the per-deploy `https://adaptcode-git-main-<team>.vercel.app`).
