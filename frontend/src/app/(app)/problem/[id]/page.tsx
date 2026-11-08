@@ -379,21 +379,43 @@ export default function ProblemPage() {
             )}
             {pTab === 'solutions' && (
               <div style={{ padding: '4px 0' }}>
-                <h3 style={{ fontSize: 14, marginBottom: 12 }}>Community Solutions</h3>
-                {[
-                  { t: 'Hash Map — O(n) Time, O(n) Space', u: '@algorithmist', l: 'Python 3', v: '2.4k', up: 342 },
-                  { t: 'Brute Force vs Optimized — Walkthrough', u: '@codemaster', l: 'Java', v: '1.8k', up: 218 },
-                  { t: 'Two-pass Hash Table with Edge Cases', u: '@devpro', l: 'C++', v: '956', up: 147 },
-                ].map((s) => (
-                  <div key={s.t} onClick={() => toast('Solution detail — demo')}
-                    style={{ padding: 12, border: '1px solid var(--border)', borderRadius: 'var(--r-md)', marginBottom: 8, cursor: 'pointer' }}>
-                    <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{s.t}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx-2)' }}>
-                      <span>{s.u} · {s.l} · {s.v} views</span>
-                      <span style={{ color: 'var(--solved)' }}>▲ {s.up}</span>
+                <h3 style={{ fontSize: 14, marginBottom: 8 }}>Your accepted submissions</h3>
+                <p style={{ fontSize: 13, color: 'var(--tx-2)', marginBottom: 12, lineHeight: 1.5 }}>
+                  Every time you pass this problem, the code you submitted is saved below.
+                  Community solutions arrive once we have enough signed-in users solving this one.
+                </p>
+                {(() => {
+                  const accepted = submissions.filter((s) => s.verdict === 'Accepted');
+                  if (accepted.length === 0) {
+                    return (
+                      <div style={{
+                        padding: 20, border: '1px dashed var(--border)',
+                        borderRadius: 'var(--r-md)', color: 'var(--tx-2)',
+                        fontSize: 13, textAlign: 'center',
+                      }}>
+                        You haven&apos;t accepted this problem yet. Pass it once and your solution will appear here.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {accepted.map((s) => (
+                        <div
+                          key={s.id}
+                          style={{ padding: 12, border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}
+                        >
+                          <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 13 }}>
+                            Accepted · {s.runtime_ms ?? '—'} ms
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx-2)' }}>
+                            <span>{LANG_NAMES[s.language] || s.language} · {new Date(s.at).toLocaleString()}</span>
+                            <span style={{ color: 'var(--solved)' }}>+{(s.mastery_delta * 100).toFixed(1)} pts mastery</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  );
+                })()}
               </div>
             )}
             {pTab === 'submissions' && (
@@ -404,7 +426,23 @@ export default function ProblemPage() {
             <span className="p-session-stat"><Timer size={13} /> This session · <b>{Math.floor(timeOnTask / 60)}m {timeOnTask % 60}s</b></span>
             <span className="p-session-stat">Attempt <b>{attemptCount}</b></span>
             <span className="p-session-stat">Compile errors <b>{compileErrors}</b></span>
-            <button className="p-bottom-action" onClick={() => toast.success('Bookmarked')} title="Save for later"><Star size={14} /></button>
+            <button
+              className="p-bottom-action"
+              onClick={() => {
+                const KEY = 'adaptcode.bookmarks.v1';
+                let set = new Set<string>();
+                try { set = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch {}
+                if (set.has(problem.slug)) {
+                  set.delete(problem.slug);
+                  toast('Bookmark removed');
+                } else {
+                  set.add(problem.slug);
+                  toast.success('Bookmarked');
+                }
+                try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch {}
+              }}
+              title="Save for later"
+            ><Star size={14} /></button>
             <button className="p-bottom-action" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success('Link copied'); }} title="Copy link"><Share2 size={14} /></button>
           </div>
         </div>

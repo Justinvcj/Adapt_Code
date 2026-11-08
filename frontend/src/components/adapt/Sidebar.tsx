@@ -1,23 +1,28 @@
 "use client";
-import { Library, Compass, Search, GraduationCap } from 'lucide-react';
-import toast from 'react-hot-toast';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Home, Layers, GitBranch, BookOpen, User, Settings } from 'lucide-react';
+import { useProfile } from '@/lib/profile-store';
 
-export default function Sidebar({ active }: { active?: string }) {
-  const soon = (m: string) => toast(m);
+/**
+ * Compact left-rail used on the Practice (/problems) page. Everything here
+ * links to a real destination — nothing says "coming soon".
+ */
+export default function Sidebar({ active: _active }: { active?: string }) {
+  const path = usePathname();
+  const { profile } = useProfile();
+  const handle = profile.display_name || 'me';
+  const is = (p: string) => path === p || path?.startsWith(`${p}/`);
+
   return (
     <div className="sidebar">
-      <button className={`si ${active === 'library' ? 'act' : ''}`} onClick={() => soon('Library coming soon')}><Library /> Library</button>
-      <button className="si" onClick={() => soon('Quest coming soon')}><Compass /> Quest</button>
-      <button className={`si ${active === 'explore' ? 'act' : ''}`} onClick={() => soon('Explore coming soon')}><Search /> Explore</button>
-      <button className="si" onClick={() => soon('Study Plan coming soon')}><GraduationCap /> Study Plan</button>
-      <div className="side-label">My Lists <button onClick={() => soon('Create list — demo')}>+ ▾</button></div>
-      <button className="side-sub"><span className="ico">⭐</span> Favorite</button>
-      <button className="side-sub"><span className="ico">📋</span> array/string</button>
-      <button className="side-sub"><span className="ico">📋</span> 001</button>
-      <button className="side-sub"><span className="ico">📋</span> PET 1</button>
-      <div className="side-label">Saved by me</div>
-      <button className="side-sub"><span className="ico">🎨</span> Design</button>
-      <button className="side-sub"><span className="ico">📊</span> Array</button>
+      <Link className={`si ${is('/') ? 'act' : ''}`} href="/"><Home /> Home</Link>
+      <Link className={`si ${is('/problems') ? 'act' : ''}`} href="/problems"><BookOpen /> Practice</Link>
+      <Link className={`si ${is('/mastery') ? 'act' : ''}`} href="/mastery"><Layers /> Mastery</Link>
+      <Link className={`si ${is('/graph') ? 'act' : ''}`} href="/graph"><GitBranch /> Concept graph</Link>
+      <div style={{ height: 1, background: 'var(--border)', margin: '8px 4px' }} />
+      <Link className={`si ${is(`/profile/${handle}`) ? 'act' : ''}`} href={`/profile/${handle}`}><User /> Profile</Link>
+      <Link className={`si ${is('/settings') ? 'act' : ''}`} href="/settings"><Settings /> Settings</Link>
     </div>
   );
 }

@@ -90,6 +90,15 @@ export const authAPI = {
   register: (email: string, password: string, display_name?: string) =>
     api.post<unknown>('/api/auth/register', { email, password, display_name }),
   logout:   () => api.post<unknown>('/api/auth/logout'),
+  identities:     () => api.get<{ status: string; providers: string[] }>('/api/auth/identities'),
+  unlinkIdentity: (provider: string) =>
+    api.post<{ status: string }>('/api/auth/unlink-identity', { provider }),
+  export:         () => api.get<{
+    status: string;
+    exported_at: string;
+    data: Record<string, unknown>;
+  }>('/api/auth/export'),
+  deleteAccount:  () => api.del<{ status: string }>('/api/auth/account'),
 };
 
 export type SubmitRequest = { problem_id: string; code: string; language: string };

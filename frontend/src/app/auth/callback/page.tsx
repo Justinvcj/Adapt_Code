@@ -40,17 +40,23 @@ export default function AuthCallbackPage() {
       }
       if (cancelled) return;
       if (!session) {
-        toast.error('Google sign-in was cancelled or failed.');
+        toast.error('Sign-in was cancelled or failed.');
         router.replace('/login');
         return;
       }
+      const providerName =
+        (session.user?.app_metadata?.provider as string | undefined) === 'github'
+          ? 'GitHub'
+          : (session.user?.app_metadata?.provider as string | undefined) === 'google'
+            ? 'Google'
+            : 'your provider';
       try {
         await api.post('/api/auth/supabase-callback', { access_token: session.access_token });
         // Clear the Supabase browser session — we only needed it for the
         // round-trip. The server cookie is the source of truth from here on.
         await sb.auth.signOut({ scope: 'local' });
         await refresh();
-        toast.success('Signed in with Google');
+        toast.success(`Signed in with ${providerName}`);
         router.replace('/');
       } catch (err) {
         if (err instanceof ApiError) {

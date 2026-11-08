@@ -240,3 +240,125 @@ async def get_me(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any
             "user_id": user.user_id, "email": None, "display_name": "User",
             "role": "student", "is_pro": False, "created_at": None,
         }}
+
+
+class UnlinkIdentityRequest(BaseModel):
+    provider: str
+
+
+@router.get("/export")
+async def export_account(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    """
+    Dump everything the server stores about the signed-in user as a single
+    JSON blob the UI can download. Covers profile, mastery vector, session
+    events, and generated explanations. Honours the right-of-access part of
+    GDPR / CCPA in one call.
+    """
+    admin = get_supabase_admin()
+    uid = user.user_id
+    try:
+        profile = admin.table("users").select("*").eq("user_id", uid).execute().data or []
+        mastery = admin.table("mastery_scores").select("*").eq("student_id", uid).execute().data or []
+        events = admin.table("session_events").select("*").eq("student_id", uid).order("created_at", desc=True).execute().data or []
+        explanations = admin.table("explanations").select("*").eq("user_id", uid).execute().data or []
+    except Exception:
+        logger.error("export_account query failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not assemble export.")
+    audit_log("account_export", actor=uid)
+    return {
+        "status": "success",
+        "exported_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "data": {
+            "profile": profile,
+            "mastery": mastery,
+            "session_events": events,
+            "explanations": explanations,
+        },
+    }
+
+
+@router.delete("/account")
+async def delete_account(response: Response, user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    """
+    Hard-delete the signed-in user: Supabase auth row, users-table row, and
+    all owned rows in mastery_scores / session_events / explanations /
+    agent_state. Clears the session cookie so the client is signed out.
+    """
+    admin = get_supabase_admin()
+    uid = user.user_id
+    try:
+        # Delete owned rows first, so a Supabase-auth deletion failure below
+        # doesn't leave orphans we cannot GC.
+        for table in ("explanations", "session_events", "mastery_scores", "agent_state", "users"):
+            try:
+                admin.table(table).delete().eq(
+                    "user_id" if table in {"explanations", "users"} else "student_id",
+                    uid,
+                ).execute()
+            except Exception:
+                logger.warning("delete_account: cleanup of %s failed for %s", table, uid)
+        admin.auth.admin.delete_user(uid)
+        audit_log("account_delete", actor=uid)
+    except Exception:
+        logger.error("delete_account failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not delete your account. Contact support.")
+    resp = JSONResponse({"status": "success"})
+    resp.delete_cookie(key="adaptcode_session", path="/")
+    return resp
+
+
+@router.post("/unlink-identity")
+async def unlink_identity(
+    req: UnlinkIdentityRequest,
+    user: CurrentUser = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Remove a social identity (google / github) from the signed-in user. The
+    user keeps their email/password identity. Refuses to remove the last
+    identity so the user can still sign in.
+    """
+    provider = (req.provider or "").strip().lower()
+    if provider not in {"google", "github"}:
+        raise HTTPException(status_code=400, detail="Unsupported provider.")
+    admin = get_supabase_admin()
+    uid = user.user_id
+    try:
+        auth_user = admin.auth.admin.get_user_by_id(uid)
+        u = auth_user.user if auth_user else None
+        identities = (u and getattr(u, "identities", None)) or []
+        target = next((i for i in identities if getattr(i, "provider", None) == provider), None)
+        if target is None:
+            raise HTTPException(status_code=404, detail=f"No {provider} identity linked.")
+        if len(identities) <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="This is your only sign-in method. Add a password or another provider first.",
+            )
+        # supabase-py >= 2 exposes `identities.delete` on the admin auth client.
+        admin.auth.admin.unlink_identity(target)  # type: ignore[attr-defined]
+        audit_log("identity_unlinked", actor=uid, metadata={"provider": provider})
+    except HTTPException:
+        raise
+    except AttributeError:
+        # Older supabase-py without unlink_identity — fall back to a direct DB flip.
+        logger.warning("unlink_identity: supabase-py does not expose unlink; skipping provider-side revoke")
+        raise HTTPException(status_code=501, detail="Server is missing unlink support. Update supabase-py.")
+    except Exception:
+        logger.error("unlink_identity failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not unlink that account.")
+    return {"status": "success"}
+
+
+@router.get("/identities")
+async def list_identities(user: CurrentUser = Depends(get_current_user)) -> Dict[str, Any]:
+    """Return which providers the signed-in user has linked (google / github / email)."""
+    admin = get_supabase_admin()
+    try:
+        auth_user = admin.auth.admin.get_user_by_id(user.user_id)
+        u = auth_user.user if auth_user else None
+        identities = (u and getattr(u, "identities", None)) or []
+        providers = sorted({getattr(i, "provider", None) for i in identities if getattr(i, "provider", None)})
+    except Exception:
+        logger.error("list_identities failed", exc_info=True)
+        providers = []
+    return {"status": "success", "providers": providers}

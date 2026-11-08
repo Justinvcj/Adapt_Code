@@ -1,5 +1,6 @@
 "use client";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   User, Mail, Phone, Key, GraduationCap, Palette, Target,
   Lightbulb, Gauge, EyeOff, Eye, Bell,
@@ -8,8 +9,9 @@ import toast from 'react-hot-toast';
 import Navbar from '@/components/adapt/Navbar';
 import Footer from '@/components/adapt/Footer';
 import { GithubIcon } from '@/components/adapt/icons';
-import { USER } from '@/components/adapt/data';
-import { usePrefs } from '@/lib/profile-store';
+import { usePrefs, useProfile } from '@/lib/profile-store';
+import { useAuth } from '@/lib/auth-context';
+import { authAPI, ApiError, ApiOffline, API_ENABLED } from '@/lib/api';
 
 type TabKey = 'account' | 'learning' | 'appearance' | 'notif' | 'privacy';
 
@@ -53,8 +55,103 @@ function ThemePreview({ theme }: { theme: 'dark' | 'light' | 'violet' }) {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<TabKey>('account');
   const { prefs, update, reset } = usePrefs();
+  const { profile } = useProfile();
+  const { user, logout } = useAuth();
+
+  const [linked, setLinked] = useState<string[]>([]);
+  const [linkedLoaded, setLinkedLoaded] = useState(false);
+  const [busyProvider, setBusyProvider] = useState<string | null>(null);
+  const [busyExport, setBusyExport] = useState(false);
+  const [busyDelete, setBusyDelete] = useState(false);
+
+  useEffect(() => {
+    if (!API_ENABLED) { setLinkedLoaded(true); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await authAPI.identities();
+        if (!cancelled) setLinked(r.providers || []);
+      } catch { /* leave empty */ }
+      finally { if (!cancelled) setLinkedLoaded(true); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const disconnect = async (provider: 'google' | 'github') => {
+    if (!API_ENABLED) {
+      toast.error('Backend is not configured.');
+      return;
+    }
+    if (!confirm(`Disconnect ${provider[0].toUpperCase() + provider.slice(1)} from your account?`)) return;
+    setBusyProvider(provider);
+    try {
+      await authAPI.unlinkIdentity(provider);
+      setLinked((prev) => prev.filter((p) => p !== provider));
+      toast.success(`${provider[0].toUpperCase() + provider.slice(1)} disconnected`);
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(typeof err.detail === 'string' ? err.detail : 'Could not disconnect.');
+      else if (err instanceof ApiOffline) toast.error('Cannot reach the backend.');
+      else toast.error('Network error.');
+    } finally {
+      setBusyProvider(null);
+    }
+  };
+
+  const exportData = async () => {
+    if (!API_ENABLED) { toast.error('Backend is not configured.'); return; }
+    setBusyExport(true);
+    try {
+      const r = await authAPI.export();
+      const blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `adaptcode-export-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Export downloaded');
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(typeof err.detail === 'string' ? err.detail : 'Export failed.');
+      else if (err instanceof ApiOffline) toast.error('Cannot reach the backend.');
+      else toast.error('Network error.');
+    } finally {
+      setBusyExport(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!API_ENABLED) { toast.error('Backend is not configured.'); return; }
+    const email = user?.email || profile.name;
+    const confirmation = prompt(
+      `This will PERMANENTLY delete your account, mastery, submissions, and explanations.\n\n` +
+      `Type "${email}" to confirm.`,
+    );
+    if (confirmation !== email) {
+      if (confirmation !== null) toast.error('Confirmation did not match.');
+      return;
+    }
+    setBusyDelete(true);
+    try {
+      await authAPI.deleteAccount();
+      await logout();
+      toast.success('Account deleted');
+      router.push('/');
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(typeof err.detail === 'string' ? err.detail : 'Delete failed.');
+      else if (err instanceof ApiOffline) toast.error('Cannot reach the backend.');
+      else toast.error('Network error.');
+      setBusyDelete(false);
+    }
+  };
+
+  const googleLinked = linked.includes('google');
+  const githubLinked = linked.includes('github');
 
   return (
     <>
@@ -75,10 +172,10 @@ export default function SettingsPage() {
               <>
                 <h3>Account</h3>
                 <p className="set-sub">You can log in using your email, phone number, or AdaptCode ID.</p>
-                <div className="set-row"><div className="set-row-icon"><User /></div><div><div className="set-row-label">AdaptCode ID</div></div><div className="set-row-val">{USER.user}</div><div className="set-row-arrow">›</div></div>
-                <div className="set-row"><div className="set-row-icon"><Mail /></div><div><div className="set-row-label">Email</div></div><div className="set-row-val">23c****@drngpit.ac.in</div><div className="set-row-arrow">›</div></div>
-                <div className="set-row"><div className="set-row-icon"><Phone /></div><div><div className="set-row-label">Phone</div></div><div className="set-row-val">—</div><div className="set-row-arrow">›</div></div>
-                <div className="set-row"><div className="set-row-icon"><Key /></div><div><div className="set-row-label">Password</div></div><div className="set-row-val">••••••••</div><div className="set-row-arrow">›</div></div>
+                <div className="set-row"><div className="set-row-icon"><User /></div><div><div className="set-row-label">Display name</div></div><div className="set-row-val">{profile.display_name || profile.name || '—'}</div><div className="set-row-arrow" /></div>
+                <div className="set-row"><div className="set-row-icon"><Mail /></div><div><div className="set-row-label">Email</div></div><div className="set-row-val">{user?.email || '—'}</div><div className="set-row-arrow" /></div>
+                <div className="set-row"><div className="set-row-icon"><Phone /></div><div><div className="set-row-label">Member since</div></div><div className="set-row-val">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</div><div className="set-row-arrow" /></div>
+                <div className="set-row"><div className="set-row-icon"><Key /></div><div><div className="set-row-label">Password</div></div><div className="set-row-val">••••••••</div><div className="set-row-arrow" /></div>
                 <div className="set-section">
                   <h4>Social accounts</h4>
                   <p className="set-sub">Connect a social account to sign in to AdaptCode.</p>
@@ -92,12 +189,36 @@ export default function SettingsPage() {
                       </svg>
                     </div>
                     <div className="social-row-name">Google</div>
-                    <button className="btn-disconnect" onClick={() => toast('Disconnect — demo')}>Disconnect</button>
+                    {!linkedLoaded ? (
+                      <span style={{ fontSize: 12, color: 'var(--tx-3)' }}>…</span>
+                    ) : googleLinked ? (
+                      <button
+                        className="btn-disconnect"
+                        disabled={busyProvider === 'google'}
+                        onClick={() => disconnect('google')}
+                      >
+                        {busyProvider === 'google' ? 'Disconnecting…' : 'Disconnect'}
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 12, color: 'var(--tx-3)' }}>Not connected</span>
+                    )}
                   </div>
                   <div className="social-row">
                     <div className="social-row-icon"><GithubIcon size={18} /></div>
                     <div className="social-row-name">GitHub</div>
-                    <button className="btn-disconnect" onClick={() => toast('Disconnect — demo')}>Disconnect</button>
+                    {!linkedLoaded ? (
+                      <span style={{ fontSize: 12, color: 'var(--tx-3)' }}>…</span>
+                    ) : githubLinked ? (
+                      <button
+                        className="btn-disconnect"
+                        disabled={busyProvider === 'github'}
+                        onClick={() => disconnect('github')}
+                      >
+                        {busyProvider === 'github' ? 'Disconnecting…' : 'Disconnect'}
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 12, color: 'var(--tx-3)' }}>Not connected</span>
+                    )}
                   </div>
                 </div>
               </>
@@ -267,8 +388,21 @@ export default function SettingsPage() {
                   <label className="pref-toggle"><input type="checkbox" defaultChecked /> <span><b>Help improve AdaptCode</b><small>Share anonymised attempt patterns to tune the engine.</small></span></label>
                 </div>
                 <div className="pref-foot" style={{ marginTop: 16 }}>
-                  <button className="btn btn-ghost" style={{ color: 'var(--hard)' }} onClick={() => toast('Export — coming soon')}>Export my data</button>
-                  <button className="btn btn-ghost" style={{ color: 'var(--hard)' }} onClick={() => toast('Account deletion — coming soon')}>Delete account</button>
+                  <button
+                    className="btn btn-ghost"
+                    disabled={busyExport}
+                    onClick={exportData}
+                  >
+                    {busyExport ? 'Exporting…' : 'Export my data'}
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    style={{ color: 'var(--hard)' }}
+                    disabled={busyDelete}
+                    onClick={deleteAccount}
+                  >
+                    {busyDelete ? 'Deleting…' : 'Delete account'}
+                  </button>
                 </div>
               </>
             )}

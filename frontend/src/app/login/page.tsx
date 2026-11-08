@@ -88,9 +88,8 @@ export default function LoginPage() {
               const email = String(fd.get('email') || '').trim();
               const password = String(fd.get('password') || '');
               const name = String(fd.get('name') || '').trim();
-              // Offline / preview mode: no backend, keep the demo flow
               if (!API_ENABLED) {
-                done(mode === 'signin' ? 'Signed in (demo)' : 'Account created (demo)');
+                toast.error('Backend is not configured — set NEXT_PUBLIC_API_URL to sign in.');
                 return;
               }
               setBusy(true);
@@ -100,7 +99,7 @@ export default function LoginPage() {
                 done(mode === 'signin' ? 'Signed in' : 'Account created');
               } catch (err) {
                 if (err instanceof ApiOffline) {
-                  done(mode === 'signin' ? 'Signed in (demo)' : 'Account created (demo)');
+                  toast.error('Cannot reach the backend — try again in a moment.');
                 } else if (err instanceof ApiError) {
                   const msg = typeof err.detail === 'string' ? err.detail : (mode === 'signin' ? 'Invalid email or password' : 'Could not create account');
                   toast.error(msg);
@@ -135,7 +134,26 @@ export default function LoginPage() {
             </div>
             {mode === 'signin' && (
               <div className="l-row">
-                <a onClick={() => toast('Password reset — coming soon')}>Forgot password?</a>
+                <a
+                  onClick={async () => {
+                    const email = prompt('Email for the password-reset link:');
+                    if (!email) return;
+                    if (!SUPABASE_BROWSER_ENABLED) {
+                      toast.error('Password reset needs Supabase to be configured.');
+                      return;
+                    }
+                    const sb = getSupabaseBrowser();
+                    if (!sb) {
+                      toast.error('Password reset is not available.');
+                      return;
+                    }
+                    const { error } = await sb.auth.resetPasswordForEmail(email.trim(), {
+                      redirectTo: `${window.location.origin}/auth/reset`,
+                    });
+                    if (error) toast.error(error.message);
+                    else toast.success('Reset link sent — check your inbox.');
+                  }}
+                >Forgot password?</a>
               </div>
             )}
             <button
@@ -154,9 +172,8 @@ export default function LoginPage() {
               className="social-btn"
               disabled={busy}
               onClick={async () => {
-                // Offline / preview: keep demo flow.
                 if (!API_ENABLED || !SUPABASE_BROWSER_ENABLED) {
-                  done(`${mode === 'signin' ? 'Signed in' : 'Signed up'} with Google (demo)`);
+                  toast.error('Google sign-in needs Supabase to be configured.');
                   return;
                 }
                 const sb = getSupabaseBrowser();
@@ -184,7 +201,30 @@ export default function LoginPage() {
               </svg>
               Continue with Google
             </button>
-            <button className="social-btn" onClick={() => done(`${mode === 'signin' ? 'Signed in' : 'Signed up'} with GitHub`)}>
+            <button
+              className="social-btn"
+              disabled={busy}
+              onClick={async () => {
+                if (!API_ENABLED || !SUPABASE_BROWSER_ENABLED) {
+                  toast.error('GitHub sign-in needs Supabase to be configured.');
+                  return;
+                }
+                const sb = getSupabaseBrowser();
+                if (!sb) {
+                  toast.error('GitHub sign-in is not available.');
+                  return;
+                }
+                setBusy(true);
+                const { error } = await sb.auth.signInWithOAuth({
+                  provider: 'github',
+                  options: { redirectTo: `${window.location.origin}/auth/callback` },
+                });
+                if (error) {
+                  setBusy(false);
+                  toast.error(error.message);
+                }
+              }}
+            >
               <GithubIcon size={16} /> Continue with GitHub
             </button>
           </div>
