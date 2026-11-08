@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { GithubIcon } from '@/components/adapt/icons';
 import { useAuth } from '@/lib/auth-context';
 import { ApiError, ApiOffline, API_ENABLED } from '@/lib/api';
+import { getSupabaseBrowser, SUPABASE_BROWSER_ENABLED } from '@/lib/supabase';
 
 type Mode = 'signin' | 'signup';
 
@@ -149,7 +150,32 @@ export default function LoginPage() {
           <div className="l-divider">or</div>
 
           <div className="auth-social">
-            <button className="social-btn" onClick={() => done(`${mode === 'signin' ? 'Signed in' : 'Signed up'} with Google`)}>
+            <button
+              className="social-btn"
+              disabled={busy}
+              onClick={async () => {
+                // Offline / preview: keep demo flow.
+                if (!API_ENABLED || !SUPABASE_BROWSER_ENABLED) {
+                  done(`${mode === 'signin' ? 'Signed in' : 'Signed up'} with Google (demo)`);
+                  return;
+                }
+                const sb = getSupabaseBrowser();
+                if (!sb) {
+                  toast.error('Google sign-in is not configured.');
+                  return;
+                }
+                setBusy(true);
+                const { error } = await sb.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: { redirectTo: `${window.location.origin}/auth/callback` },
+                });
+                if (error) {
+                  setBusy(false);
+                  toast.error(error.message);
+                }
+                // On success the browser navigates to Google — nothing more to do.
+              }}
+            >
               <svg viewBox="0 0 24 24" width="16" height="16">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />

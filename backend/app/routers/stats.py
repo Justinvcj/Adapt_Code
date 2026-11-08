@@ -1,5 +1,5 @@
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from app.core.database import get_supabase_admin, get_supabase_user
 from app.core.dependencies import get_current_user, CurrentUser
@@ -8,12 +8,16 @@ router = APIRouter(prefix="/api", tags=["stats"])
 
 
 def _compute_streak(events: List[Dict[str, Any]]) -> int:
+    # Streaks are counted in UTC to match the UTC timestamps in session_events.
+    # datetime.utcnow() returns a naive object — the date() call after it was
+    # fine but using timezone-aware UTC here removes the DeprecationWarning in
+    # Python 3.12 and keeps behaviour identical.
     if not events:
         return 0
     dates = sorted(list(set([e['timestamp'][:10] for e in events])), reverse=True)
     if not dates:
         return 0
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
     last_active = datetime.strptime(dates[0], "%Y-%m-%d").date()
     if (today - last_active).days > 1:
         return 0

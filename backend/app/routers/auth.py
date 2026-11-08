@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Header, Request, Response
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from typing import Dict, Any
 import uuid
 import secrets
@@ -8,11 +9,26 @@ from app.core.config import settings
 from app.core.database import get_supabase_admin, get_supabase_user
 from app.services.audit import log_event as audit_log
 from app.models.schemas import RegisterRequest, LoginRequest
-from app.core.dependencies import get_current_user, CurrentUser
+from app.core.dependencies import get_current_user, CurrentUser, _verify_supabase_jwt
 from app.core.rate_limit import limiter, get_real_ip
 from app.core.logging import logger
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+def _set_session_cookie(resp: JSONResponse, access_token: str) -> None:
+    """Issue the httpOnly adaptcode_session cookie that the rest of the API
+    reads via get_current_user. Shared between password login and OAuth."""
+    is_prod = settings.ENV in {"production", "staging"}
+    resp.set_cookie(
+        key="adaptcode_session",
+        value=access_token,
+        max_age=60 * 60,
+        httponly=True,
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
+        path="/",
+    )
 
 GENERIC_LOGIN_ERROR = HTTPException(status_code=401, detail="Invalid credentials.")
 
@@ -103,19 +119,82 @@ async def login(request: Request, req: LoginRequest, response: Response) -> Any:
         "display_name": display_name,
         "is_pro": is_pro,
     })
-    # samesite=lax works locally when backend+frontend share localhost;
-    # in prod the two services sit on different domains (Vercel ↔ Cloud Run),
-    # which requires samesite=none + secure for the cookie to flow at all.
-    _is_prod = settings.ENV in {"production", "staging"}
-    json_resp.set_cookie(
-        key="adaptcode_session",
-        value=access_token,
-        max_age=60 * 60,
-        httponly=True,
-        secure=_is_prod,
-        samesite="none" if _is_prod else "lax",
-        path="/",
-    )
+    _set_session_cookie(json_resp, access_token)
+    return json_resp
+
+
+class SupabaseCallbackRequest(BaseModel):
+    """Token exchange from the browser after a Supabase OAuth redirect.
+
+    The browser received a Supabase session (access_token + refresh_token)
+    via the implicit flow at /auth/callback. We re-verify the access token
+    against the live JWKS and mint our own httpOnly adaptcode_session cookie
+    so the rest of the API — which only reads cookies — keeps working.
+    """
+    access_token: str
+
+
+@router.post("/supabase-callback")
+@limiter.limit("20/minute")
+async def supabase_oauth_callback(request: Request, req: SupabaseCallbackRequest) -> Any:
+    try:
+        verified = await _verify_supabase_jwt(req.access_token)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("supabase-callback JWT verify failed", exc_info=True)
+        raise HTTPException(status_code=401, detail="Invalid Supabase token.")
+
+    user_id = verified.user_id
+
+    # Pull the authoritative user record from Supabase (email, display_name
+    # from user_metadata) so we don't trust the browser for identity fields.
+    display_name = "User"
+    email: str | None = None
+    try:
+        auth_user = get_supabase_admin().auth.admin.get_user_by_id(user_id)
+        u = getattr(auth_user, "user", None)
+        if u:
+            email = getattr(u, "email", None)
+            meta = getattr(u, "user_metadata", None) or {}
+            display_name = (
+                meta.get("full_name")
+                or meta.get("name")
+                or meta.get("display_name")
+                or (email.split("@")[0] if email else "User")
+            )
+    except Exception:
+        logger.error("auth.admin.get_user_by_id failed in supabase-callback", exc_info=True)
+
+    # Ensure a row exists in `users` so the rest of the backend can look up
+    # display_name + is_pro without 500ing on OAuth users who never hit /register.
+    is_pro = False
+    try:
+        supabase = get_supabase_admin()
+        upserted = supabase.table("users").upsert({
+            "user_id": user_id,
+            "email": email,
+            "display_name": display_name,
+            "hashed_password": "supabase-auth-managed",
+            "role": "student",
+            "is_pro": False,
+        }, on_conflict="user_id").execute()
+        if upserted.data:
+            row = upserted.data[0]
+            display_name = row.get("display_name") or display_name
+            is_pro = bool(row.get("is_pro", False))
+    except Exception:
+        logger.error("users upsert failed in supabase-callback", exc_info=True)
+
+    audit_log("oauth_login", actor=user_id)
+
+    json_resp = JSONResponse({
+        "status": "success",
+        "user_id": user_id,
+        "display_name": display_name,
+        "is_pro": is_pro,
+    })
+    _set_session_cookie(json_resp, req.access_token)
     return json_resp
 
 @router.post("/logout")

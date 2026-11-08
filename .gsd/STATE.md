@@ -15,6 +15,16 @@
 - ✅ Fixed `/api/leaderboard` NameError (undefined `user.jwt`).
 - ✅ Deleted 9 dead paths (see "Cleanup completed" below).
 
+### Phase C — backend parity + bug sweep (in progress)
+- ✅ Added `POST /api/auth/supabase-callback` — verifies Supabase JWT, upserts users row, mints `adaptcode_session` cookie.
+- ✅ Frontend `/auth/callback` page completes the OAuth round-trip.
+- ✅ Google button on `/login` now calls real `signInWithOAuth`.
+- ✅ `/api/checkout/mock-upgrade` — gate switched from `require_admin` to signed-in user, refused in prod/staging.
+- ✅ Streak compute uses `datetime.now(timezone.utc)` (removes deprecation warning + makes UTC explicit).
+- ✅ Dropped stale `TEST_MODE=false` from `.env.example`; added missing `SUPABASE_SERVICE_KEY`, `PISTON_URL`, `ENV`.
+- ✅ Verified C1 (TEST_MODE auth bypass) is already fixed in `dependencies.py` — only the stale env-example line remained.
+- ⏸ C3 (RLS gap: users can self-promote to admin) — needs a migration; queued for later in Phase C.
+
 ### Phase B — frontend wiring (7 / 8)
 - ✅ B1 /learn — live mastery + `/api/next-problem`, offline fallback.
 - ✅ B2 Homepage — `useLiveMastery` + `useLiveStats` replace `MOCK_MASTERY`.
