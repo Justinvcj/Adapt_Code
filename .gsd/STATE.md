@@ -15,6 +15,13 @@
 - ✅ Fixed `/api/leaderboard` NameError (undefined `user.jwt`).
 - ✅ Deleted 9 dead paths (see "Cleanup completed" below).
 
+### Phase E — verification (in progress)
+- ✅ Installed `@playwright/test` + downloaded Chromium headless shell.
+- ✅ Added `playwright.config.ts` (local dev-server auto-boot, `PLAYWRIGHT_BASE_URL` override for deployed targets).
+- ✅ 6 smoke tests in `frontend/e2e/smoke.spec.ts` covering homepage, login, problems list, problem page, onboarding, /learn dispatcher — all green in ~12s warm.
+- ✅ `npm run test:e2e` / `test:e2e:ui` scripts.
+- ✅ [docs/TESTING.md](../docs/TESTING.md) covers running locally + against prod.
+
 ### Phase D — deploy (in progress)
 - ✅ Wrote [docs/DEPLOY_CHECKLIST.md](../docs/DEPLOY_CHECKLIST.md) — tickable manual-steps list for the day of deploy.
 - ✅ Updated [docs/DEPLOY.md](../docs/DEPLOY.md) with Google OAuth provider setup (§2a) and the new `NEXT_PUBLIC_SUPABASE_*` env vars in §4.
