@@ -28,8 +28,12 @@ export default function LandingPage() {
 
   const totalSolved = stats?.total_problems_solved
     ?? Object.values(mastery).reduce((a, b) => a + b.solved, 0);
-  const avgMastery = stats?.avg_mastery
-    ?? Object.values(mastery).reduce((a, b) => a + b.mastery, 0) / 12;
+  // Prefer the mastery-derived average over stats.avg_mastery: the latter is
+  // 0 for a new account (mastery_scores table empty) but the per-concept
+  // rings below still render P(L0) = 0.3, which would make the hero's "0%"
+  // contradict the rings. Keep both numbers consistent by deriving from the
+  // same vector.
+  const avgMastery = Object.values(mastery).reduce((a, b) => a + b.mastery, 0) / 12;
   const unlockedCount = Object.values(mastery).filter((m) => m.unlocked).length;
   const streakValue = stats?.current_streak ?? USER.streak;
 

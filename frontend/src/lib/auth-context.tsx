@@ -41,6 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (email: string, password: string, displayName?: string) => {
     await authAPI.register(email, password, displayName);
+    // /api/auth/register never sets the session cookie (it only creates the
+    // Supabase user), so without this we'd leave the user in an anonymous
+    // state after a successful sign-up. When "Confirm email" is disabled in
+    // Supabase, the follow-up login mints the cookie and we're signed in.
+    // When it's enabled, login legitimately 401s; we swallow it so the
+    // register-then-"check your email" flow still works end-to-end.
+    try {
+      await authAPI.login(email, password);
+    } catch { /* confirmation required or similar — handled by the caller */ }
     await refresh();
   }, [refresh]);
 

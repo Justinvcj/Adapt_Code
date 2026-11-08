@@ -6,7 +6,7 @@ import json
 import numpy as np
 
 from app.core.config import settings
-from app.core.database import get_supabase_admin, get_supabase_user
+from app.core.database import get_supabase_admin, get_supabase_user, new_supabase_admin
 from app.core.dependencies import get_current_user, CurrentUser
 from app.services.bkt import compute_effective_weight, update_mastery, get_bkt_params
 from app.services.linucb import LinUCBAgent, get_unlocked_concepts, get_weakest_unlocked, PREREQUISITE_GRAPH, MASTERY_THRESHOLD
@@ -255,9 +255,17 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     
     # 5. LinUCB
     agent = LinUCBAgent(d=16, alpha=1.0)
-    
-    # Load the student's a_matrix / b_vector from DB
-    res = supabase.table("agent_state").select("*").eq("student_id", "00000000-0000-0000-0000-000000000000").execute()
+
+    # The LinUCB matrices are intentionally GLOBAL across students (keyed by
+    # a sentinel zero UUID). Student-scoped RLS on agent_state denies writes
+    # via the user's JWT. The *shared* admin client is also unsafe here —
+    # supabase-py persists auth sessions, and after the login flow earlier
+    # in this request lifecycle the shared client will have drifted to the
+    # `authenticated` role, which RLS still denies. new_supabase_admin()
+    # returns a fresh client with persist_session=False so the service_role
+    # key actually runs as service_role.
+    admin = new_supabase_admin()
+    res = admin.table("agent_state").select("*").eq("student_id", "00000000-0000-0000-0000-000000000000").execute()
     db_row = res.data[0] if res.data else {}
     agent.load_state(db_row)
 
@@ -291,10 +299,11 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
     )
     agent.update(action_idx, x, reward)
     
-    # Save back to DB
+    # Save back to DB — same reason, admin client bypasses student-scoped RLS
+    # for the shared global sentinel row.
     a_matrices_json = {str(k): v.tolist() for k, v in agent.A.items()}
     b_vectors_json = {str(k): v.tolist() for k, v in agent.b.items()}
-    supabase.table("agent_state").upsert({
+    admin.table("agent_state").upsert({
         "student_id": "00000000-0000-0000-0000-000000000000",
         "a_matrices": a_matrices_json,
         "b_vectors": b_vectors_json
@@ -402,8 +411,9 @@ async def get_next_problem_endpoint(user: CurrentUser = Depends(get_current_user
     weakest = get_weakest_unlocked(mastery)
     
     agent = LinUCBAgent(d=16, alpha=1.0)
-    supabase = get_supabase_user(user.jwt)
-    res = supabase.table("agent_state").select("*").eq("student_id", "00000000-0000-0000-0000-000000000000").execute()
+    # Same shared-state rationale as submit_code — fresh service_role client.
+    admin = new_supabase_admin()
+    res = admin.table("agent_state").select("*").eq("student_id", "00000000-0000-0000-0000-000000000000").execute()
     db_row = res.data[0] if res.data else {}
     agent.load_state(db_row)
 
