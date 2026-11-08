@@ -5,7 +5,15 @@ from slowapi.errors import RateLimitExceeded
 from fastapi import FastAPI, Request
 from app.core.config import settings
 
-_TRUSTED_PROXIES = [ipaddress.ip_network(c.strip()) for c in settings.TRUSTED_PROXY_CIDRS.split(",") if c.strip()]
+import re
+_TRUSTED_PROXIES = []
+for c in re.split(r"[,;]", getattr(settings, "TRUSTED_PROXY_CIDRS", "") or ""):
+    c = c.strip()
+    if c:
+        try:
+            _TRUSTED_PROXIES.append(ipaddress.ip_network(c))
+        except ValueError:
+            pass
 
 def get_real_ip(request: Request) -> str:
     peer = request.client.host if request.client else "0.0.0.0"
