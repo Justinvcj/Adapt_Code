@@ -190,7 +190,7 @@ export default function LoginPage() {
           </div>
 
           <p className="auth-fine">
-            By {mode === 'signin' ? 'signing in' : 'creating an account'} you agree to the <a>Terms</a> and <a>Privacy Policy</a>.
+            By {mode === 'signin' ? 'signing in' : 'creating an account'} you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
           </p>
         </section>
       </main>

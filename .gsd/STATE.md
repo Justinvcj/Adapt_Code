@@ -1,7 +1,7 @@
 # Session State
 
 **Updated:** 2026-11-08
-**Current phase:** Phase B — frontend wiring (7 of 8 steps complete; B6 OAuth deferred to Phase C).
+**Current phase:** Phase F — polish (done pending user's manual deploy steps).
 **Resumable plan:** [.gsd/PLAN.md](PLAN.md) — if a credit window closes, read that first.
 
 ## This session's work
@@ -14,6 +14,14 @@
 - ✅ Rewrote [README.md](../README.md) to match reality.
 - ✅ Fixed `/api/leaderboard` NameError (undefined `user.jwt`).
 - ✅ Deleted 9 dead paths (see "Cleanup completed" below).
+
+### Phase F — polish (done)
+- ✅ B5 Profile heatmap now reads `useLiveHeatmap()` — builds the 52×7 grid from real `/api/stats/heatmap` data, falls back to the synthetic PRNG when offline.
+- ✅ New `/terms` and `/privacy` placeholder pages (required for Google OAuth app verification).
+- ✅ New `not-found.tsx` 404 page with Home + Problems CTAs.
+- ✅ Login page's Terms / Privacy footer links now route to the real pages.
+- ✅ Confirmed C3 (RLS role-escalation) is already fixed by `backend/migrations/fix_role_escalation.sql` — trigger + narrow policy + admin-only `promote_user_to_admin` RPC.
+- ⏸ Mobile responsiveness pass — iterative; call out specific screens if you want them tightened.
 
 ### Phase E — verification (in progress)
 - ✅ Installed `@playwright/test` + downloaded Chromium headless shell.

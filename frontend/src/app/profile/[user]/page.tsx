@@ -10,6 +10,7 @@ import { GithubIcon, TwitterIcon, LinkedinIcon } from '@/components/adapt/icons'
 import { USER } from '@/components/adapt/data';
 import { useProfile } from '@/lib/profile-store';
 import { statsAPI, API_ENABLED, type ApiStatsSummary } from '@/lib/api';
+import { useLiveHeatmap } from '@/lib/live-data';
 
 type Skill = { name: string; count: number };
 
@@ -62,7 +63,32 @@ export default function ProfilePage() {
   const mL = C * (u.solved.medium / allTotal);
   const hL = C * (u.solved.hard / allTotal);
 
+  // Real heatmap when the backend is up; synthetic PRNG when it isn't so the
+  // profile never shows an empty grid in offline/preview mode.
+  const { entries: heatmapEntries, live: heatmapLive } = useLiveHeatmap();
   const heatmap = useMemo(() => {
+    if (heatmapLive && heatmapEntries.length) {
+      // Build a date→count map, then walk 52 weeks × 7 days back from today
+      // so the grid aligns with the current calendar week (rightmost column).
+      const counts = new Map<string, number>();
+      for (const e of heatmapEntries) counts.set(e.date, e.count);
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const weeks: number[][] = [];
+      for (let w = 51; w >= 0; w--) {
+        const week: number[] = [];
+        for (let d = 6; d >= 0; d--) {
+          const cell = new Date(today);
+          cell.setUTCDate(today.getUTCDate() - (w * 7 + d));
+          const key = cell.toISOString().slice(0, 10);
+          const n = counts.get(key) ?? 0;
+          week.push(n >= 7 ? 4 : n >= 4 ? 3 : n >= 2 ? 2 : n >= 1 ? 1 : 0);
+        }
+        weeks.push(week);
+      }
+      return weeks;
+    }
+    // Offline fallback — deterministic synthetic pattern.
     let s = 42;
     const r = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
     const weeks: number[][] = [];
@@ -75,7 +101,7 @@ export default function ProfilePage() {
       weeks.push(week);
     }
     return weeks;
-  }, []);
+  }, [heatmapEntries, heatmapLive]);
 
   const renderSkill = (s: Skill) => {
     const earned  = s.count >= 10;
