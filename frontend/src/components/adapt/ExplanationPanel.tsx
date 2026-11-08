@@ -36,7 +36,10 @@ function useGeminiExplanation(eventId: string | undefined, enabled: boolean): Ge
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let ticks = 0;
-    const MAX_TICKS = 20; // ~24s
+    // Gemini Flash cold starts can take 20-30s; backend retries once, so the
+    // whole budget on a slow day is ~60s. Poll every 1.2s for up to ~72s so
+    // the spinner doesn't give up early and quietly show the fallback copy.
+    const MAX_TICKS = 60;
     const tick = async () => {
       if (cancelled) return;
       try {

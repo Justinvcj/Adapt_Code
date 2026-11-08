@@ -1,11 +1,19 @@
+import os
 import httpx
 import asyncio
 from typing import Optional
 from app.core.config import settings
+from app.core.logging import logger
 from app.core.database import get_supabase
 
-# Free tier: 15 RPM, 1,500 RPD, 1,000,000 TPM — no credit card needed
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+# Model is overridable via env so bumping versions doesn't need a code change.
+# Default is flash-lite — a diagnostic explanation is a short, cheap task and
+# the full flash model was timing out at 45 s per call under current load.
+# flash-lite returns in ~1-2 s.
+# (2026-11-08) gemini-2.5-flash returns 404 "no longer available to new users"
+# for recently-created API keys; the alias avoids chasing version bumps.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest")
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 # 12 concept-specific prompt templates
 CONCEPT_PROMPTS = {
@@ -85,9 +93,12 @@ RULES:
     
     supabase_client = get_supabase()
     
-    for attempt in range(3):
+    for attempt in range(2):
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            # 45s per attempt: gemini-flash-latest can take 20-30s on the
+            # first cold request, and 15s left no margin — every call was
+            # timing out and we fell back to the generic explanation.
+            async with httpx.AsyncClient(timeout=45.0) as client:
                 response = await client.post(url, json=payload, headers=headers)
                 
                 if response.status_code == 429:
@@ -122,7 +133,13 @@ RULES:
                 return explanation
                 
         except Exception as e:
-            if attempt == 2:
+            # Log at WARN on retryable attempts, ERROR when we fall back. The
+            # previous code swallowed every exception silently, so bad API
+            # keys / model IDs / network failures looked identical on the
+            # frontend — the student just saw the generic fallback copy.
+            logger.warning("generate_explanation attempt %d failed: %s", attempt + 1, e)
+            if attempt == 1:
+                logger.error("generate_explanation gave up after 2 attempts; saving fallback", exc_info=True)
                 # Final fallback — save generic explanation
                 supabase_client.table("explanations").upsert({
                     "session_event_id": session_event_id,

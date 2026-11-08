@@ -38,7 +38,7 @@ Stack is final. Do not propose alternatives (see [CLAUDE.md](CLAUDE.md), `.gsd/S
 - **Bayesian Knowledge Tracing** over 12 concepts with graded behavioural penalties ρ for hints, attempts, compile errors, and server-tracked time-on-task.
 - **LinUCB** contextual bandit (d=16, α=1.0) picking among 5 pedagogical actions: easier / same / harder / redirect_prerequisite / hint_augmented.
 - **Piston** code execution over a private Tailscale tunnel; the backend wraps function-style submissions in a stdin/stdout harness.
-- **Gemini 2.5 Flash** for 3-part diagnostic explanations on wrong submissions (background task, polled via `/api/explanation/{event_id}`).
+- **Gemini Flash** (stable alias `gemini-flash-latest`, overridable via `GEMINI_MODEL`) for 3-part diagnostic explanations on wrong submissions (background task, polled via `/api/explanation/{event_id}`).
 
 Full backend route reference: [docs/API.md](docs/API.md). Topology detail: [.gsd/ARCHITECTURE.md](.gsd/ARCHITECTURE.md). Deploy runbook: [docs/DEPLOY.md](docs/DEPLOY.md).
 
@@ -125,7 +125,7 @@ DRY_RUN=1 python scripts/seed_problems_from_db.py # inspect without writing
 | Backend | FastAPI 0.115, Uvicorn, Pydantic, Supabase-py, NumPy, SlowAPI |
 | Execution | Piston on AWS EC2 (Tailscale-only) |
 | DB + auth | Supabase (Postgres 15, Auth JWT, RLS) |
-| AI | Google Gemini 2.5 Flash |
+| AI | Google Gemini Flash (`gemini-flash-latest` alias) |
 | Adaptive engine | BKT + LinUCB (in-process, state in Postgres) |
 | Testing | Pytest (backend — needs maintenance), Jest (frontend) |
 

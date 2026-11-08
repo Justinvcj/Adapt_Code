@@ -12,7 +12,7 @@
        [ FastAPI Backend (Cloud Run) ]
        [ + Tailscale Userspace Proxy ]
        ├── JWKS / REST / RLS ──► [ Supabase (PostgreSQL 15 + Auth) ]
-       ├── REST (public) ──────► [ Google Gemini 2.5 Flash API ]
+       ├── REST (public) ──────► [ Google Gemini Flash API (alias: gemini-flash-latest) ]
        └── SOCKS5 (Tailnet) ───► [ Piston Sandbox on AWS EC2 (100.114.155.33:2000) ]
 ```
 
@@ -23,4 +23,4 @@
 4. **Pedagogical Engine (`backend/app/services/bkt.py` & `linucb.py`)**:
    - Bayesian Knowledge Tracing (BKT) with graded behavioral penalties ($\rho$) for hints, attempts, compile errors, and time-on-task.
    - Contextual Multi-Armed Bandit (LinUCB) evaluating a 16-dimensional feature vector to pick optimal pedagogical actions (`easier_problem`, `same_difficulty`, `harder_problem`, `redirect_prerequisite`, `hint_augmented`).
-5. **AI Diagnostic Engine (`backend/app/services/gemini.py`)**: Asynchronous background worker generating targeted 3-part pedagogical failure explanations using Gemini 2.5 Flash.
+5. **AI Diagnostic Engine (`backend/app/services/gemini.py`)**: Asynchronous background worker generating targeted 3-part pedagogical failure explanations using `gemini-flash-latest` (overridable via `GEMINI_MODEL` env).
