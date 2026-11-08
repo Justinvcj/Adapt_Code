@@ -2,187 +2,167 @@
 
 # AdaptCode
 
-**AI-powered adaptive programming practice platform that personalizes problem difficulty using Bayesian Knowledge Tracing, LinUCB contextual bandits, and LLM tutoring.**
+**Adaptive DS&A practice: BKT models your concept mastery, LinUCB picks the next problem, Piston grades the code, Gemini explains why it failed.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Next.js 14](https://img.shields.io/badge/Next.js_14-App_Router-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
 
-[Report Bug](https://github.com/Justinvcj/Adapt_Code/issues) * [Request Feature](https://github.com/Justinvcj/Adapt_Code/issues)
-
 </div>
 
 ---
 
+## Architecture (locked)
+
 ```
-+-----------------------------------------------------------------------------+
-|                    AdaptCode Adaptive Learning Loop                         |
-|                                                                             |
-|  +-----------------------+  +-----------------------+                       |
-|  | Monaco Code Editor    |  | Multi-Language Code   |                       |
-|  | (Python/Java/C++)     |  | Submission Payload    |                       |
-|  +----------+------------+  +----------+------------+                       |
-|             |                          |                                    |
-|             +--------------------------+------------------------+           |
-|                                        v                        v           |
-|  +-----------------------------------------------------------------------+  |
-|  |        Piston Code Execution Sandbox (HTTP POST to :2000)             |  |
-|  +-------------------------------------+---------------------------------+  |
-|                                        v                                    |
-|  +-----------------------------------------------------------------------+  |
-|  | Bayesian Knowledge Tracing (BKT) ---> LinUCB Contextual Bandit Selector|  |
-|  +-------------------------------------+---------------------------------+  |
-|                                        v                                    |
-|  +-----------------------------------------------------------------------+  |
-|  |    LLM Diagnostic Tutoring Hint <--- Next Optimal Challenge (ZPD)     |  |
-|  +-----------------------------------------------------------------------+  |
-+-----------------------------------------------------------------------------+
+                 Client Browser
+                       │
+                       ▼ HTTPS (credentials: 'include')
+              Vercel · Next.js 14
+                       │
+                       ▼ httpOnly adaptcode_session cookie
+            Cloud Run · FastAPI + Tailscale sidecar
+           ┌───────────┼───────────┐
+           ▼           ▼           ▼
+       Supabase    Gemini    AWS EC2 · Piston
+       (REST+Auth) (REST)    (reached only over Tailscale
+                              at 100.114.155.33:2000)
 ```
 
-> Standard coding practice platforms rely on static difficulty tags and rigid problem sets, leaving students either stuck on difficult concepts or bored with repetitive questions.
-> AdaptCode models each learner's mastery in real-time across a prerequisite graph of 12 algorithmic concepts, applying Bayesian Knowledge Tracing (P(L0), P(T), P(G), P(S)) and LinUCB contextual multi-armed bandits to serve challenges in the Zone of Proximal Development while providing instant LLM diagnostic feedback on failed test cases.
+Stack is final. Do not propose alternatives (see [CLAUDE.md](CLAUDE.md), `.gsd/STACK.md`).
+
+## What's in the box
+
+- **518** LeetCode-sourced problems in `problems_db/final_problems_db.json`; **442** picked by the seeder and upserted into Supabase across 12 concepts (see `backend/scripts/seed_problems_from_db.py` for the exact mapping).
+- **Bayesian Knowledge Tracing** over 12 concepts with graded behavioural penalties ρ for hints, attempts, compile errors, and server-tracked time-on-task.
+- **LinUCB** contextual bandit (d=16, α=1.0) picking among 5 pedagogical actions: easier / same / harder / redirect_prerequisite / hint_augmented.
+- **Piston** code execution over a private Tailscale tunnel; the backend wraps function-style submissions in a stdin/stdout harness.
+- **Gemini 2.5 Flash** for 3-part diagnostic explanations on wrong submissions (background task, polled via `/api/explanation/{event_id}`).
+
+Full backend route reference: [docs/API.md](docs/API.md). Topology detail: [.gsd/ARCHITECTURE.md](.gsd/ARCHITECTURE.md). Deploy runbook: [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ---
 
-## Features
-
-- **Dynamic Knowledge Tracing** -- Models concept mastery across 12 algorithmic topics in real time using Bayesian Knowledge Tracing (BKT).
-- **Contextual Bandit Selection** -- Recommends optimal practice problems dynamically via LinUCB multi-armed bandit algorithms with ridge regression.
-- **Piston Sandbox** -- Executes and evaluates multi-language submissions securely inside a standalone Piston container with strict timeouts.
-- **Monaco In-Browser IDE** -- Delivers a complete in-browser coding environment with syntax highlighting, custom themes, and instant execution telemetry.
-- **AI Diagnostic Tutoring** -- Generates targeted explanations and remediation hints automatically upon test case failures using Google Gemini integration.
-- **Curriculum Prerequisite Graph** -- Visualizes concept progression and dependencies across data structures and algorithms.
-
----
-
-## How It Works
-
-```mermaid
-graph TD
-    A[Student Submits Code] --> B[FastAPI Backend Endpoint: /api/submit]
-    B --> C[Piston Execution Sandbox :2000]
-    C -->|Execution Telemetry| D[BKT Engine Updates Mastery State]
-    D --> E[LinUCB Contextual Bandit]
-    E --> F[Next Optimal Problem Selected]
-    C -->|On Failure| G[LLM Diagnostic Tutor: /api/explanation/{event_id}]
-    G --> H[Contextual Hint & Remediation Plan]
-```
-
----
-
-## Quick Start
+## Local development
 
 ### Prerequisites
 
-| Requirement | Version | Notes |
+| Tool | Version | Why |
 |---|---|---|
-| [Node.js](https://nodejs.org/) | 18+ | Frontend runtime |
-| [Python](https://www.python.org/) | 3.10+ | Backend runtime |
-| [Supabase](https://supabase.com/) | Cloud / Local | PostgreSQL database and authentication |
-| [Docker](https://www.docker.com/) | 20+ | Required for Piston Code Runner |
+| Node.js | 18+ | Frontend runtime |
+| Python | 3.11+ | Backend runtime |
+| Supabase project | — | DB + auth |
+| Tailscale | — | Only needed if you want to hit the real Piston EC2 node |
 
-### Installation
+You do **not** need a local Piston Docker container — `PISTON_URL` defaults to the Tailscale IP of the deployed EC2 node. Running Piston locally is optional (`docker run -d -p 2000:2000 --privileged --tmpfs /tmp:exec --name piston ghcr.io/engineer-man/piston`), in which case set `PISTON_URL=http://localhost:2000`.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Justinvcj/Adapt_Code.git
-   cd Adapt_Code
-   ```
+### Setup
 
-2. Set up the backend:
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # Or `venv\Scripts\activate` on Windows
-   pip install -r requirements.txt
-   cp .env.example .env
-   ```
+```bash
+# Backend
+cd backend
+python -m venv venv
+# PowerShell
+venv\Scripts\Activate.ps1
+# or bash
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env     # fill in SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY, GEMINI_API_KEY
+uvicorn app.main:app --reload --port 8000
 
-3. Set up the frontend:
-   ```bash
-   cd ../frontend
-   npm install
-   cp .env.example .env.local
-   ```
+# Frontend (new terminal)
+cd frontend
+npm install
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8000
+npm run dev
+```
 
-4. Launch services via Docker Compose:
-   ```bash
-   docker-compose up -d
-   ```
+Open http://localhost:3000.
 
-5. **CRITICAL: Launch Piston Sandbox:**
-   The `docker-compose.yml` does not currently include Piston. You must launch it manually:
-   ```bash
-   docker run -d -p 2000:2000 --privileged --tmpfs /tmp:exec --name piston ghcr.io/engineer-man/piston
-   ```
+### Seeding problems
 
-### Usage
+Needs `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` in env:
 
-Open `http://localhost:3000` in your browser, select a topic from the curriculum graph, and begin solving adaptive challenges with real-time feedback.
+```bash
+cd backend
+python scripts/seed_problems_from_db.py           # writes ~442 rows
+DRY_RUN=1 python scripts/seed_problems_from_db.py # inspect without writing
+```
 
 ---
 
 ## Configuration
 
-### Backend (`backend/.env`)
+### `backend/.env`
 
-| Variable | Required | Default | Description |
+| Variable | Required | Default | Notes |
 |---|---|---|---|
-| `SUPABASE_URL` | Yes | -- | Supabase project URL |
-| `SUPABASE_KEY` | Yes | -- | Supabase service role or anon API key |
-| `GEMINI_API_KEY` | Yes | -- | API key for Google Gemini LLM tutoring explanations |
-| `FRONTEND_URL` | No | `http://localhost:3000` | Allowed CORS origin |
-| `PISTON_URL` | No | `http://localhost:2000/api/v2/execute` | Piston execution endpoint |
-| `DEBUG` | No | `false` | Enable verbose logging |
-| `TEST_MODE` | No | `false` | Enable test mode (bypasses auth for development) |
+| `SUPABASE_URL` | yes | — | `https://<ref>.supabase.co` |
+| `SUPABASE_KEY` | yes | — | **anon** key |
+| `SUPABASE_SERVICE_KEY` | yes | — | **service_role** key (admin writes, RPC, seeding) |
+| `GEMINI_API_KEY` | yes | — | Google Generative Language API key |
+| `FRONTEND_URL` | no | `http://localhost:3000` | Comma-separated CORS allowlist |
+| `FRONTEND_URL_REGEX` | no | — | Regex for Vercel preview subdomains |
+| `PISTON_URL` | no | `http://100.114.155.33:2000` | Tailscale IP of the EC2 Piston node |
+| `ENV` | no | `development` | Set to `production`/`staging` to enable secure cookies + HSTS |
+| `DEBUG` | no | `false` | Verbose logging |
+| `TEST_MODE` | no | `false` | **Dev only** — `DEV_TOKEN_<email>` bypass. Known security issue when true in prod (see `security/SECURITY_ISSUES.md` C1). |
 
-### Frontend (`frontend/.env.local`)
+### `frontend/.env.local`
 
-| Variable | Required | Default | Description |
+| Variable | Required | Default | Notes |
 |---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | No | `http://localhost:8000` | FastAPI backend URL |
+| `NEXT_PUBLIC_API_URL` | no | — | FastAPI URL. **Unset** → UI renders with local mocks (`src/data/`); this is the intentional offline fallback per [CLAUDE.md](CLAUDE.md). |
 
 ---
 
-## Tech Stack
+## Tech stack
 
-| Layer | Technology |
+| Layer | Tech |
 |---|---|
-| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS, Monaco Editor, Framer Motion, Lucide React |
-| Backend | FastAPI, Uvicorn, Pydantic, Supabase Python SDK, NumPy, SlowAPI |
-| Execution Sandbox | Piston API (Docker) |
-| AI & Adaptive Engine | Google Gemini LLM, Bayesian Knowledge Tracing (BKT), LinUCB Bandit |
-| Testing | Pytest, Jest |
+| Frontend | Next.js 14.2, React 18, TypeScript, Tailwind 3.4, Monaco, Framer Motion, GSAP, Lucide |
+| Backend | FastAPI 0.115, Uvicorn, Pydantic, Supabase-py, NumPy, SlowAPI |
+| Execution | Piston on AWS EC2 (Tailscale-only) |
+| DB + auth | Supabase (Postgres 15, Auth JWT, RLS) |
+| AI | Google Gemini 2.5 Flash |
+| Adaptive engine | BKT + LinUCB (in-process, state in Postgres) |
+| Testing | Pytest (backend — needs maintenance), Jest (frontend) |
 
 ---
 
-## Testing (Requires Maintenance)
+## Testing
 
-> **Warning:** The backend test suite currently suffers from import debt due to structural refactoring and requires updates before passing.
+Backend tests currently have import debt — they live in `backend/tests/` but CI (`.github/workflows/ci.yml`) is intentionally gated off (`if: ${{ false }}`); flip it to `true` when the suite is rehabilitated. Per [CLAUDE.md](CLAUDE.md), do not re-enable without explicit sign-off.
 
 ```bash
-# Run backend test suite
-cd backend && venv/bin/pytest tests/
-
-# Run frontend unit tests
-cd ../frontend && npm test
+# Backend
+cd backend && pytest tests/
+# Frontend
+cd frontend && npm test
 ```
 
 ---
 
-## Contributing
+## Deployment
 
-Contributions are welcome. Please open an issue first to discuss the changes you would like to make.
+Full runbook: [docs/DEPLOY.md](docs/DEPLOY.md). Short version:
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feat/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the Branch (`git push origin feat/AmazingFeature`)
-5. Open a Pull Request
+1. Load secrets (`SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY`, `TS_AUTHKEY`) into GCP Secret Manager.
+2. `gcloud builds submit --config=backend/cloudbuild.yaml --substitutions=_FRONTEND_URL=<vercel-url>` — builds the container, pushes to Artifact Registry, deploys to Cloud Run with Tailscale userspace sidecar.
+3. Verify `curl <cloud-run-url>/health` → `piston_reachable: true`.
+4. Vercel: set `NEXT_PUBLIC_API_URL` to the Cloud Run URL, redeploy.
+
+---
+
+## Roadmap
+
+See [.gsd/PLAN.md](.gsd/PLAN.md) — resumable phase checklist (audit → frontend wiring → backend parity → deploy → verify → polish).
+
+Historical phases: [.gsd/ROADMAP.md](.gsd/ROADMAP.md).
 
 ---
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).

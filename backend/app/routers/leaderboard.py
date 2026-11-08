@@ -1,6 +1,6 @@
 from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Depends
-from app.core.database import get_supabase_admin, get_supabase_user
+from fastapi import APIRouter, HTTPException
+from app.core.database import get_supabase_admin
 
 router = APIRouter(prefix="/api", tags=["leaderboard"])
 
@@ -8,9 +8,12 @@ router = APIRouter(prefix="/api", tags=["leaderboard"])
 @router.get("/leaderboard")
 async def get_leaderboard() -> Dict[str, Any]:
     try:
-        # We utilize the get_leaderboard_stats RPC defined in schema.sql
-        # to offload aggregation to the Postgres engine and prevent O(N) memory blowouts.
-        supabase = get_supabase_user(user.jwt)
+        # Leaderboard is public — use the admin client, no per-user JWT. The
+        # previous version referenced `user.jwt` without declaring a `user`
+        # dependency, which raised NameError on every call.
+        # Uses the get_leaderboard_stats RPC defined in schema.sql to offload
+        # aggregation to Postgres.
+        supabase = get_supabase_admin()
         res = supabase.rpc("get_leaderboard_stats").execute()
         
         leaderboard = []
