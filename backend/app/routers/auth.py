@@ -256,24 +256,33 @@ async def export_account(user: CurrentUser = Depends(get_current_user)) -> Dict[
     """
     admin = get_supabase_admin()
     uid = user.user_id
-    try:
-        profile = admin.table("users").select("*").eq("user_id", uid).execute().data or []
-        mastery = admin.table("mastery_scores").select("*").eq("student_id", uid).execute().data or []
-        events = admin.table("session_events").select("*").eq("student_id", uid).order("created_at", desc=True).execute().data or []
-        explanations = admin.table("explanations").select("*").eq("user_id", uid).execute().data or []
-    except Exception:
-        logger.error("export_account query failed", exc_info=True)
-        raise HTTPException(status_code=500, detail="Could not assemble export.")
+    # Query each table independently so a schema drift on one doesn't null the whole export.
+    # Column names differ across tables (users/explanations key on user_id, the learning
+    # tables key on student_id); each query uses the correct one.
+    plan = [
+        ("profile",         "users",          "user_id"),
+        ("mastery",         "mastery_scores", "student_id"),
+        ("session_events",  "session_events", "student_id"),
+        ("explanations",    "explanations",   "user_id"),
+    ]
+    data: Dict[str, Any] = {}
+    errors: Dict[str, str] = {}
+    for key, table, col in plan:
+        try:
+            q = admin.table(table).select("*").eq(col, uid)
+            if table == "session_events":
+                q = q.order("created_at", desc=True)
+            data[key] = q.execute().data or []
+        except Exception as e:
+            logger.warning("export_account: %s failed (%s): %s", table, col, e)
+            data[key] = []
+            errors[key] = type(e).__name__
     audit_log("account_export", actor=uid)
     return {
         "status": "success",
         "exported_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
-        "data": {
-            "profile": profile,
-            "mastery": mastery,
-            "session_events": events,
-            "explanations": explanations,
-        },
+        "data": data,
+        **({"warnings": errors} if errors else {}),
     }
 
 
@@ -302,6 +311,13 @@ async def delete_account(response: Response, user: CurrentUser = Depends(get_cur
     except Exception:
         logger.error("delete_account failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not delete your account. Contact support.")
+    # Evict the "user still exists" cache immediately so the deleted account's
+    # cookie can't be used in the TTL window before the entry would expire.
+    try:
+        from app.core.dependencies import _USER_EXISTS_CACHE
+        _USER_EXISTS_CACHE.pop(uid, None)
+    except Exception:
+        pass
     resp = JSONResponse({"status": "success"})
     resp.delete_cookie(key="adaptcode_session", path="/")
     return resp

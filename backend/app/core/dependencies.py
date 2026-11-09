@@ -6,6 +6,13 @@ from fastapi import Request, HTTPException, Depends
 from app.core.config import settings
 from app.core.database import get_supabase_admin
 
+# Short-lived cache of "user_id → last time we confirmed this account still exists".
+# Without this, a stale JWT whose Supabase auth row was deleted (DELETE /api/auth/account)
+# keeps working until the JWT itself expires (up to an hour). With it, the cache window
+# bounds the exposure to _USER_EXISTS_TTL seconds.
+_USER_EXISTS_CACHE: dict = {}
+_USER_EXISTS_TTL = 30  # seconds
+
 JWKS_URL = f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json"
 _JWKS_CACHE: dict = {"keys": None, "fetched_at": 0}
 _JWKS_TTL   = 3600  # 1 hour
@@ -43,21 +50,45 @@ async def _verify_supabase_jwt(token: str) -> CurrentUser:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return CurrentUser(user_id=claims["sub"], jwt=token)
 
+def _confirm_user_exists(user_id: str) -> None:
+    """
+    Verify the user_id in the JWT still has a Supabase auth row. The JWT itself
+    is stateless and remains valid until expiry, so without this check a deleted
+    account can keep hitting authenticated endpoints with its old cookie for up
+    to an hour. Result is cached per user for a short window to avoid hitting
+    Supabase on every request.
+    """
+    now = time.time()
+    last = _USER_EXISTS_CACHE.get(user_id)
+    if last and now - last < _USER_EXISTS_TTL:
+        return
+    try:
+        admin = get_supabase_admin()
+        res = admin.auth.admin.get_user_by_id(user_id)
+        if not res or not getattr(res, "user", None):
+            _USER_EXISTS_CACHE.pop(user_id, None)
+            raise HTTPException(status_code=401, detail="Account no longer exists")
+        _USER_EXISTS_CACHE[user_id] = now
+    except HTTPException:
+        raise
+    except Exception:
+        # If Supabase is briefly unreachable, don't lock everyone out — fall through.
+        # Worst case the stale-session window is slightly longer than TTL.
+        return
+
+
 async def get_current_user(request: Request) -> CurrentUser:
     token = request.cookies.get("adaptcode_session")
     if not token:
-        # Fallback to header for now if cookie is missing? 
-        # The prompt says: "Switch to an httpOnly... cookie... The frontend never touches the token... read the token from the cookie, not the header."
-        # We enforce it.
-        # However, for API tests we might need header. Actually, the fix strictly says read from cookie.
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
-        
         if not token:
             raise HTTPException(status_code=401, detail="Not authenticated")
-            
-    return await _verify_supabase_jwt(token)
+
+    user = await _verify_supabase_jwt(token)
+    _confirm_user_exists(user.user_id)
+    return user
 
 async def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     supabase = get_supabase_admin()
