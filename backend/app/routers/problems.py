@@ -66,16 +66,57 @@ class AbandonRequest(BaseModel):
     hint_used: bool = False
 
 import uuid as _uuid
+import re as _re
+import time as _time
+
+# slug → uuid cache. The real problem bank was seeded with RANDOM uuids (not
+# the uuid5(DNS, 'adaptcode.problem.<slug>') the resolver previously assumed),
+# so slug→id must come from a title lookup in the problems table. Cache with a
+# TTL to avoid a full-table scan per detail-page load.
+_SLUG_CACHE: dict = {"map": {}, "built_at": 0.0}
+_SLUG_TTL = 300  # seconds
+
+def _slugify(s: str) -> str:
+    s = (s or "").strip().lower()
+    s = _re.sub(r"[^a-z0-9]+", "-", s)
+    return s.strip("-")
+
+def _build_slug_map() -> dict:
+    """Pull every problem's (problem_id, title) once and build a slug→id map."""
+    admin = get_supabase_admin()
+    try:
+        rows = admin.table("problems").select("problem_id,title").execute().data or []
+    except Exception:
+        return {}
+    m: dict = {}
+    for r in rows:
+        slug = _slugify(r.get("title") or "")
+        if slug and slug not in m:
+            m[slug] = r["problem_id"]
+    return m
 
 def _resolve_problem_id(problem_id_or_slug: str) -> str:
-    """Problems are stored by UUID. The frontend references them by slug
-    (e.g. 'two-sum'). Treat anything that's not a valid UUID as a slug and
-    derive the deterministic uuid5 the seeder used."""
+    """Return the DB uuid for a problem given either its uuid (passthrough)
+    or its slug (lookup by slugified title, cached). Falls back to uuid5 for
+    any legacy explicitly-seeded slugs the lookup misses."""
+    if not problem_id_or_slug:
+        return problem_id_or_slug
     try:
         _uuid.UUID(problem_id_or_slug)
         return problem_id_or_slug
     except Exception:
-        return str(_uuid.uuid5(_uuid.NAMESPACE_DNS, f"adaptcode.problem.{problem_id_or_slug}"))
+        slug = _slugify(problem_id_or_slug)
+        now = _time.time()
+        if now - _SLUG_CACHE["built_at"] > _SLUG_TTL or not _SLUG_CACHE["map"]:
+            _SLUG_CACHE["map"] = _build_slug_map()
+            _SLUG_CACHE["built_at"] = now
+        hit = _SLUG_CACHE["map"].get(slug)
+        if hit:
+            return hit
+        # Legacy fallback for a slug that was explicitly seeded via the old
+        # uuid5 convention (preserves backwards compat with any client that
+        # references such a problem).
+        return str(_uuid.uuid5(_uuid.NAMESPACE_DNS, f"adaptcode.problem.{slug}"))
 
 
 async def get_problem(jwt: str, problem_id: str):
