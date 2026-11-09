@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import toast from 'react-hot-toast';
 import { GithubIcon } from '@/components/adapt/icons';
 import { useAuth } from '@/lib/auth-context';
@@ -10,7 +10,18 @@ import { getSupabaseBrowser, SUPABASE_BROWSER_ENABLED } from '@/lib/supabase';
 
 type Mode = 'signin' | 'signup';
 
+// Next.js App Router requires useSearchParams() to be inside a Suspense boundary
+// at prerender time, otherwise the whole page bails out of static generation
+// and the Vercel build fails with "prerender-error".
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const router = useRouter();
   const search = useSearchParams();
   const nextPath = (() => {
