@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
@@ -66,9 +66,17 @@ function adaptBackendProblem(b: MinimalBackendProblem, slug: string, fallback?: 
 
 export default function ProblemPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const slug = params?.id || '';
   const staticFallback = PROBLEM_BANK[slug];
   const [problem, setProblem] = useState<Problem | undefined>(staticFallback);
+  // 'idle' — nothing fetched yet; 'loading' — backend request in flight;
+  // 'ready' — backend returned a problem (or we fell through to static);
+  // 'auth' — backend 401'd, we need the user to sign in;
+  // 'missing' — backend reached but slug genuinely does not exist.
+  const [loadState, setLoadState] = useState<'idle' | 'loading' | 'ready' | 'auth' | 'missing'>(
+    staticFallback ? 'ready' : (API_ENABLED ? 'loading' : 'missing'),
+  );
 
   useEffect(() => {
     if (!API_ENABLED || !slug) return;
@@ -76,11 +84,25 @@ export default function ProblemPage() {
     (async () => {
       try {
         const r = await problemsAPI.get(slug);
-        if (!cancelled && r.problem) {
+        if (cancelled) return;
+        if (r.problem) {
           setProblem(adaptBackendProblem(r.problem as MinimalBackendProblem, slug, staticFallback));
+          setLoadState('ready');
+        } else if (!staticFallback) {
+          setLoadState('missing');
         }
-      } catch {
-        // Keep static fallback (or undefined → 404 renders below)
+      } catch (err) {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 401) {
+          if (!staticFallback) setLoadState('auth');
+        } else if (err instanceof ApiError && err.status === 404) {
+          if (!staticFallback) setLoadState('missing');
+        } else if (err instanceof ApiOffline) {
+          if (!staticFallback) setLoadState('missing');
+        } else {
+          // Network / 5xx — if we have no fallback, surface it as missing
+          if (!staticFallback) setLoadState('missing');
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -160,6 +182,14 @@ export default function ProblemPage() {
   }, []);
 
   if (!problem) {
+    const heading =
+      loadState === 'loading' ? 'Loading problem…' :
+      loadState === 'auth'    ? 'Sign in to open this problem' :
+                                'Problem Not Available';
+    const detail =
+      loadState === 'loading' ? 'Fetching from the problem bank.' :
+      loadState === 'auth'    ? 'This problem lives on the backend. Sign in to load it.' :
+                                'The problem bank does not have this one yet.';
     return (
       <>
         <div className="prob-nav">
@@ -169,9 +199,19 @@ export default function ProblemPage() {
           <Link className="pn-item" href="/problems"><Menu /> Problem List</Link>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-h))', flexDirection: 'column', gap: 12 }}>
-          <h2 style={{ fontSize: 16 }}>Problem Not Available</h2>
-          <p style={{ color: 'var(--tx-2)', fontSize: 13 }}>This problem is in the catalogue but not in the practice bank yet.</p>
-          <Link className="btn btn-outline" href="/problems"><ChevronLeft /> Back to Problems</Link>
+          <h2 style={{ fontSize: 16 }}>{heading}</h2>
+          <p style={{ color: 'var(--tx-2)', fontSize: 13 }}>{detail}</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {loadState === 'auth' && (
+              <button
+                className="btn btn-primary"
+                onClick={() => router.push(`/login?next=${encodeURIComponent(`/problem/${slug}`)}`)}
+              >
+                Sign in
+              </button>
+            )}
+            <Link className="btn btn-outline" href="/problems"><ChevronLeft /> Back to Problems</Link>
+          </div>
         </div>
       </>
     );

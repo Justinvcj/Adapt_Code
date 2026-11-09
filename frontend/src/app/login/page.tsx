@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { GithubIcon } from '@/components/adapt/icons';
@@ -12,10 +12,16 @@ type Mode = 'signin' | 'signup';
 
 export default function LoginPage() {
   const router = useRouter();
+  const search = useSearchParams();
+  const nextPath = (() => {
+    const n = search?.get('next') || '';
+    // Only allow in-app relative paths (never an external redirect).
+    return n.startsWith('/') && !n.startsWith('//') ? n : '/';
+  })();
   const { login, register } = useAuth();
   const [mode, setMode] = useState<Mode>('signin');
   const [busy, setBusy] = useState(false);
-  const done = (msg: string) => { toast.success(msg); router.push('/'); };
+  const done = (msg: string) => { toast.success(msg); router.push(nextPath); };
 
   const copy = mode === 'signin'
     ? { h: 'Welcome back', sub: 'Pick up where you left off.' }
