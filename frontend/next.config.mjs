@@ -17,11 +17,16 @@ const API_ORIGIN = (() => {
 
 const isDev = process.env.NODE_ENV !== 'production';
 
+// Known prod backend origin — allow unconditionally so a mis-set or stale
+// NEXT_PUBLIC_API_URL in Vercel doesn't CSP-block the real backend.
+const PROD_BACKEND = 'https://adaptcode-backend-c4evyt3utq-as.a.run.app';
+
 const connectSrc = [
   "'self'",
   'https://*.supabase.co',
   'wss://*.supabase.co',
-  ...(API_ORIGIN ? [API_ORIGIN] : []),
+  PROD_BACKEND,
+  ...(API_ORIGIN && API_ORIGIN !== PROD_BACKEND ? [API_ORIGIN] : []),
   // Dev-only: Next.js uses a WebSocket for HMR; add both host forms because
   // NEXT_PUBLIC_API_URL could be either.
   ...(isDev ? ['http://localhost:*', 'http://127.0.0.1:*', 'ws://localhost:*', 'ws://127.0.0.1:*'] : []),
