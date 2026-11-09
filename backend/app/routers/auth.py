@@ -296,17 +296,34 @@ async def delete_account(response: Response, user: CurrentUser = Depends(get_cur
     """
     admin = get_supabase_admin()
     uid = user.user_id
+    # supabase-py's .table().delete().eq().execute() has been observed to no-op
+    # silently against this project (likely because the client doesn't send the
+    # PostgREST-required `Prefer: return=...` with the service-role key the way
+    # the REST API expects). We use a direct PostgREST DELETE instead, which is
+    # the same call the dashboard SQL editor makes and is verified to work.
+    import httpx
+    rest_url = f"{settings.SUPABASE_URL}/rest/v1"
+    headers = {
+        "apikey": settings.SUPABASE_SERVICE_KEY,
+        "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+        "Prefer": "return=minimal",
+    }
     try:
-        # Delete owned rows first, so a Supabase-auth deletion failure below
-        # doesn't leave orphans we cannot GC.
-        for table in ("explanations", "session_events", "mastery_scores", "agent_state", "users"):
-            try:
-                admin.table(table).delete().eq(
-                    "user_id" if table in {"explanations", "users"} else "student_id",
-                    uid,
-                ).execute()
-            except Exception:
-                logger.warning("delete_account: cleanup of %s failed for %s", table, uid)
+        with httpx.Client(timeout=10.0) as client:
+            # Children first (users has FK references pointing at it). Each
+            # delete is best-effort: a missing table or zero rows is fine.
+            for table, col in (
+                ("explanations",  "user_id"),
+                ("session_events", "student_id"),
+                ("mastery_scores", "student_id"),
+                ("users",          "user_id"),
+            ):
+                try:
+                    r = client.delete(f"{rest_url}/{table}?{col}=eq.{uid}", headers=headers)
+                    if r.status_code >= 400:
+                        logger.warning("delete_account: %s DELETE returned %s: %s", table, r.status_code, r.text[:200])
+                except Exception as e:
+                    logger.warning("delete_account: %s DELETE raised %s", table, e)
         admin.auth.admin.delete_user(uid)
         audit_log("account_delete", actor=uid)
     except Exception:
