@@ -32,15 +32,20 @@ const connectSrc = [
   ...(isDev ? ['http://localhost:*', 'http://127.0.0.1:*', 'ws://localhost:*', 'ws://127.0.0.1:*'] : []),
 ].join(' ');
 
+// Monaco loads its own loader + workers from jsdelivr at runtime. Without
+// this it stays stuck at "Loading..." on every problem page because CSP
+// blocks the loader.js fetch.
+const MONACO_CDN = 'https://cdn.jsdelivr.net';
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'",
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' ${MONACO_CDN}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  `connect-src ${connectSrc}`,
+  `connect-src ${connectSrc} ${MONACO_CDN}`,
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob:",
   "media-src 'self'",
-  "worker-src 'self' blob:",
+  `worker-src 'self' blob: ${MONACO_CDN}`,
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
