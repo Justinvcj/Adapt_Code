@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Edit, Play, Sparkles } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
 import ActivityRail from '@/components/adapt/ActivityRail';
@@ -10,16 +10,34 @@ import Footer from '@/components/adapt/Footer';
 import Avatar from '@/components/adapt/Avatar';
 import EditProfileModal from '@/components/adapt/EditProfileModal';
 import Onboarding from '@/components/adapt/Onboarding';
-import { USER } from '@/components/adapt/data';
 import { CONCEPTS, CONCEPT_BY_ID } from '@/data/concepts';
 import { useProfile } from '@/lib/profile-store';
+import { useAuth } from '@/lib/auth-context';
 import { useLiveMastery, useLiveStats, pickWeakestUnlocked } from '@/lib/live-data';
 import toast from 'react-hot-toast';
 
 export default function LandingPage() {
   const router = useRouter();
+  const { status, user } = useAuth();
   const { profile, update } = useProfile();
   const [editOpen, setEditOpen] = useState(false);
+
+  // Anonymous visitors have no business on the personalised dashboard — it
+  // would show empty-mastery placeholder rings next to whatever name/avatar
+  // the browser's localStorage remembers. Send them to /login with a return
+  // path so they land back here after signing in.
+  useEffect(() => {
+    if (status === 'anonymous') router.replace('/login?next=/');
+  }, [status, router]);
+  if (status === 'loading' || status === 'anonymous') {
+    return <div style={{ minHeight: '100dvh', background: 'var(--bg)' }} />;
+  }
+
+  // Prefer the authenticated user's display_name / email prefix over a
+  // localStorage-remembered one (which carries over between accounts in the
+  // same browser).
+  const displayName = user?.display_name || profile.name || user?.email?.split('@')[0] || 'Learner';
+  const handle = profile.display_name || user?.email?.split('@')[0] || 'me';
 
   // Live mastery + stats; both fall back to the mock when the API is offline
   // or the user is anonymous so the hero never shows NaN.
@@ -35,7 +53,8 @@ export default function LandingPage() {
   // same vector.
   const avgMastery = Object.values(mastery).reduce((a, b) => a + b.mastery, 0) / 12;
   const unlockedCount = Object.values(mastery).filter((m) => m.unlocked).length;
-  const streakValue = stats?.current_streak ?? USER.streak;
+  // Only trust the real backend streak; fall back to 0 rather than fabricating one.
+  const streakValue = stats?.current_streak ?? 0;
 
   const weakestUnlockedId = pickWeakestUnlocked(mastery);
   const weakestUnlocked = CONCEPT_BY_ID[weakestUnlockedId] ?? CONCEPTS[0];
@@ -48,17 +67,16 @@ export default function LandingPage() {
           <div className="land-left">
             <section className="hero">
               <Avatar
-                name={profile.name}
+                name={displayName}
                 dataUri={profile.avatar_data_uri}
                 editable
                 size={92}
                 onChange={(uri) => update({ avatar_data_uri: uri })}
               />
               <div className="hero-info">
-                <div className="hero-name">{profile.name}</div>
+                <div className="hero-name">{displayName}</div>
                 <div className="hero-sub">
-                  <span>@{profile.display_name}</span>
-                  <span className="pill">Rank #{USER.rank.toLocaleString()}</span>
+                  <span>@{handle}</span>
                   <span className="pill learn">
                     <Sparkles size={11} style={{ marginRight: 4, verticalAlign: -1 }} />
                     Up next · {weakestUnlocked.title}

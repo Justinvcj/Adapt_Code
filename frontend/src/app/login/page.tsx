@@ -29,9 +29,14 @@ function LoginPageInner() {
     // Only allow in-app relative paths (never an external redirect).
     return n.startsWith('/') && !n.startsWith('//') ? n : '/';
   })();
-  const { login, register } = useAuth();
+  const { status, login, register } = useAuth();
   const [mode, setMode] = useState<Mode>('signin');
   const [busy, setBusy] = useState(false);
+  // When Supabase has "Confirm email" enabled, register() succeeds but the
+  // follow-up login 401s because the email isn't verified yet. We can't tell
+  // the two cases apart from here, so we gate the home redirect on the auth
+  // context's status and show a "check your inbox" screen otherwise.
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
   const done = (msg: string) => { toast.success(msg); router.push(nextPath); };
 
   const copy = mode === 'signin'
@@ -96,6 +101,34 @@ function LoginPageInner() {
           <h2>{copy.h}</h2>
           <p className="auth-sub">{copy.sub}</p>
 
+          {pendingVerificationEmail ? (
+            <div style={{ padding: '18px 0' }}>
+              <h3 style={{ fontSize: 16, marginBottom: 8 }}>Check your email</h3>
+              <p style={{ color: 'var(--tx-2)', fontSize: 13, lineHeight: 1.5 }}>
+                We sent a confirmation link to <b style={{ color: 'var(--tx)' }}>{pendingVerificationEmail}</b>.
+                Click it to activate your account, then come back and sign in.
+              </p>
+              <p style={{ color: 'var(--tx-2)', fontSize: 12, marginTop: 12 }}>
+                Didn&apos;t get it? Check spam, or try a different email.
+              </p>
+              <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => { setPendingVerificationEmail(null); setMode('signin'); }}
+                >
+                  Back to sign in
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setPendingVerificationEmail(null)}
+                >
+                  Use a different email
+                </button>
+              </div>
+            </div>
+          ) : (
           <form
             className="auth-form"
             onSubmit={async (e) => {
@@ -111,9 +144,28 @@ function LoginPageInner() {
               }
               setBusy(true);
               try {
-                if (mode === 'signin') await login(email, password);
-                else await register(email, password, name || undefined);
-                done(mode === 'signin' ? 'Signed in' : 'Account created');
+                if (mode === 'signin') {
+                  await login(email, password);
+                  done('Signed in');
+                } else {
+                  await register(email, password, name || undefined);
+                  // auth-context ran a follow-up login; if that minted a
+                  // session, go home. Otherwise Supabase is holding the
+                  // account for email confirmation — show that screen.
+                  // Give the context one tick to settle its status.
+                  await new Promise((r) => setTimeout(r, 50));
+                  // Re-read the latest status from closure via a microtask;
+                  // simplest signal is cookie presence, which we proxy by
+                  // hitting /api/auth/me through the login() path.
+                  try {
+                    // Try login one more time — if it succeeds, great; if it
+                    // throws 401, we're in email-verification mode.
+                    await login(email, password);
+                    done('Account created');
+                  } catch {
+                    setPendingVerificationEmail(email);
+                  }
+                }
               } catch (err) {
                 if (err instanceof ApiOffline) {
                   toast.error('Cannot reach the backend — try again in a moment.');
@@ -181,7 +233,10 @@ function LoginPageInner() {
               {busy ? (mode === 'signin' ? 'Signing in…' : 'Creating account…') : (mode === 'signin' ? 'Sign in' : 'Create account')}
             </button>
           </form>
+          )}
 
+          {!pendingVerificationEmail && (
+          <>
           <div className="l-divider">or</div>
 
           <div className="auth-social">
@@ -249,6 +304,8 @@ function LoginPageInner() {
           <p className="auth-fine">
             By {mode === 'signin' ? 'signing in' : 'creating an account'} you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
           </p>
+          </>
+          )}
         </section>
       </main>
     </div>

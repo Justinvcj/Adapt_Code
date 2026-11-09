@@ -25,12 +25,16 @@ export type LearningPrefs = {
   reduced_motion: boolean;
 };
 
+// Empty defaults — each browser starts with no identity. Real values come
+// from the authenticated user via useAuth(); the edit modal is what writes
+// into this store. Shipping hardcoded demo values meant a brand-new signup
+// saw someone else's name and handle on the home page.
 const DEFAULT_PROFILE: Profile = {
-  name: 'Justin Varghese',
-  display_name: 'Justinvcj',
+  name: '',
+  display_name: '',
   avatar_data_uri: null,
-  bio: 'Learning twelve concepts, one node at a time.',
-  socials: { github: 'Justinvcj' },
+  bio: '',
+  socials: {},
 };
 
 const DEFAULT_PREFS: LearningPrefs = {
