@@ -270,8 +270,9 @@ async def export_account(user: CurrentUser = Depends(get_current_user)) -> Dict[
     for key, table, col in plan:
         try:
             q = admin.table(table).select("*").eq(col, uid)
+            # session_events uses `timestamp` (not `created_at`) per schema.sql.
             if table == "session_events":
-                q = q.order("created_at", desc=True)
+                q = q.order("timestamp", desc=True)
             data[key] = q.execute().data or []
         except Exception as e:
             logger.warning("export_account: %s failed (%s): %s", table, col, e)

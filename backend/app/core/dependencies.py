@@ -52,29 +52,29 @@ async def _verify_supabase_jwt(token: str) -> CurrentUser:
 
 def _confirm_user_exists(user_id: str) -> None:
     """
-    Verify the user_id in the JWT still has a Supabase auth row. The JWT itself
-    is stateless and remains valid until expiry, so without this check a deleted
-    account can keep hitting authenticated endpoints with its old cookie for up
-    to an hour. Result is cached per user for a short window to avoid hitting
-    Supabase on every request.
+    Verify the user_id in the JWT still corresponds to an active account. The JWT
+    itself is stateless and stays valid until expiry, so without this check a
+    deleted account's cookie would keep working for up to an hour. We check the
+    public.users row (deleted first by DELETE /api/auth/account), which is a
+    plain PostgREST select — no "user not found" exception ambiguity, just a
+    zero-row result. Cached per user for a short window.
     """
     now = time.time()
     last = _USER_EXISTS_CACHE.get(user_id)
     if last and now - last < _USER_EXISTS_TTL:
         return
+    admin = get_supabase_admin()
     try:
-        admin = get_supabase_admin()
-        res = admin.auth.admin.get_user_by_id(user_id)
-        if not res or not getattr(res, "user", None):
-            _USER_EXISTS_CACHE.pop(user_id, None)
-            raise HTTPException(status_code=401, detail="Account no longer exists")
-        _USER_EXISTS_CACHE[user_id] = now
-    except HTTPException:
-        raise
+        res = admin.table("users").select("user_id").eq("user_id", user_id).limit(1).execute()
     except Exception:
-        # If Supabase is briefly unreachable, don't lock everyone out — fall through.
-        # Worst case the stale-session window is slightly longer than TTL.
+        # Transient PostgREST / network error: don't lock everyone out. The next
+        # request retries. Worst case the stale-session window is slightly longer.
         return
+    rows = getattr(res, "data", None) or []
+    if not rows:
+        _USER_EXISTS_CACHE.pop(user_id, None)
+        raise HTTPException(status_code=401, detail="Account no longer exists")
+    _USER_EXISTS_CACHE[user_id] = now
 
 
 async def get_current_user(request: Request) -> CurrentUser:
