@@ -479,7 +479,7 @@ export default function ProblemPage() {
                   set.add(problem.slug);
                   toast.success('Bookmarked');
                 }
-                try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch {}
+                try { localStorage.setItem(KEY, JSON.stringify(Array.from(set))); } catch {}
               }}
               title="Save for later"
             ><Star size={14} /></button>

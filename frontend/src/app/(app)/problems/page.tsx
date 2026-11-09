@@ -52,7 +52,7 @@ function loadBookmarks(): Set<string> {
 }
 
 function saveBookmarks(set: Set<string>) {
-  try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify([...set])); } catch {}
+  try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(Array.from(set))); } catch {}
 }
 
 export default function ProblemsPage() {
