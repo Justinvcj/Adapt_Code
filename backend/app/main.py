@@ -1,3 +1,25 @@
+import os
+
+# Sentry must initialise BEFORE the FastAPI app is created so its ASGI
+# middleware wraps every route. No-op when SENTRY_DSN is unset.
+_sentry_dsn = os.environ.get("SENTRY_DSN")
+if _sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.starlette import StarletteIntegration
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        environment=os.environ.get("ENV", "development"),
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+        profiles_sample_rate=0.0,
+        send_default_pii=False,
+        integrations=[
+            StarletteIntegration(transaction_style="endpoint"),
+            FastApiIntegration(transaction_style="endpoint"),
+        ],
+    )
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -35,7 +57,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
 
-import os
 env = os.environ.get("ENV", "development").lower()
 
 setup_rate_limiting(app)

@@ -73,4 +73,23 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry wrapper is a no-op when SENTRY_* envs are absent, so this stays
+// safe for local dev and for previews that don't have the DSN wired up.
+let exportedConfig = nextConfig;
+if (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  try {
+    const { withSentryConfig } = await import('@sentry/nextjs');
+    exportedConfig = withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: !process.env.CI,
+      widenClientFileUpload: true,
+      hideSourceMaps: true,
+      disableLogger: true,
+    });
+  } catch {
+    // Sentry not installed yet — keep the base config.
+  }
+}
+
+export default exportedConfig;

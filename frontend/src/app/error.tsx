@@ -6,6 +6,7 @@
  */
 import { useEffect } from 'react';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 
 export default function GlobalError({
   error,
@@ -15,7 +16,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Best-effort client log — swap for Sentry once that's wired.
+    Sentry.captureException(error);
     // eslint-disable-next-line no-console
     console.error('[app error]', error);
   }, [error]);
