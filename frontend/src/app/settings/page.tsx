@@ -172,7 +172,7 @@ export default function SettingsPage() {
               <>
                 <h3>Account</h3>
                 <p className="set-sub">You can log in using your email, phone number, or AdaptCode ID.</p>
-                <div className="set-row"><div className="set-row-icon"><User /></div><div><div className="set-row-label">Display name</div></div><div className="set-row-val">{profile.display_name || profile.name || '—'}</div><div className="set-row-arrow" /></div>
+                <div className="set-row"><div className="set-row-icon"><User /></div><div><div className="set-row-label">Display name</div></div><div className="set-row-val">{user?.display_name || profile.display_name || profile.name || '—'}</div><div className="set-row-arrow" /></div>
                 <div className="set-row"><div className="set-row-icon"><Mail /></div><div><div className="set-row-label">Email</div></div><div className="set-row-val">{user?.email || '—'}</div><div className="set-row-arrow" /></div>
                 <div className="set-row"><div className="set-row-icon"><Phone /></div><div><div className="set-row-label">Member since</div></div><div className="set-row-val">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</div><div className="set-row-arrow" /></div>
                 <div className="set-row"><div className="set-row-icon"><Key /></div><div><div className="set-row-label">Password</div></div><div className="set-row-val">••••••••</div><div className="set-row-arrow" /></div>
