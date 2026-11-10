@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/-AdaptCode-FFA116?style=for-the-badge&logo=leetcode&logoColor=white" alt="AdaptCode" height="40" />
+<img src="assets/logo.webp" alt="AdaptCode" width="140" />
+
+# AdaptCode
 
 ### An adaptive DS&A tutor that *learns you* while you learn to code.
 
