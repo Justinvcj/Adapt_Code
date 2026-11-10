@@ -53,6 +53,11 @@ class SubmitResponse(BaseModel):
     test_cases_passed: int
     test_cases_total: int
     mastery: dict
+    # How much the mastery for THIS problem's concept changed. Positive on
+    # accepted / partial-credit, zero on wrong_answer with no reward. The
+    # frontend needs this to show "Mastery went up by X.X pts" accurately;
+    # otherwise the UI shows a hard-coded 0.0.
+    mastery_delta: float = 0.0
     next_problem: dict
     effective_weight: float
     explanation_status: str
@@ -378,6 +383,7 @@ async def submit_code(request: Request, req: SubmitRequest, background_tasks: Ba
         test_cases_passed=execution["passed"],
         test_cases_total=execution["total"],
         mastery=user_mastery,
+        mastery_delta=float(new_mastery - old_mastery),
         next_problem=next_prob,
         effective_weight=w,
         explanation_status=explanation_status,
