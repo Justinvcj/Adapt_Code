@@ -24,11 +24,27 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://adapt-code.vercel.app"),
   title: "AdaptCode — Learn by solving",
-  description: "A learning-first programming platform. Twelve concepts, prerequisite-gated progression, adaptive hints.",
+  description: "An adaptive DS&A tutor. BKT models your mastery, a LinUCB bandit picks your next problem, Piston grades your code, Gemini explains what broke.",
   icons: {
     icon: [{ url: "/logo.webp", type: "image/webp" }],
     apple: [{ url: "/logo.webp" }],
+  },
+  openGraph: {
+    title: "AdaptCode — Learn by solving",
+    description: "An adaptive DS&A tutor that learns you while you learn to code.",
+    url: "https://adapt-code.vercel.app",
+    siteName: "AdaptCode",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "AdaptCode" }],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AdaptCode — Learn by solving",
+    description: "An adaptive DS&A tutor that learns you while you learn to code.",
+    images: ["/og-image.svg"],
   },
 };
 

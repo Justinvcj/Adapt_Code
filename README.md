@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="assets/logo.webp" alt="AdaptCode" width="140" />
+<a href="https://adapt-code.vercel.app"><img src="assets/social-card.svg" alt="AdaptCode — An adaptive DS&A tutor that learns you while you learn to code." width="760" /></a>
 
-# AdaptCode
+&nbsp;
 
 ### An adaptive DS&A tutor that *learns you* while you learn to code.
 
