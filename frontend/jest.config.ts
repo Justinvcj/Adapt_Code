@@ -15,6 +15,8 @@ const config: Config = {
     // Handle module aliases
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  // Playwright e2e specs are run by `npm run test:e2e`, not Jest. Keep them out.
+  testPathIgnorePatterns: ['/node_modules/', '/e2e/', '/.next/'],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
