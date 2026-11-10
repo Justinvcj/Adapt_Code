@@ -53,3 +53,10 @@ ui_duplicate/
 # Temporary
 tmp/
 *.tmp
+
+# Research / presentation binaries — kept locally, not in git
+*.pptx
+*.pdf
+*.docx
+*.xlsx
+*.key
