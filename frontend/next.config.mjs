@@ -26,6 +26,10 @@ const connectSrc = [
   'https://*.supabase.co',
   'wss://*.supabase.co',
   PROD_BACKEND,
+  // Sentry browser ingest + session replay upload. Without these the
+  // SDK boots but every event is CSP-blocked (silent data loss).
+  'https://*.ingest.us.sentry.io',
+  'https://*.ingest.sentry.io',
   ...(API_ORIGIN && API_ORIGIN !== PROD_BACKEND ? [API_ORIGIN] : []),
   // Dev-only: Next.js uses a WebSocket for HMR; add both host forms because
   // NEXT_PUBLIC_API_URL could be either.
