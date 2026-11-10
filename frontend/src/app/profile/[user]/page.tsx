@@ -1,28 +1,48 @@
 "use client";
 import { useEffect, useMemo, useState } from 'react';
-import { Edit, Globe, Trophy, TrendingUp, Flame, Calendar } from 'lucide-react';
+import { Edit, Globe, Flame, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '@/components/adapt/Navbar';
 import Footer from '@/components/adapt/Footer';
 import Avatar from '@/components/adapt/Avatar';
 import EditProfileModal from '@/components/adapt/EditProfileModal';
 import { GithubIcon, TwitterIcon, LinkedinIcon } from '@/components/adapt/icons';
-import { USER } from '@/components/adapt/data';
 import { useProfile } from '@/lib/profile-store';
-import { statsAPI, API_ENABLED, type ApiStatsSummary } from '@/lib/api';
-import { useLiveHeatmap } from '@/lib/live-data';
+import { useAuth } from '@/lib/auth-context';
+import { statsAPI, API_ENABLED, API_BASE, type ApiStatsSummary } from '@/lib/api';
+import { useLiveHeatmap, useLiveMastery } from '@/lib/live-data';
 
-type Skill = { name: string; count: number };
+type HistoryEvent = {
+  event_id: string;
+  concept_tag: string;
+  difficulty_level: 'easy' | 'medium' | 'hard';
+  final_verdict: string;
+  timestamp: string;
+  problems?: { title?: string };
+};
 
-const SKILLS_ADVANCED: Skill[]   = [{ name: 'Dynamic Programming', count: 6 }, { name: 'Divide and Conquer', count: 2 }, { name: 'Trie', count: 1 }];
-const SKILLS_INTERMEDIATE: Skill[]= [{ name: 'Hash Table', count: 24 }, { name: 'Math', count: 18 }, { name: 'Two Pointers', count: 12 }, { name: 'Binary Search', count: 9 }, { name: 'Sorting', count: 8 }, { name: 'Greedy', count: 7 }];
-const SKILLS_FUNDAMENTAL: Skill[]= [{ name: 'Array', count: 62 }, { name: 'String', count: 41 }, { name: 'Linked List', count: 11 }, { name: 'Recursion', count: 6 }, { name: 'Simulation', count: 4 }];
+function relTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const diff = Math.max(0, now - then);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months === 1 ? '' : 's'} ago`;
+}
 
 export default function ProfilePage() {
-  const uFallback = USER;
+  const { user } = useAuth();
   const { profile, update } = useProfile();
+  const { mastery } = useLiveMastery();
   const [editOpen, setEditOpen] = useState(false);
   const [liveStats, setLiveStats] = useState<ApiStatsSummary | null>(null);
+  const [history, setHistory] = useState<HistoryEvent[]>([]);
 
   useEffect(() => {
     if (!API_ENABLED) return;
@@ -30,38 +50,34 @@ export default function ProfilePage() {
       try {
         const r = await statsAPI.summary();
         setLiveStats(r.data);
-      } catch { /* keep fallback */ }
+      } catch { /* leave null */ }
+      try {
+        const r = await fetch(`${API_BASE}/api/history`, { credentials: 'include' });
+        if (r.ok) {
+          const data = await r.json();
+          setHistory(data?.data || []);
+        }
+      } catch { /* leave empty */ }
     })();
   }, []);
 
-  // Blend: real backend values when available, static fallback otherwise.
-  // Keeps the easy/medium/hard breakdown mocked for now (backend only returns totals).
-  const u = useMemo(() => {
-    if (!liveStats) return uFallback;
-    const totalSolved = liveStats.total_problems_solved;
-    // Distribute live total across difficulty tiers proportionally to the mock shape,
-    // falling back to all-easy if the mock totals are zero.
-    const mSum = uFallback.solved.easy + uFallback.solved.medium + uFallback.solved.hard || 1;
-    const scale = totalSolved / mSum;
-    return {
-      ...uFallback,
-      solved: {
-        easy:   Math.round(uFallback.solved.easy   * scale),
-        medium: Math.round(uFallback.solved.medium * scale),
-        hard:   Math.round(uFallback.solved.hard   * scale),
-      },
-      streak: liveStats.current_streak,
-      subs: totalSolved,
-    };
-  }, [liveStats, uFallback]);
+  const displayName = user?.display_name || profile.name || user?.email?.split('@')[0] || 'Learner';
+  const handle = profile.display_name || user?.email?.split('@')[0] || 'me';
 
-  const total    = u.solved.easy + u.solved.medium + u.solved.hard;
-  const allTotal = u.total.easy + u.total.medium + u.total.hard;
+  // Donut shows mastery across all 12 concepts rather than a fabricated
+  // Easy/Medium/Hard breakdown we don't have data for.
+  const totalSolved = liveStats?.total_problems_solved ?? 0;
+  const conceptsUnlocked = Object.values(mastery).filter((m) => m.unlocked).length;
+  const avgMastery = Object.values(mastery).reduce((a, b) => a + b.mastery, 0) / Math.max(12, 1);
+  const streakValue = liveStats?.current_streak ?? 0;
+  const strongest = liveStats?.strongest_concept;
+  const weakest = liveStats?.weakest_concept;
+
   const R = 70;
   const C = 2 * Math.PI * R;
-  const eL = C * (u.solved.easy / allTotal);
-  const mL = C * (u.solved.medium / allTotal);
-  const hL = C * (u.solved.hard / allTotal);
+  const masteryArc = C * avgMastery;
+
+  const acceptedHistory = history.filter((h) => h.final_verdict === 'Accepted');
 
   // Real heatmap when the backend is up; synthetic PRNG when it isn't so the
   // profile never shows an empty grid in offline/preview mode.
@@ -103,38 +119,28 @@ export default function ProfilePage() {
     return weeks;
   }, [heatmapEntries, heatmapLive]);
 
-  const renderSkill = (s: Skill) => {
-    const earned  = s.count >= 10;
-    const trophy  = s.count >= 25;
-    return (
-      <span key={s.name} className={`skill-chip ${earned ? 'earned' : ''} ${trophy ? 'trophy' : ''}`}>
-        {trophy && <Trophy size={11} />} {s.name}<span className="n">×{s.count}</span>
-      </span>
-    );
-  };
-
   return (
     <>
       <Navbar active="profile" />
       <div className="prof2">
         <aside className="prof2-side">
           <Avatar
-            name={profile.name}
+            name={displayName}
             dataUri={profile.avatar_data_uri}
             editable
             size={120}
             onChange={(uri) => update({ avatar_data_uri: uri })}
           />
           <div>
-            <div className="prof2-name">{profile.name}</div>
-            <div className="prof2-user">@{profile.display_name}</div>
+            <div className="prof2-name">{displayName}</div>
+            <div className="prof2-user">@{handle}</div>
           </div>
           {profile.bio && <p className="prof2-bio">{profile.bio}</p>}
 
           <div className="prof2-stat-row">
-            <div><b>{u.following}</b><span>Following</span></div>
-            <div><b>{u.followers}</b><span>Followers</span></div>
-            <div><b>#{u.rank.toLocaleString()}</b><span>Rank</span></div>
+            <div><b>{totalSolved}</b><span>Solved</span></div>
+            <div><b>{conceptsUnlocked}/12</b><span>Unlocked</span></div>
+            <div><b>{(avgMastery * 100).toFixed(0)}%</b><span>Mastery</span></div>
           </div>
 
           <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => setEditOpen(true)}>
@@ -166,81 +172,65 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <div className="prof2-card">
-            <h4>Languages</h4>
-            {[
-              { n: 'Java', c: 142 },
-              { n: 'Python 3', c: 38 },
-              { n: 'C++', c: 5 },
-              { n: 'JavaScript', c: 1 },
-            ].map((l) => (
-              <div key={l.n} className="lang-row">
-                <span className="lang-pill">{l.n}</span>
-                <span className="lang-count"><b>{l.c}</b> solved</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="prof2-card">
-            <h4>Skills</h4>
-            <div className="skill-group" style={{ ['--dot' as string]: 'var(--hard)' }}>
-              <h5>Advanced</h5>
-              <div className="skill-chips">{SKILLS_ADVANCED.map(renderSkill)}</div>
+          {(strongest || weakest) && (
+            <div className="prof2-card">
+              <h4>Concepts</h4>
+              {strongest && (
+                <div className="lang-row">
+                  <span className="lang-pill">Strongest</span>
+                  <span className="lang-count"><b>{strongest.replace(/_/g, ' ')}</b></span>
+                </div>
+              )}
+              {weakest && weakest !== strongest && (
+                <div className="lang-row">
+                  <span className="lang-pill">Weakest</span>
+                  <span className="lang-count"><b>{weakest.replace(/_/g, ' ')}</b></span>
+                </div>
+              )}
             </div>
-            <div className="skill-group" style={{ ['--dot' as string]: 'var(--med)' }}>
-              <h5>Intermediate</h5>
-              <div className="skill-chips">{SKILLS_INTERMEDIATE.map(renderSkill)}</div>
-            </div>
-            <div className="skill-group" style={{ ['--dot' as string]: 'var(--easy)' }}>
-              <h5>Fundamental</h5>
-              <div className="skill-chips">{SKILLS_FUNDAMENTAL.map(renderSkill)}</div>
-            </div>
-          </div>
+          )}
         </aside>
 
         <main className="prof2-main">
-          {/* Hero: donut + difficulty bars — enlarged */}
+          {/* Hero: mastery donut + top unlocked concepts */}
           <section className="prof2-progress">
             <div className="prof2-donut">
               <svg viewBox="0 0 180 180" width="180" height="180">
                 <circle cx="90" cy="90" r={R} fill="none" stroke="var(--bg-sf)" strokeWidth="12" />
-                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--easy)" strokeWidth="12" strokeDasharray={`${eL} ${C - eL}`} strokeDashoffset="0" strokeLinecap="round" transform="rotate(-90 90 90)" />
-                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--med)"  strokeWidth="12" strokeDasharray={`${mL} ${C - mL}`} strokeDashoffset={-eL} strokeLinecap="round" transform="rotate(-90 90 90)" />
-                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--hard)" strokeWidth="12" strokeDasharray={`${hL} ${C - hL}`} strokeDashoffset={-(eL + mL)} strokeLinecap="round" transform="rotate(-90 90 90)" />
+                <circle cx="90" cy="90" r={R} fill="none" stroke="var(--learn)" strokeWidth="12"
+                  strokeDasharray={`${masteryArc} ${C - masteryArc}`} strokeDashoffset="0" strokeLinecap="round"
+                  transform="rotate(-90 90 90)" />
               </svg>
               <div className="prof2-donut-c">
-                <b>{total}</b>
-                <span>of {allTotal} solved</span>
-                {u.attempting > 0 && <span className="prof2-donut-attempting">· {u.attempting} attempting</span>}
+                <b>{(avgMastery * 100).toFixed(0)}%</b>
+                <span>average mastery</span>
+                <span className="prof2-donut-attempting">· {totalSolved} solved</span>
               </div>
             </div>
 
             <div className="prof2-progress-bars">
-              {([
-                ['Easy',   u.solved.easy,   u.total.easy,   'e'],
-                ['Medium', u.solved.medium, u.total.medium, 'm'],
-                ['Hard',   u.solved.hard,   u.total.hard,   'h'],
-              ] as const).map(([lbl, val, tot, cls]) => (
-                <div key={lbl} className={`prof2-pbar prof2-pbar-${cls}`}>
+              {Object.entries(mastery).slice(0, 4).map(([id, m]) => (
+                <div key={id} className="prof2-pbar prof2-pbar-e">
                   <div className="prof2-pbar-head">
-                    <span>{lbl}</span>
-                    <b>{val}<i> / {tot}</i></b>
+                    <span style={{ textTransform: 'capitalize' }}>{id.replace(/_/g, ' ')}</span>
+                    <b>{(m.mastery * 100).toFixed(0)}%<i> · {m.solved}/{m.solved + m.attempted} solved</i></b>
                   </div>
-                  <div className="prof2-pbar-track"><div className="prof2-pbar-fill" style={{ width: `${(val / tot * 100).toFixed(1)}%` }} /></div>
+                  <div className="prof2-pbar-track">
+                    <div className="prof2-pbar-fill" style={{ width: `${(m.mastery * 100).toFixed(1)}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Promoted heatmap */}
+          {/* Heatmap — drives from real /api/stats/heatmap */}
           <section className="prof2-heatmap-card">
             <header>
               <div className="prof2-heatmap-title">
-                <h3>{u.subs} submissions in the last year</h3>
+                <h3>{totalSolved} submission{totalSolved === 1 ? '' : 's'} in the last year</h3>
                 <div className="prof2-heatmap-stats">
-                  <span><Flame size={12} /> Streak <b>{u.streak}</b></span>
-                  <span><Calendar size={12} /> Active <b>{u.days}</b> days</span>
-                  <span><TrendingUp size={12} /> This week <b>12</b></span>
+                  <span><Flame size={12} /> Streak <b>{streakValue}</b></span>
+                  <span><Calendar size={12} /> Unlocked <b>{conceptsUnlocked}/12</b></span>
                 </div>
               </div>
             </header>
@@ -268,27 +258,27 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* Recent AC submissions */}
+          {/* Recent AC submissions — drives from /api/history */}
           <section className="prof2-recent">
             <header>
               <h3>Recent accepted</h3>
-              <Link href="/problems" className="section-h-link">All submissions <span>→</span></Link>
+              <Link href="/problems" className="section-h-link">All problems <span>→</span></Link>
             </header>
-            <ul>
-              {[
-                ['Reverse String II',    'Strings',  '15 days ago'],
-                ['Two Sum',              'Hashing',  '18 days ago'],
-                ['Valid Parentheses',    'Arrays',   '20 days ago'],
-                ['Maximum Subarray',     'Arrays',   '22 days ago'],
-                ['Climbing Stairs',      'Recursion','25 days ago'],
-              ].map(([n, concept, t]) => (
-                <li key={n}>
-                  <span className="prof2-recent-name">{n}</span>
-                  <span className="prof2-recent-concept">{concept}</span>
-                  <span className="prof2-recent-time">{t}</span>
-                </li>
-              ))}
-            </ul>
+            {acceptedHistory.length === 0 ? (
+              <p style={{ padding: '14px 0', color: 'var(--tx-2)', fontSize: 13 }}>
+                No accepted submissions yet. <Link href="/problems" style={{ color: 'var(--learn)' }}>Start practising →</Link>
+              </p>
+            ) : (
+              <ul>
+                {acceptedHistory.slice(0, 10).map((h) => (
+                  <li key={h.event_id}>
+                    <span className="prof2-recent-name">{h.problems?.title || h.event_id.slice(0, 8)}</span>
+                    <span className="prof2-recent-concept">{h.concept_tag.replace(/_/g, ' ')}</span>
+                    <span className="prof2-recent-time">{relTime(h.timestamp)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </main>
       </div>
