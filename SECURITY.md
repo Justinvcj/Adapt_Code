@@ -72,16 +72,20 @@ frontend never holds the Supabase service key; it holds only the anon key
 
 Ranking uses: exploitability × blast radius × availability of mitigation.
 
-### 4.1 Per-user failed-login lockout — _in flight_
-After N failed logins against the same email within a window, start returning
-a uniform "invalid credentials" response with a progressively increasing delay
-(or hard lock for M minutes). SlowAPI only rate-limits by IP; an attacker
-rotating IPs can credential-stuff a single user. Branch: `feat/rate-limits`.
+### 4.1 Per-user failed-login lockout — ✅ shipped (PR #28, commit `6af63be`)
+Tiers: 5 failures → 15 min, 10 → 1 hr, 20 → 24 hr. Keyed by normalized email
+(`strip().lower()`), DB-clock `now()` for all comparisons, fails OPEN on DB
+outage. See [backend/app/services/login_lockout.py](backend/app/services/login_lockout.py).
+Verified live 2026-11-11: 5 failed logins → DB row `failed_count=5`,
+`locked_until = first_failed_at + 15m`. SlowAPI (5/min per IP) still layered
+in front. **Known quirk** — once `locked_until` expires, `failed_count` resets
+to 1 instead of accumulating to the 10/20 tiers via the login endpoint alone.
 
-### 4.2 Per-user daily submit cap — _in flight_
-A free account can call `/api/submit` far more than a human could. The Piston
-sandbox is the expensive resource and the cap belongs in FastAPI, not Piston.
-Branch: `feat/rate-limits`.
+### 4.2 Per-user daily submit cap — ✅ shipped (PR #28, commit `6af63be`)
+Free: 100 submits/24h. Pro: 500. Rolling window keyed by `session_events`.
+Header `X-AdaptCode-Submits-Today` on every response. Fails CLOSED (`403`) if
+the user row is missing; fails OPEN on DB outage. See
+[backend/app/services/submit_quota.py](backend/app/services/submit_quota.py).
 
 ### 4.3 Cloudflare in front (free tier)
 Even with SlowAPI, L7 abuse (slow-loris, UA rotation, cheap DDoS) hits Cloud
@@ -97,7 +101,8 @@ to Secret Manager like the other secrets. See [§6](#6-sentry_dsn--secret-manage
 ### 4.5 CAPTCHA on signup
 Prevents automated account creation farms. Cloudflare Turnstile is the lowest
 friction (free, privacy-respecting, no re-arrange-the-traffic-lights UX).
-Deferred until `feat/rate-limits` lands so we don't thrash `auth.py`.
+`feat/rate-limits` has shipped, so `auth.py` is stable — this is now
+unblocked and ready to pick up.
 
 ### 4.6 Piston runtime pinning + CVE audit
 `LANGUAGE_MAP` in [backend/app/services/piston.py](backend/app/services/piston.py)
