@@ -1,24 +1,29 @@
-import os
+import os, sys
 
 # Sentry must initialise BEFORE the FastAPI app is created so its ASGI
 # middleware wraps every route. No-op when SENTRY_DSN is unset.
 _sentry_dsn = os.environ.get("SENTRY_DSN")
+print(f"[boot] SENTRY_DSN set: {bool(_sentry_dsn)}", flush=True, file=sys.stderr)
 if _sentry_dsn:
-    import sentry_sdk
-    from sentry_sdk.integrations.fastapi import FastApiIntegration
-    from sentry_sdk.integrations.starlette import StarletteIntegration
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
 
-    sentry_sdk.init(
-        dsn=_sentry_dsn,
-        environment=os.environ.get("ENV", "development"),
-        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
-        profiles_sample_rate=0.0,
-        send_default_pii=False,
-        integrations=[
-            StarletteIntegration(transaction_style="endpoint"),
-            FastApiIntegration(transaction_style="endpoint"),
-        ],
-    )
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            environment=os.environ.get("ENV", "development"),
+            traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+            profiles_sample_rate=0.0,
+            send_default_pii=False,
+            integrations=[
+                StarletteIntegration(transaction_style="endpoint"),
+                FastApiIntegration(transaction_style="endpoint"),
+            ],
+        )
+        print(f"[boot] sentry_sdk initialised, version {sentry_sdk.VERSION}", flush=True, file=sys.stderr)
+    except Exception as _sentry_boot_err:
+        print(f"[boot] sentry_sdk init FAILED: {_sentry_boot_err}", flush=True, file=sys.stderr)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
