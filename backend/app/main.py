@@ -1,29 +1,24 @@
-import os, sys
+import os
 
 # Sentry must initialise BEFORE the FastAPI app is created so its ASGI
 # middleware wraps every route. No-op when SENTRY_DSN is unset.
 _sentry_dsn = os.environ.get("SENTRY_DSN")
-print(f"[boot] SENTRY_DSN set: {bool(_sentry_dsn)}", flush=True, file=sys.stderr)
 if _sentry_dsn:
-    try:
-        import sentry_sdk
-        from sentry_sdk.integrations.fastapi import FastApiIntegration
-        from sentry_sdk.integrations.starlette import StarletteIntegration
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.starlette import StarletteIntegration
 
-        sentry_sdk.init(
-            dsn=_sentry_dsn,
-            environment=os.environ.get("ENV", "development"),
-            traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
-            profiles_sample_rate=0.0,
-            send_default_pii=False,
-            integrations=[
-                StarletteIntegration(transaction_style="endpoint"),
-                FastApiIntegration(transaction_style="endpoint"),
-            ],
-        )
-        print(f"[boot] sentry_sdk initialised, version {sentry_sdk.VERSION}", flush=True, file=sys.stderr)
-    except Exception as _sentry_boot_err:
-        print(f"[boot] sentry_sdk init FAILED: {_sentry_boot_err}", flush=True, file=sys.stderr)
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        environment=os.environ.get("ENV", "development"),
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+        profiles_sample_rate=0.0,
+        send_default_pii=False,
+        integrations=[
+            StarletteIntegration(transaction_style="endpoint"),
+            FastApiIntegration(transaction_style="endpoint"),
+        ],
+    )
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,37 +56,6 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
-
-# One-time Sentry pipeline verification endpoint. Deliberately raises so
-# the SDK captures an unhandled exception and we can confirm events reach
-# the backend Sentry project. Remove after the pipeline is verified.
-@app.get("/_sentry-debug", include_in_schema=False)
-def _sentry_debug_route():
-    diagnostics = {
-        "sentry_dsn_in_env": bool(os.environ.get("SENTRY_DSN")),
-        "sentry_sdk_imported": False,
-        "sentry_client_present": False,
-        "no_proxy": os.environ.get("NO_PROXY", "")[:300],
-    }
-    try:
-        import sentry_sdk as _ssdk
-        diagnostics["sentry_sdk_imported"] = True
-        diagnostics["sentry_sdk_version"] = _ssdk.VERSION
-        hub = _ssdk.Hub.current
-        client = hub.client
-        diagnostics["sentry_client_present"] = client is not None
-        if client:
-            diagnostics["sentry_dsn_configured"] = bool(client.dsn)
-            try:
-                eid = _ssdk.capture_message("AdaptCode backend canary ping via /_sentry-debug")
-                diagnostics["capture_message_id"] = eid
-                _ssdk.flush(5)
-            except Exception as e:
-                diagnostics["capture_err"] = str(e)
-    except Exception as e:
-        diagnostics["import_err"] = str(e)
-    # Also raise so the integration's unhandled-exception path is exercised
-    raise RuntimeError(f"AdaptCode backend Sentry canary. Diagnostics: {diagnostics}")
 
 env = os.environ.get("ENV", "development").lower()
 
