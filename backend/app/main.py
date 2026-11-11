@@ -57,6 +57,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
 
+# One-time Sentry pipeline verification endpoint. Deliberately raises so
+# the SDK captures an unhandled exception and we can confirm events reach
+# the backend Sentry project. Remove after the pipeline is verified.
+@app.get("/_sentry-debug", include_in_schema=False)
+def _sentry_debug_route():
+    raise RuntimeError("AdaptCode backend Sentry canary — if you see this in Sentry, the pipeline works.")
+
 env = os.environ.get("ENV", "development").lower()
 
 setup_rate_limiting(app)
