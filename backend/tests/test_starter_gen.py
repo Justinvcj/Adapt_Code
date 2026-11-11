@@ -489,3 +489,38 @@ def test_spot_check_cpp_compilation():
                 res = subprocess.run([*gpp_cmd, "-std=c++17", "-O2", cpp_file, "-o", out_path], capture_output=True, text=True)
 
             assert res.returncode == 0, f"g++ failed on sample {i}:\n{res.stderr}\nCode:\n{cpp_code}"
+
+
+def test_raw_string_input_with_non_string_outputs_compiles_java():
+    """Verify that raw_string and fallback inputs with non-string outputs compile cleanly in Java."""
+    javac_path = shutil.which("javac")
+    if not javac_path:
+        pytest.skip("javac not available on PATH")
+
+    test_samples = [
+        [{"input": "hello", "expected_output": "42"}],         # raw_string -> int
+        [{"input": "hello", "expected_output": "3.14"}],       # raw_string -> float (double)
+        [{"input": "hello", "expected_output": "True"}],       # raw_string -> python_bool (boolean)
+        [{"input": "hello", "expected_output": "true"}],       # raw_string -> json_bool (boolean)
+        [{"input": "hello", "expected_output": "[1, 2, 3]"}],  # raw_string -> array (List<Integer>)
+        [{"input": "", "expected_output": "42"}],              # fallback -> int
+        [{"input": "", "expected_output": "3.14"}],            # fallback -> float
+        [{"input": "", "expected_output": "[1, 2]"}],          # fallback -> array
+    ]
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        for i, tc in enumerate(test_samples):
+            starters = generate_starter_code(tc, languages=["java"])
+            java_code = starters["java"]
+
+            sub_dir = os.path.join(temp_dir, f"raw_string_test_{i}")
+            os.makedirs(sub_dir, exist_ok=True)
+            main_java = os.path.join(sub_dir, "Main.java")
+            with open(main_java, "w", encoding="utf-8") as f:
+                f.write(java_code)
+
+            res = subprocess.run([javac_path, main_java], capture_output=True, text=True)
+            assert res.returncode == 0, (
+                f"javac failed on sample {i} (tc={tc}):\n{res.stderr}\nCode:\n{java_code}"
+            )
+

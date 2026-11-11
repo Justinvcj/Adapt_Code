@@ -320,7 +320,7 @@ def _generate_java(
         method_sig = f"public static {ret_type} solve(String data)"
         read_block = """        Scanner scanner = new Scanner(System.in);
         String data = scanner.hasNextLine() ? scanner.nextLine().trim() : "";
-        String result = solve(data);"""
+        """ + f"{ret_type} result = solve(data);"
     elif input_type == "multiline":
         method_sig = f"public static {ret_type} solve(List<String> lines)"
         read_block = """        Scanner scanner = new Scanner(System.in);
