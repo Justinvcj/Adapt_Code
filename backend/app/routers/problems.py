@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import httpx
@@ -12,6 +12,7 @@ from app.services.bkt import compute_effective_weight, update_mastery, get_bkt_p
 from app.services.linucb import LinUCBAgent, get_unlocked_concepts, get_weakest_unlocked, PREREQUISITE_GRAPH, MASTERY_THRESHOLD
 from app.services.gemini import generate_explanation
 from app.services.piston import run_test_cases
+from app.services.submit_quota import check_submit_quota
 from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api", tags=["core"])
@@ -217,16 +218,36 @@ async def select_next_problem(jwt: str, action: str, current_concept: str, curre
 
 @router.post("/submit", response_model=SubmitResponse)
 @limiter.limit("20/minute")
-async def submit_code(request: Request, req: SubmitRequest, background_tasks: BackgroundTasks, user: CurrentUser = Depends(get_current_user)):
-    user_id = user.user_id
+async def submit_code(
+    request: Request,
+    response: Response,
+    req: SubmitRequest,
+    background_tasks: BackgroundTasks,
+    user: CurrentUser = Depends(get_current_user),
+):
+    user_id = getattr(user, "user_id", str(user))
+    user_jwt = getattr(user, "jwt", "")
+
+    # Enforce daily submit quota (Requirement R2)
+    quota = check_submit_quota(user_id)
+    if not quota.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily submit limit reached ({quota.current_count}/{quota.cap}). Resets at {quota.resets_at}.",
+            headers={"X-AdaptCode-Submits-Today": str(quota.current_count)},
+        )
+
+    # Attach current submit count header on allowed submission
+    response.headers["X-AdaptCode-Submits-Today"] = str(quota.current_count + 1)
+
     # Frontend may send a slug ("two-sum"); every downstream column is uuid-typed,
     # so normalize once at the top and reuse everywhere.
     problem_uuid = _resolve_problem_id(req.problem_id)
     req.problem_id = problem_uuid
-    supabase = get_supabase_user(user.jwt)
-    problem = await get_problem(user.jwt, problem_uuid)
-    user_mastery = await get_mastery_vector(user.jwt, user_id)
-    recent_events = await get_recent_events(user.jwt, user_id, limit=5)
+    supabase = get_supabase_user(user_jwt)
+    problem = await get_problem(user_jwt, problem_uuid)
+    user_mastery = await get_mastery_vector(user_jwt, user_id)
+    recent_events = await get_recent_events(user_jwt, user_id, limit=5)
     
     # 1. Execute via Piston (harness wraps function-style code for function-based problems)
     test_cases = problem.get("test_cases", [])

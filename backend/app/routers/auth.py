@@ -12,6 +12,7 @@ from app.models.schemas import RegisterRequest, LoginRequest
 from app.core.dependencies import get_current_user, CurrentUser, _verify_supabase_jwt
 from app.core.rate_limit import limiter, get_real_ip
 from app.core.logging import logger
+from app.services.login_lockout import check_login_lockout, record_failed_login, clear_login_lockout
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -82,18 +83,35 @@ async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
 @limiter.limit("5/minute")
 async def login(request: Request, req: LoginRequest, response: Response) -> Any:
     import traceback as _tb
-    request.state.login_email = req.email.lower().strip()
+    normalized_email = req.email.strip().lower()
+    request.state.login_email = normalized_email
+
+    # Pre-auth lockout check (Requirement R1)
+    lockout = check_login_lockout(normalized_email)
+    if lockout and lockout.get("is_locked"):
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed attempts. Try again at {lockout['locked_until']}.",
+            headers={"Retry-After": str(lockout["retry_after"])},
+        )
 
     # 1) authenticate — this is the only part that MUST succeed
+    auth_failed = False
     try:
         supabase = get_supabase_admin()
         res = supabase.auth.sign_in_with_password({"email": req.email, "password": req.password})
+        if not getattr(res, "session", None) or not getattr(res, "user", None):
+            auth_failed = True
     except Exception:
         logger.error("sign_in_with_password raised", exc_info=True)
+        auth_failed = True
+
+    if auth_failed:
+        record_failed_login(normalized_email)
         raise GENERIC_LOGIN_ERROR
 
-    if not getattr(res, "session", None) or not getattr(res, "user", None):
-        raise GENERIC_LOGIN_ERROR
+    # Clear lockout record on successful login
+    clear_login_lockout(normalized_email)
 
     user_id = res.user.id
     access_token = res.session.access_token
