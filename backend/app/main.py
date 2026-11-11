@@ -62,7 +62,31 @@ app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
 # the backend Sentry project. Remove after the pipeline is verified.
 @app.get("/_sentry-debug", include_in_schema=False)
 def _sentry_debug_route():
-    raise RuntimeError("AdaptCode backend Sentry canary — if you see this in Sentry, the pipeline works.")
+    diagnostics = {
+        "sentry_dsn_in_env": bool(os.environ.get("SENTRY_DSN")),
+        "sentry_sdk_imported": False,
+        "sentry_client_present": False,
+        "no_proxy": os.environ.get("NO_PROXY", "")[:300],
+    }
+    try:
+        import sentry_sdk as _ssdk
+        diagnostics["sentry_sdk_imported"] = True
+        diagnostics["sentry_sdk_version"] = _ssdk.VERSION
+        hub = _ssdk.Hub.current
+        client = hub.client
+        diagnostics["sentry_client_present"] = client is not None
+        if client:
+            diagnostics["sentry_dsn_configured"] = bool(client.dsn)
+            try:
+                eid = _ssdk.capture_message("AdaptCode backend canary ping via /_sentry-debug")
+                diagnostics["capture_message_id"] = eid
+                _ssdk.flush(5)
+            except Exception as e:
+                diagnostics["capture_err"] = str(e)
+    except Exception as e:
+        diagnostics["import_err"] = str(e)
+    # Also raise so the integration's unhandled-exception path is exercised
+    raise RuntimeError(f"AdaptCode backend Sentry canary. Diagnostics: {diagnostics}")
 
 env = os.environ.get("ENV", "development").lower()
 
