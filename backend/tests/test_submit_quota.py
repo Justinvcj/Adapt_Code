@@ -32,6 +32,12 @@ from app.services.submit_quota import (
 )
 
 
+@pytest.fixture(autouse=True)
+def isolate_db_env(monkeypatch):
+    """Ensure tests run hermetically against mocks, never attempting live Postgres connections."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "")
+
+
 @pytest.fixture
 def disable_limiter():
     """Temporarily disable SlowAPI per-IP limiter so it does not mask quota logic."""
@@ -582,3 +588,124 @@ def test_api_submit_allowed_returns_header_count_plus_one(client: TestClient, ov
         assert res.status_code == 200
         # Allowed submit sets header to count + 1 (42 + 1 = 43)
         assert res.headers.get("X-AdaptCode-Submits-Today") == "43"
+
+
+# -----------------------------------------------------------------------------
+# Unit Tests: new_supabase_admin Default & psycopg2 Direct Postgres Access
+# -----------------------------------------------------------------------------
+
+def test_default_client_calls_new_supabase_admin_not_get_supabase_admin():
+    """Verify check_submit_quota defaults to fresh new_supabase_admin (persist_session=False)."""
+    mock_admin = MagicMock()
+    mock_admin.table.return_value.select.return_value.eq.return_value.limit.return_value.execute.return_value.data = [
+        {"is_pro": False}
+    ]
+    mock_admin.table.return_value.select.return_value.eq.return_value.gte.return_value.order.return_value.limit.return_value.execute.return_value = (
+        type("PostgrestCountResponse", (), {"count": 10, "data": []})()
+    )
+
+    with patch("app.services.submit_quota.new_supabase_admin", return_value=mock_admin) as mock_new:
+        quota = check_submit_quota("test-user-uid")
+        assert quota.allowed is True
+        assert quota.current_count == 10
+        mock_new.assert_called_once()
+
+
+def test_psycopg2_missing_user_row_fails_closed_raises_403(monkeypatch):
+    """Verify direct Postgres query raises HTTP 403 (fail CLOSED) if user row is missing."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+
+    mock_cur.fetchone.return_value = None  # No row in public.users
+
+    with patch("psycopg2.connect", return_value=mock_conn):
+        with pytest.raises(HTTPException) as exc_info:
+            check_submit_quota("missing-user-uid")
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "User account record not found."
+
+
+def test_psycopg2_free_user_under_and_at_cap(monkeypatch):
+    """Verify direct Postgres query enforces 100 submit cap for free tier with resets_at from DB clock."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+
+    min_ts = datetime(2026, 11, 10, 16, 0, 0, tzinfo=timezone.utc)
+    resets_dt = datetime(2026, 11, 11, 16, 0, 0, tzinfo=timezone.utc)
+
+    # 1. Free user under cap (99 submits)
+    mock_cur.fetchone.side_effect = [
+        (False,),  # is_pro = False
+        (99, min_ts, resets_dt),  # count = 99
+    ]
+    with patch("psycopg2.connect", return_value=mock_conn):
+        q1 = check_submit_quota("free-student-1")
+        assert q1.allowed is True
+        assert q1.current_count == 99
+        assert q1.cap == 100
+        assert q1.resets_at is None
+
+    # 2. Free user at cap (100 submits) -> blocked
+    mock_cur.fetchone.side_effect = [
+        (False,),  # is_pro = False
+        (100, min_ts, resets_dt),  # count = 100
+    ]
+    with patch("psycopg2.connect", return_value=mock_conn):
+        q2 = check_submit_quota("free-student-2")
+        assert q2.allowed is False
+        assert q2.current_count == 100
+        assert q2.cap == 100
+        assert q2.resets_at == resets_dt.isoformat()
+
+
+def test_psycopg2_pro_user_cap_500(monkeypatch):
+    """Verify direct Postgres query enforces 500 submit cap for pro tier."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+
+    min_ts = datetime(2026, 11, 10, 16, 0, 0, tzinfo=timezone.utc)
+    resets_dt = datetime(2026, 11, 11, 16, 0, 0, tzinfo=timezone.utc)
+
+    # Pro user at 150 submits (allowed under 500 cap)
+    mock_cur.fetchone.side_effect = [
+        (True,),  # is_pro = True
+        (150, min_ts, resets_dt),
+    ]
+    with patch("psycopg2.connect", return_value=mock_conn):
+        q1 = check_submit_quota("pro-student")
+        assert q1.allowed is True
+        assert q1.current_count == 150
+        assert q1.cap == 500
+
+    # Pro user at 500 submits (blocked)
+    mock_cur.fetchone.side_effect = [
+        (True,),  # is_pro = True
+        (500, min_ts, resets_dt),
+    ]
+    with patch("psycopg2.connect", return_value=mock_conn):
+        q2 = check_submit_quota("pro-student")
+        assert q2.allowed is False
+        assert q2.current_count == 500
+        assert q2.cap == 500
+        assert q2.resets_at == resets_dt.isoformat()
+
+
+def test_psycopg2_db_error_fails_open(monkeypatch):
+    """Verify direct Postgres query fails OPEN (allowed=True) on connection/query failure."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    with patch("psycopg2.connect", side_effect=Exception("Database unreachable")):
+        quota = check_submit_quota("any-student")
+        assert quota.allowed is True
+        assert quota.current_count == 0
+        assert quota.cap == FREE_TIER_CAP
+        assert quota.resets_at is None
+

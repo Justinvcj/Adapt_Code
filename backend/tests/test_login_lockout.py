@@ -30,6 +30,12 @@ from app.services.login_lockout import (
 )
 
 
+@pytest.fixture(autouse=True)
+def isolate_db_env(monkeypatch):
+    """Ensure tests run hermetically against mocks, never attempting live Postgres connections."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "")
+
+
 @pytest.fixture
 def disable_limiter():
     """Temporarily disable SlowAPI per-IP limiter so it does not mask lockout logic."""
@@ -419,7 +425,7 @@ def test_api_login_db_unreachable_fails_open_allows_login_attempt(client: TestCl
     mock_sb.auth.sign_in_with_password.return_value = MagicMock(session=None, user=None)
     failing_db = InMemoryLoginAttemptsDB(should_fail=True)
 
-    with patch("app.services.login_lockout.get_supabase_admin", return_value=failing_db), \
+    with patch("app.services.login_lockout.new_supabase_admin", return_value=failing_db), \
          patch("app.routers.auth.get_supabase_admin", return_value=mock_sb):
 
         res = client.post(
@@ -429,3 +435,138 @@ def test_api_login_db_unreachable_fails_open_allows_login_attempt(client: TestCl
         # Login proceeded to credentials check and returned 401 (not 429, not 500)
         assert res.status_code == 401
         assert res.json()["detail"] == "Invalid credentials."
+
+
+# -----------------------------------------------------------------------------
+# Unit Tests: new_supabase_admin Default & psycopg2 Direct Postgres Access
+# -----------------------------------------------------------------------------
+
+def test_default_client_calls_new_supabase_admin_not_get_supabase_admin():
+    """Verify check_login_lockout defaults to fresh new_supabase_admin (persist_session=False)."""
+    mock_admin = MagicMock()
+    mock_admin.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
+
+    with patch("app.services.login_lockout.new_supabase_admin", return_value=mock_admin) as mock_new, \
+         patch("app.services.login_lockout.get_lockout_duration_seconds"):
+        res = check_login_lockout("default@example.com")
+        assert res is None
+        mock_new.assert_called_once()
+
+
+def test_psycopg2_check_login_lockout_locked(monkeypatch):
+    """Verify check_login_lockout evaluates locked status using DB clock via psycopg2."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+
+    locked_dt = datetime(2026, 11, 11, 16, 0, 0, tzinfo=timezone.utc)
+    mock_cur.fetchone.return_value = (locked_dt, 900)
+
+    with patch("psycopg2.connect", return_value=mock_conn):
+        res = check_login_lockout("pglocked@example.com")
+        assert res is not None
+        assert res["is_locked"] is True
+        assert res["locked_until"] == locked_dt.isoformat()
+        assert res["retry_after"] == 900
+
+
+def test_psycopg2_check_login_lockout_unlocked(monkeypatch):
+    """Verify check_login_lockout returns None when no row exists or remaining <= 0."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+
+    # Case 1: No row in DB
+    mock_cur.fetchone.return_value = None
+    with patch("psycopg2.connect", return_value=mock_conn):
+        assert check_login_lockout("unknown@example.com") is None
+
+    # Case 2: Past lockout (remaining <= 0)
+    mock_cur.fetchone.return_value = (datetime(2026, 11, 11, 10, 0, 0, tzinfo=timezone.utc), 0)
+    with patch("psycopg2.connect", return_value=mock_conn):
+        assert check_login_lockout("expired@example.com") is None
+
+
+def test_psycopg2_check_login_lockout_db_error_fails_open(monkeypatch):
+    """Verify check_login_lockout fails OPEN (returns None) on direct DB error."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    with patch("psycopg2.connect", side_effect=Exception("DB down")):
+        assert check_login_lockout("any@example.com") is None
+
+
+def test_psycopg2_record_failed_login_tiers(monkeypatch):
+    """Verify record_failed_login uses DB now() and interval tiers in SQL queries."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+
+    now_dt = datetime(2026, 11, 11, 15, 0, 0, tzinfo=timezone.utc)
+    lock_dt = datetime(2026, 11, 11, 15, 15, 0, tzinfo=timezone.utc)
+
+    # 1st failure: row is None
+    mock_cur.fetchone.side_effect = [
+        None,  # SELECT existing
+        ("pguser@example.com", 1, now_dt, None),  # RETURNING after INSERT
+    ]
+    with patch("psycopg2.connect", return_value=mock_conn):
+        res1 = record_failed_login("pguser@example.com")
+        assert res1["failed_count"] == 1
+        assert res1["locked_until"] is None
+
+    # 5th failure: existing count is 4 -> increments to 5, interval 15 minutes
+    mock_cur.fetchone.side_effect = [
+        (4, now_dt, None, False),  # SELECT existing
+        ("pguser@example.com", 5, now_dt, lock_dt),  # RETURNING after INSERT
+    ]
+    with patch("psycopg2.connect", return_value=mock_conn):
+        res5 = record_failed_login("pguser@example.com")
+        assert res5["failed_count"] == 5
+        assert res5["locked_until"] == lock_dt.isoformat()
+
+    # Expired lockout: is_expired is True -> resets to count 1
+    mock_cur.fetchone.side_effect = [
+        (5, now_dt, lock_dt, True),  # is_expired=True
+        ("pguser@example.com", 1, now_dt, None),  # RETURNING after reset
+    ]
+    with patch("psycopg2.connect", return_value=mock_conn):
+        res_reset = record_failed_login("pguser@example.com")
+        assert res_reset["failed_count"] == 1
+        assert res_reset["locked_until"] is None
+
+
+def test_psycopg2_record_failed_login_db_error_fails_open(monkeypatch):
+    """Verify record_failed_login fails OPEN (returns None) on direct DB error."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    with patch("psycopg2.connect", side_effect=Exception("DB write failed")):
+        assert record_failed_login("any@example.com") is None
+
+
+def test_psycopg2_clear_login_lockout(monkeypatch):
+    """Verify clear_login_lockout deletes record via direct psycopg2 execute."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+
+    with patch("psycopg2.connect", return_value=mock_conn):
+        success = clear_login_lockout("clear@example.com")
+        assert success is True
+        mock_cur.execute.assert_called_once_with(
+            "DELETE FROM public.login_attempts WHERE email = %s",
+            ("clear@example.com",),
+        )
+
+
+def test_psycopg2_clear_login_lockout_db_error_fails_open(monkeypatch):
+    """Verify clear_login_lockout fails OPEN (returns False without raising) on direct DB error."""
+    monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://mock:mock@localhost:5432/mock")
+    with patch("psycopg2.connect", side_effect=Exception("DB delete failed")):
+        assert clear_login_lockout("any@example.com") is False
+
