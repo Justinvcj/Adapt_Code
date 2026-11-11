@@ -1,0 +1,6 @@
+# Shell scripts and other Linux-run files must stay LF-only.
+# Without this, autocrlf on Windows checkouts rewrites them with CRLF
+# and container boot breaks (/usr/bin/env can't find "sh\r").
+*.sh      text eol=lf
+Dockerfile text eol=lf
+entrypoint* text eol=lf
