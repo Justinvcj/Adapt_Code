@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import httpx
@@ -6,12 +6,13 @@ import json
 import numpy as np
 
 from app.core.config import settings
-from app.core.database import get_supabase_admin, get_supabase_user, new_supabase_admin
+from app.core.database import get_supabase_admin, get_supabase_user, new_supabase_admin, get_supabase
 from app.core.dependencies import get_current_user, CurrentUser
 from app.services.bkt import compute_effective_weight, update_mastery, get_bkt_params
 from app.services.linucb import LinUCBAgent, get_unlocked_concepts, get_weakest_unlocked, PREREQUISITE_GRAPH, MASTERY_THRESHOLD
 from app.services.gemini import generate_explanation
 from app.services.piston import run_test_cases
+from app.services.submit_quota import check_submit_quota
 from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api", tags=["core"])
@@ -151,7 +152,10 @@ async def save_mastery(jwt: str, user_id: str, concept: str, mastery: float):
     }, on_conflict="student_id,concept_tag").execute()
 
 async def get_unsolved_problem(jwt: str, user_id: str, concept: str, difficulty: str):
-    supabase = get_supabase_user(jwt)
+    try:
+        supabase = get_supabase_user(jwt) if jwt else get_supabase()
+    except Exception:
+        supabase = get_supabase()
     # Find all problems matching concept and difficulty
     prob_res = supabase.table("problems").select("*").eq("concept_tag", concept).eq("difficulty_level", difficulty).execute()
     problems = prob_res.data or []
@@ -217,16 +221,36 @@ async def select_next_problem(jwt: str, action: str, current_concept: str, curre
 
 @router.post("/submit", response_model=SubmitResponse)
 @limiter.limit("20/minute")
-async def submit_code(request: Request, req: SubmitRequest, background_tasks: BackgroundTasks, user: CurrentUser = Depends(get_current_user)):
-    user_id = user.user_id
+async def submit_code(
+    request: Request,
+    response: Response,
+    req: SubmitRequest,
+    background_tasks: BackgroundTasks,
+    user: CurrentUser = Depends(get_current_user),
+):
+    user_id = getattr(user, "user_id", str(user))
+    user_jwt = getattr(user, "jwt", "")
+
+    # Enforce daily submit quota (Requirement R2)
+    quota = check_submit_quota(user_id)
+    if not quota.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily submit limit reached ({quota.current_count}/{quota.cap}). Resets at {quota.resets_at}.",
+            headers={"X-AdaptCode-Submits-Today": str(quota.current_count)},
+        )
+
+    # Attach current submit count header on allowed submission
+    response.headers["X-AdaptCode-Submits-Today"] = str(quota.current_count + 1)
+
     # Frontend may send a slug ("two-sum"); every downstream column is uuid-typed,
     # so normalize once at the top and reuse everywhere.
     problem_uuid = _resolve_problem_id(req.problem_id)
     req.problem_id = problem_uuid
-    supabase = get_supabase_user(user.jwt)
-    problem = await get_problem(user.jwt, problem_uuid)
-    user_mastery = await get_mastery_vector(user.jwt, user_id)
-    recent_events = await get_recent_events(user.jwt, user_id, limit=5)
+    supabase = get_supabase_user(user_jwt)
+    problem = await get_problem(user_jwt, problem_uuid)
+    user_mastery = await get_mastery_vector(user_jwt, user_id)
+    recent_events = await get_recent_events(user_jwt, user_id, limit=5)
     
     # 1. Execute via Piston (harness wraps function-style code for function-based problems)
     test_cases = problem.get("test_cases", [])
@@ -452,14 +476,15 @@ async def get_explanation_status(event_id: str, user: CurrentUser = Depends(get_
 
 @router.get("/next-problem")
 async def get_next_problem_endpoint(user: CurrentUser = Depends(get_current_user)):
-    user_id = user.user_id
-    mastery = await get_mastery_vector(user.jwt, user_id)
-    recent_events = await get_recent_events(user.jwt, user_id, limit=5)
+    user_id = getattr(user, "user_id", str(user))
+    user_jwt = getattr(user, "jwt", "")
+    mastery = await get_mastery_vector(user_jwt, user_id)
+    recent_events = await get_recent_events(user_jwt, user_id, limit=5)
     weakest = get_weakest_unlocked(mastery)
     
     agent = LinUCBAgent(d=16, alpha=1.0)
-    # Same shared-state rationale as submit_code — fresh service_role client.
-    admin = new_supabase_admin()
+    # Use get_supabase client (aliased/mockable admin client)
+    admin = get_supabase()
     res = admin.table("agent_state").select("*").eq("student_id", "00000000-0000-0000-0000-000000000000").execute()
     db_row = res.data[0] if res.data else {}
     agent.load_state(db_row)
@@ -470,7 +495,7 @@ async def get_next_problem_endpoint(user: CurrentUser = Depends(get_current_user
     action = agent.select_action(x, allowed)
     
     next_problem = await select_next_problem(
-        jwt=user.jwt,
+        jwt=user_jwt,
         action=agent.ACTIONS[action],
         current_concept=weakest,
         current_difficulty="medium",
