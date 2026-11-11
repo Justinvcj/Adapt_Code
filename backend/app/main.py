@@ -55,9 +55,19 @@ async def lifespan(app: FastAPI):
     yield
     pass
 
-app = FastAPI(title="AdaptCode API Phase 2 (Modular)", lifespan=lifespan)
-
 env = os.environ.get("ENV", "development").lower()
+
+# In prod/staging, hide the FastAPI auto-generated interactive docs. They're
+# a reconnaissance gift to attackers (full route + schema catalog). Keep them
+# on in dev so we don't lose the DX.
+_is_public_env = env in ("production", "staging")
+app = FastAPI(
+    title="AdaptCode API Phase 2 (Modular)",
+    lifespan=lifespan,
+    docs_url=None if _is_public_env else "/docs",
+    redoc_url=None if _is_public_env else "/redoc",
+    openapi_url=None if _is_public_env else "/openapi.json",
+)
 
 setup_rate_limiting(app)
 

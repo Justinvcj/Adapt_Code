@@ -35,36 +35,16 @@ type MinimalBackendProblem = {
   starter_code?: Record<string, unknown>;
 };
 
-// Replace the seeded "def solve(): pass" stub with a real stdin scaffold so the
-// student can see the input shape without guessing. First test case input is
-// pasted in as a comment so the student can see the exact format they'll parse.
-function buildPythonScaffold(firstInput: string): string {
-  const example = firstInput ? `# example stdin: ${firstInput.split('\n')[0].slice(0, 60)}\n` : '';
-  return (
-    `${example}import sys\n\n` +
-    `data = sys.stdin.read().strip()\n\n` +
-    `# write your solution — print the answer to stdout\n`
-  );
-}
-
-function isUselessStub(code: string): boolean {
-  const trimmed = (code || '').trim();
-  return trimmed === '' ||
-    /^def\s+solve\s*\(\s*\)\s*:\s*pass\s*$/.test(trimmed) ||
-    /^def\s+solve\s*\(\s*\)\s*:\s*return\s*$/.test(trimmed);
-}
-
 function adaptBackendProblem(b: MinimalBackendProblem, slug: string, fallback?: Problem): Problem {
   const diff = (b.difficulty_level.charAt(0).toUpperCase() + b.difficulty_level.slice(1)) as 'Easy' | 'Medium' | 'Hard';
   const firstVisible = (b.test_cases ?? []).find((t) => !t.is_hidden) ?? b.test_cases?.[0];
-  const rawPy = typeof b.starter_code?.python === 'string' ? b.starter_code!.python as string : (fallback?.starter.python ?? '');
-  const py = isUselessStub(rawPy) ? buildPythonScaffold(firstVisible?.input ?? '') : rawPy;
+  // Every problem in the bank now ships real starters across all four
+  // languages (PR #27 — backend/scripts/generate_starters.py). Just pass
+  // them through; the Python-stub workaround and the lang-tab filter are
+  // no longer needed.
   const starter: Record<string, string> = {
-    // Only populate Python by default — most problems in the current bank
-    // don't ship Java/JS/C++ starters, so leaving those empty hides those
-    // tabs via availableLangs below.
     java: typeof b.starter_code?.java === 'string' ? b.starter_code!.java as string : (fallback?.starter.java ?? ''),
-    python: py,
+    python: typeof b.starter_code?.python === 'string' ? b.starter_code!.python as string : (fallback?.starter.python ?? ''),
     javascript: typeof b.starter_code?.javascript === 'string' ? b.starter_code!.javascript as string : (fallback?.starter.javascript ?? ''),
     cpp: typeof b.starter_code?.cpp === 'string' ? b.starter_code!.cpp as string : (fallback?.starter.cpp ?? ''),
   };
@@ -153,17 +133,9 @@ export default function ProblemPage() {
   }, [slug]);
 
   const concept = problem ? CONCEPT_BY_ID[problem.concept] : undefined;
-  // Which languages have real starter code for this problem? Most problems in
-  // the current bank only ship a Python starter — showing a Java tab then
-  // letting the student select it means every submission in that language
-  // runs as empty source and fails with "no class declared". Filter the
-  // language picker to the languages that actually have code to start from.
-  const availableLangs: string[] = problem
-    ? ['java', 'python', 'javascript', 'cpp'].filter((k) => {
-        const v = problem.starter[k as 'java' | 'python' | 'javascript' | 'cpp'];
-        return typeof v === 'string' && v.trim().length > 0;
-      })
-    : [];
+  // Every problem now ships starters in all four languages, so the picker
+  // shows them unconditionally (see PR #27).
+  const LANGS = ['java', 'python', 'javascript', 'cpp'] as const;
   const [pTab, setPTab] = useState<'desc' | 'hints' | 'explanation' | 'solutions' | 'submissions'>('desc');
   useEffect(() => {
     const h = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
@@ -172,8 +144,6 @@ export default function ProblemPage() {
     }
   }, []);
   const [cTab, setCTab] = useState<'tc' | 'result'>('tc');
-  // Default to whichever language actually has starter code. Falls back to
-  // python when nothing is available so the Monaco mode is still valid.
   const [lang, setLang] = useState<string>('python');
   const starter = (l: string) => problem?.starter[l as 'java' | 'python' | 'javascript' | 'cpp'] ?? '';
   const [code, setCode] = useState<string>(starter('java'));
@@ -204,17 +174,6 @@ export default function ProblemPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setCode(starter(lang)); }, [lang]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Once the problem loads, snap `lang` to the first language that actually
-  // has starter code if the current selection has none. Stops Java being the
-  // default on a Python-only problem.
-  useEffect(() => {
-    if (!problem) return;
-    if (availableLangs.length && !availableLangs.includes(lang)) {
-      setLang(availableLangs[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problem]);
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
@@ -542,7 +501,7 @@ export default function ProblemPage() {
           <div className="ed-head">
             <span className="ed-label"><FileCode size={14} /> Code</span>
             <select className="lang-sel" value={lang} onChange={(e) => setLang(e.target.value)}>
-              {(availableLangs.length ? availableLangs : ['python']).map((k) => (
+              {LANGS.map((k) => (
                 <option key={k} value={k}>{LANG_NAMES[k]}</option>
               ))}
             </select>
