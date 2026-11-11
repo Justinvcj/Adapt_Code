@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Database batch update script for multi-language starter code scaffolds.
+"""Database update script for multi-language starter code scaffolds.
 
 Generates runnable starter scaffolds (Python, Java, C++, JavaScript) and updates
-the `starter_code` JSONB column in dev Supabase.
+the `starter_code` JSONB column in dev Supabase, one row at a time (PostgREST
+does not support varying payloads in a single UPDATE). Rows are iterated in
+chunks of CHUNK_SIZE purely for progress reporting cadence — this is not a
+bulk-UPDATE path.
 """
 
 from __future__ import annotations
@@ -42,7 +45,10 @@ from app.services.starter_gen import generate_starter_code  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-BATCH_SIZE = 50
+# Rows are iterated in chunks purely for progress-bar cadence (one UPDATE per
+# row — PostgREST can't bulk-UPDATE varying payloads). Keep this around 50 so
+# the progress bar refreshes often enough to feel responsive.
+CHUNK_SIZE = 50
 MAX_RETRIES = 5
 
 
@@ -283,14 +289,14 @@ def main() -> int:
             _print_diff(p, existing, merged, i + 1, max_diffs)
             diffs_printed += 1
 
-    print("\nStarting batch processing...")
+    print("\nStarting row-by-row processing...")
     current_idx = 0
 
-    # Process in batches of 50
-    for batch_start in range(0, total, BATCH_SIZE):
-        batch = problems[batch_start : batch_start + BATCH_SIZE]
+    # Chunked iteration only for progress-bar pacing — each row is its own UPDATE.
+    for chunk_start in range(0, total, CHUNK_SIZE):
+        chunk = problems[chunk_start : chunk_start + CHUNK_SIZE]
 
-        for problem in batch:
+        for problem in chunk:
             current_idx += 1
             pid = problem.get("problem_id", "")
             title = problem.get("title", "")
