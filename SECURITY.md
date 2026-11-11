@@ -110,7 +110,33 @@ code change here. See [§7](#7-piston-runtime-pinning).
 Residual Dependabot queue is stale (branches 6+ weeks old); close and let
 Dependabot regenerate against current `main`.
 
-### 4.8 Audit logging for admin routes
+### 4.8 SECURITY DEFINER functions open to anon REST — _patch ready_
+
+The Supabase advisor flagged two `SECURITY DEFINER` functions as callable by
+the `anon` role via `/rest/v1/rpc/*`:
+
+- `public.register_user(p_email, p_display_name, p_auth_uid)` — **real risk.**
+  Inserts a row into `public.users` with `user_id = p_auth_uid` taken as a
+  trusted argument, with **no check that `p_auth_uid = auth.uid()`**. An anon
+  caller could insert `users` rows under any UUID they chose. Not an account
+  takeover (they can't make `auth.users` entries), but trash data and
+  collisions are possible. Called server-side from FastAPI's `/api/auth/register`
+  with the service_role key, so revoking anon/authenticated EXECUTE is safe.
+
+- `public.promote_user_to_admin(target_user)` — **false alarm.** Body has
+  `IF (SELECT role FROM users WHERE user_id = auth.uid()) <> 'admin' …
+  RAISE EXCEPTION`. Still shouldn't be on the public REST surface.
+
+**Patch:** [backend/migrations/2026_11_11_harden_security_definer_fns.sql](backend/migrations/2026_11_11_harden_security_definer_fns.sql)
+revokes EXECUTE from `anon`/`authenticated` on both and pins `search_path`
+on all four `SECURITY DEFINER` / trigger functions. Idempotent; run via the
+Supabase SQL editor against the dev project.
+
+### 4.9 Supabase Auth: leaked-password protection disabled
+HaveIBeenPwned check is off. One click in Supabase dashboard →
+**Authentication → Password Settings → Leaked Password Protection**.
+
+### 4.10 Audit logging for admin routes
 `/api/admin/*` writes to Supabase but does not log the acting user id to a
 tamper-evident log. Low priority — admin surface is tiny — but worth it before
 a second admin exists.
