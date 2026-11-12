@@ -52,6 +52,21 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # One-shot: log the Piston runtime catalogue so operators can pin specific
+    # versions without needing Tailscale CLI access. Suppressed if the fetch
+    # fails — we don't want a flaky sandbox to block the API from booting.
+    try:
+        import httpx
+        from app.services.piston import PISTON_BASE_URL
+        async with httpx.AsyncClient(timeout=5.0) as c:
+            r = await c.get(f"{PISTON_BASE_URL}/api/v2/runtimes")
+            if r.status_code == 200:
+                pairs = [{"language": x.get("language"), "version": x.get("version")} for x in r.json()]
+                import json as _json
+                from app.core.logging import logger as _lg
+                _lg.info("piston_runtimes_catalog=%s", _json.dumps(pairs))
+    except Exception:
+        pass
     yield
     pass
 
