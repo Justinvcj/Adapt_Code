@@ -176,3 +176,19 @@ export type ApiLeaderboardEntry = {
 export const leaderboardAPI = {
   list: () => api.get<{ status: string; data: ApiLeaderboardEntry[] }>('/api/leaderboard'),
 };
+
+// ---- problem of the day ----
+
+export type ApiPotd = {
+  problem_id: string;
+  title: string;
+  description: string;
+  concept_tag: string;
+  difficulty_level: 'easy' | 'medium' | 'hard';
+  hint_text?: string | null;
+  is_solved: boolean;
+};
+
+export const potdAPI = {
+  today: () => api.get<{ status: string; data: ApiPotd }>('/api/problem/potd'),
+};

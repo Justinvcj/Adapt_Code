@@ -6,6 +6,7 @@ import { Search, ArrowUpDown, Filter, Shuffle, Bookmark, BookmarkCheck } from 'l
 import Navbar from '@/components/adapt/Navbar';
 import Sidebar from '@/components/adapt/Sidebar';
 import Calendar from '@/components/adapt/Calendar';
+import PotdCard from '@/components/adapt/PotdCard';
 import { PROBLEMS } from '@/components/adapt/data';
 import { PROBLEM_LIST } from '@/data/problems';
 import { CONCEPTS, CONCEPT_BY_ID, type ConceptId } from '@/data/concepts';
@@ -168,6 +169,7 @@ export default function ProblemsPage() {
         <Sidebar active="problems" />
         <div className="main">
           <div className="main-inner" style={{ maxWidth: 'none', padding: '12px 20px' }}>
+            <PotdCard />
             {/* Concept tag row — real data, not demo strings */}
             <div className="tags-row">
               <span
