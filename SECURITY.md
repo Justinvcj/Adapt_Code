@@ -247,6 +247,21 @@ it per-env without rebuilding.
 
 ---
 
+## 6.5 Supabase "Leaked Password Protection"
+
+The Supabase advisor flags `auth_leaked_password_protection` as a WARN. One
+toggle in **Dashboard → Authentication → Policies → Password Settings →
+Prevent use of leaked passwords**. There is no MCP/REST surface for this —
+it is dashboard-only. Flipping it enables HIBP (Have I Been Pwned) password
+checks on signup and password-change.
+
+**Why it's one toggle away:** we already issue the Supabase auth JWT; HIBP
+runs client-side in the auth flow via a k-anonymity k-request so the full
+password never leaves the browser. Enabling it adds zero infra and one
+network round-trip per signup.
+
+---
+
 ## 7. Piston runtime pinning
 
 Current state: [backend/app/services/piston.py](backend/app/services/piston.py)
@@ -265,10 +280,17 @@ still get `"*"`. Zero behaviour change until the env var is set.
 
 **To turn it on:**
 
-1. From your laptop on Tailscale (the sandbox is not public), query the
-   installed runtimes:
+1. Query the installed runtimes — either from your laptop on Tailscale
+   (the sandbox is not public), or from Cloud Run logs (the backend logs
+   the catalogue once per cold start since commit `3f1111f`):
    ```bash
+   # Option A: from Tailscale
    curl http://100.114.155.33:2000/api/v2/runtimes | jq '[.[] | {language, version}]'
+
+   # Option B: from Cloud Run logs
+   gcloud logging read \
+     'resource.type="cloud_run_revision" AND resource.labels.service_name="adaptcode-backend" AND textPayload:"piston_runtimes_catalog="' \
+     --limit=1 --format='value(textPayload)'
    ```
 2. Pick the latest patch of each language the UI exposes (python, java, c++,
    javascript). Example output:
