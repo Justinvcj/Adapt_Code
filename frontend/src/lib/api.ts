@@ -163,3 +163,16 @@ export const statsAPI = {
   summary: () => api.get<{ status: string; data: ApiStatsSummary }>('/api/stats'),
   heatmap: () => api.get<{ status: string; data: Array<{ date: string; count: number }> }>('/api/stats/heatmap'),
 };
+
+// ---- leaderboard ----
+
+export type ApiLeaderboardEntry = {
+  user_id: string;
+  display_name: string | null;
+  solved_count: number;
+  avg_mastery: number;
+};
+
+export const leaderboardAPI = {
+  list: () => api.get<{ status: string; data: ApiLeaderboardEntry[] }>('/api/leaderboard'),
+};

@@ -53,6 +53,7 @@ export default function Navbar({ active, loggedIn = true }: { active?: string; l
             <Link className={`nav-link ${active === 'mastery' ? 'act' : ''}`} href="/mastery">Mastery</Link>
             <Link className={`nav-link ${active === 'graph' ? 'act' : ''}`} href="/graph">Graph</Link>
             <Link className={`nav-link ${active === 'problems' ? 'act' : ''}`} href="/problems">Practice</Link>
+            <Link className={`nav-link ${active === 'leaderboard' ? 'act' : ''}`} href="/leaderboard">Leaderboard</Link>
           </div>
           <div className="nav-acts">
             <button className="nav-search" onClick={() => setSmOpen(true)}>
