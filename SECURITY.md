@@ -254,23 +254,52 @@ silently changes what student code runs against.
 Node.js vm-escape bugs, Python `pickle` sandboxing issues, Java deserialization
 chains) between two of our deploys, we inherit that CVE immediately.
 
-**Mitigation:** pin to a known-good minor. The exact pin should come from an
-actual query against the EC2 host — not a guess from here — because a wrong
-version string makes Piston 400 on every request. One-time:
+**Scaffold shipped (commit after `21ea150`):** backend reads an optional
+`PISTON_PINNED_VERSIONS` env var at import time. Any language listed there
+gets that version string sent to Piston instead of `"*"`; unlisted languages
+still get `"*"`. Zero behaviour change until the env var is set.
 
-```bash
-# From your laptop on Tailscale (the sandbox is not public):
-curl http://100.114.155.33:2000/api/v2/runtimes | jq '[.[] | {language, version}]'
-```
+**To turn it on:**
 
-Take the latest patch of each language we care about (python, java, c++,
-javascript) and replace the `"*"` values in `LANGUAGE_MAP` with those exact
-strings (e.g. `"3.12.0"`, `"20.11.1"`, `"17.0.6"`, `"10.2.0"`).
+1. From your laptop on Tailscale (the sandbox is not public), query the
+   installed runtimes:
+   ```bash
+   curl http://100.114.155.33:2000/api/v2/runtimes | jq '[.[] | {language, version}]'
+   ```
+2. Pick the latest patch of each language the UI exposes (python, java, c++,
+   javascript). Example output:
+   ```json
+   [
+     {"language":"python","version":"3.12.0"},
+     {"language":"java","version":"15.0.2"},
+     {"language":"c++","version":"10.2.0"},
+     {"language":"javascript","version":"20.11.1"}
+   ]
+   ```
+3. Set the env var on Cloud Run. **Watch the quoting** — the whole JSON must
+   be a single argument:
+   ```bash
+   gcloud run services update adaptcode-backend \
+     --region=asia-southeast1 \
+     --update-env-vars='PISTON_PINNED_VERSIONS={"python":"3.12.0","java":"15.0.2","c++":"10.2.0","javascript":"20.11.1"}'
+   ```
+4. Smoke test: submit one problem per language and confirm the verdict still
+   returns Accepted. Unset the env var to roll back:
+   ```bash
+   gcloud run services update adaptcode-backend \
+     --region=asia-southeast1 --remove-env-vars=PISTON_PINNED_VERSIONS
+   ```
 
-Also schedule a quarterly CVE sweep against those pinned versions using
-`osv-scanner` or similar. The sandbox being Tailnet-only limits blast radius
-to "compromised runtime can exec arbitrary code inside Piston's seccomp jail",
-which is already the design assumption — but a layered defense is cheap.
+**Follow-up:** schedule a quarterly CVE sweep (`osv-scanner` or similar)
+against the pinned versions. The sandbox being Tailnet-only limits blast
+radius to "compromised runtime can exec inside Piston's seccomp jail", which
+is already the design assumption — but layered defence is cheap.
+
+**Failure mode:** a wrong version string makes Piston 400 on every request
+for that language. Code logs a warning line (`Piston runtime pins active: …`)
+at import so you can tell at a glance from Cloud Run logs whether pinning is
+active after a deploy. Invalid JSON is ignored with a warning (service keeps
+running with `"*"` for everyone) — not a hard crash on boot.
 
 ---
 

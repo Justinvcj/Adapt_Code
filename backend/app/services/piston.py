@@ -1,25 +1,78 @@
 import httpx
 import json
+import os
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
+from app.core.logging import logger
 
 # Treat PISTON_URL strictly as the base URL
 PISTON_BASE_URL = getattr(settings, "PISTON_URL", "http://localhost:2000").rstrip("/")
 PISTON_EXECUTE_URL = f"{PISTON_BASE_URL}/api/v2/execute"
 
 # Piston rejects a request if "version" does not match an installed runtime.
-# "*" tells Piston to pick the latest installed version — robust across runtime upgrades.
+# "*" tells Piston to pick the latest installed version — robust across
+# runtime upgrades, but means a silent Piston runtime upgrade with a fresh
+# CVE lands in prod with no code change here.
+#
+# `PISTON_PINNED_VERSIONS` (JSON object) overrides specific languages with a
+# known-good version string, e.g.:
+#   PISTON_PINNED_VERSIONS='{"python":"3.12.0","java":"15.0.2","c++":"10.2.0","javascript":"18.15.0"}'
+#
+# Get the actual version strings installed on the sandbox with:
+#   curl http://100.114.155.33:2000/api/v2/runtimes | jq '[.[] | {language, version}]'
+# (from a tailnet-connected machine — the sandbox has no public port.)
+#
+# Unpinned languages still get "*". A wrong version string makes Piston 400
+# on every request for that language, so pin from an actual runtimes listing
+# — never guess.
+
+
+def _load_pinned_versions() -> Dict[str, str]:
+    raw = os.environ.get("PISTON_PINNED_VERSIONS", "").strip()
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as e:
+        logger.warning("PISTON_PINNED_VERSIONS ignored (invalid JSON): %s", e)
+        return {}
+    if not isinstance(parsed, dict):
+        logger.warning("PISTON_PINNED_VERSIONS ignored (not an object)")
+        return {}
+    # Normalise to str/str — Piston rejects anything else anyway.
+    return {str(k): str(v) for k, v in parsed.items() if v}
+
+
+_PINNED = _load_pinned_versions()
+
+
+def _version_for(lang: str) -> str:
+    # Lookup order: exact alias -> Piston canonical name -> "*"
+    if lang in _PINNED:
+        return _PINNED[lang]
+    canonical = {
+        "python3":    "python",
+        "cpp":        "c++",
+        "js":         "javascript",
+        "node":       "javascript",
+    }.get(lang, lang)
+    return _PINNED.get(canonical, "*")
+
+
 LANGUAGE_MAP = {
-    "python":     {"language": "python",     "version": "*"},
-    "python3":    {"language": "python",     "version": "*"},
-    "java":       {"language": "java",       "version": "*"},
-    "c":          {"language": "c",          "version": "*"},
-    "cpp":        {"language": "c++",        "version": "*"},
-    "c++":        {"language": "c++",        "version": "*"},
-    "javascript": {"language": "javascript", "version": "*"},
-    "js":         {"language": "javascript", "version": "*"},
-    "node":       {"language": "javascript", "version": "*"},
+    "python":     {"language": "python",     "version": _version_for("python")},
+    "python3":    {"language": "python",     "version": _version_for("python3")},
+    "java":       {"language": "java",       "version": _version_for("java")},
+    "c":          {"language": "c",          "version": _version_for("c")},
+    "cpp":        {"language": "c++",        "version": _version_for("cpp")},
+    "c++":        {"language": "c++",        "version": _version_for("c++")},
+    "javascript": {"language": "javascript", "version": _version_for("javascript")},
+    "js":         {"language": "javascript", "version": _version_for("js")},
+    "node":       {"language": "javascript", "version": _version_for("node")},
 }
+
+if _PINNED:
+    logger.info("Piston runtime pins active: %s", _PINNED)
 
 async def execute_on_piston(code: str, language: str, stdin: str = "") -> dict:
     """Execute code on Piston and return stdout, stderr, exit code."""
