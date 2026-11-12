@@ -52,21 +52,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # One-shot: log the Piston runtime catalogue so operators can pin specific
-    # versions without needing Tailscale CLI access. Suppressed if the fetch
-    # fails — we don't want a flaky sandbox to block the API from booting.
-    try:
-        import httpx
-        from app.services.piston import PISTON_BASE_URL
-        async with httpx.AsyncClient(timeout=5.0) as c:
-            r = await c.get(f"{PISTON_BASE_URL}/api/v2/runtimes")
-            if r.status_code == 200:
-                pairs = [{"language": x.get("language"), "version": x.get("version")} for x in r.json()]
-                import json as _json
-                from app.core.logging import logger as _lg
-                _lg.info("piston_runtimes_catalog=%s", _json.dumps(pairs))
-    except Exception:
-        pass
     yield
     pass
 
@@ -154,6 +139,23 @@ async def health_check():
         "gemini_configured": bool(settings.GEMINI_API_KEY),
         "supabase_configured": bool(settings.SUPABASE_URL and settings.SUPABASE_SERVICE_KEY),
     }
+
+
+@app.get("/health/runtimes")
+async def runtime_catalog():
+    """One-shot endpoint for picking PISTON_PINNED_VERSIONS values. Returns the
+    runtime catalogue the sandbox currently has installed. Not sensitive — the
+    sandbox is tailnet-only; knowing versions does not expand attack surface.
+    Can be removed once pins are set if we want to tighten the surface later."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(f"{settings.PISTON_URL}/api/v2/runtimes")
+            if r.status_code != 200:
+                return {"status": "error", "detail": f"piston returned {r.status_code}"}
+            return {"status": "ok", "data": r.json()}
+    except Exception as e:
+        return {"status": "error", "detail": f"{type(e).__name__}: {str(e)}"}
+
 
 if __name__ == "__main__":
     import uvicorn
