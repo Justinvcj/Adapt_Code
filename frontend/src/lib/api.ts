@@ -87,8 +87,8 @@ export type ApiUser = {
 export const authAPI = {
   me:       () => api.get<{ status: string; user: ApiUser }>('/api/auth/me'),
   login:    (email: string, password: string) => api.post<unknown>('/api/auth/login', { email, password }),
-  register: (email: string, password: string, display_name?: string) =>
-    api.post<unknown>('/api/auth/register', { email, password, display_name }),
+  register: (email: string, password: string, display_name?: string, turnstile_token?: string) =>
+    api.post<unknown>('/api/auth/register', { email, password, display_name, turnstile_token }),
   logout:   () => api.post<unknown>('/api/auth/logout'),
   identities:     () => api.get<{ status: string; providers: string[] }>('/api/auth/identities'),
   unlinkIdentity: (provider: string) =>

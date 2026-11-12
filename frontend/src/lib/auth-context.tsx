@@ -8,7 +8,7 @@ type AuthValue = {
   status: Status;
   user: ApiUser | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName?: string) => Promise<void>;
+  register: (email: string, password: string, displayName?: string, turnstileToken?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refresh();
   }, [refresh]);
 
-  const register = useCallback(async (email: string, password: string, displayName?: string) => {
-    await authAPI.register(email, password, displayName);
+  const register = useCallback(async (email: string, password: string, displayName?: string, turnstileToken?: string) => {
+    await authAPI.register(email, password, displayName, turnstileToken);
     // /api/auth/register never sets the session cookie (it only creates the
     // Supabase user), so without this we'd leave the user in an anonymous
     // state after a successful sign-up. When "Confirm email" is disabled in

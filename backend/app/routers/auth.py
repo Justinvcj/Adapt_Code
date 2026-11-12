@@ -13,6 +13,7 @@ from app.core.dependencies import get_current_user, CurrentUser, _verify_supabas
 from app.core.rate_limit import limiter, get_real_ip
 from app.core.logging import logger
 from app.services.login_lockout import check_login_lockout, record_failed_login, clear_login_lockout
+from app.services.turnstile import verify_turnstile
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -36,6 +37,13 @@ GENERIC_LOGIN_ERROR = HTTPException(status_code=401, detail="Invalid credentials
 @router.post("/register")
 @limiter.limit("10/minute")
 async def register(request: Request, req: RegisterRequest) -> Dict[str, Any]:
+    # CAPTCHA gate (feature-flagged — no-op when TURNSTILE_SECRET_KEY unset).
+    # Fails CLOSED so Cloudflare DoS can't be used to bypass bot protection.
+    if not await verify_turnstile(req.turnstile_token, get_real_ip(request)):
+        raise HTTPException(
+            status_code=403,
+            detail="CAPTCHA verification failed. Please refresh the page and try again.",
+        )
     try:
         supabase = get_supabase_admin()
         res = supabase.auth.sign_up({

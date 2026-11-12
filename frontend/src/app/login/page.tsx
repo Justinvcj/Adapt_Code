@@ -7,6 +7,7 @@ import { GithubIcon } from '@/components/adapt/icons';
 import { useAuth } from '@/lib/auth-context';
 import { ApiError, ApiOffline, API_ENABLED } from '@/lib/api';
 import { getSupabaseBrowser, SUPABASE_BROWSER_ENABLED } from '@/lib/supabase';
+import { Turnstile, TURNSTILE_ENABLED } from '@/components/Turnstile';
 
 type Mode = 'signin' | 'signup';
 
@@ -37,6 +38,10 @@ function LoginPageInner() {
   // the two cases apart from here, so we gate the home redirect on the auth
   // context's status and show a "check your inbox" screen otherwise.
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
+  // Cloudflare Turnstile token. Only set when the widget solves successfully.
+  // When the widget isn't enabled (NEXT_PUBLIC_TURNSTILE_SITE_KEY unset) the
+  // signup form submits with an empty token and the backend no-ops.
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
   const done = (msg: string) => { toast.success(msg); router.push(nextPath); };
 
   const copy = mode === 'signin'
@@ -142,13 +147,17 @@ function LoginPageInner() {
                 toast.error('Backend is not configured — set NEXT_PUBLIC_API_URL to sign in.');
                 return;
               }
+              if (mode === 'signup' && TURNSTILE_ENABLED && !turnstileToken) {
+                toast.error('Please complete the CAPTCHA.');
+                return;
+              }
               setBusy(true);
               try {
                 if (mode === 'signin') {
                   await login(email, password);
                   done('Signed in');
                 } else {
-                  await register(email, password, name || undefined);
+                  await register(email, password, name || undefined, turnstileToken || undefined);
                   // auth-context ran a follow-up login; if that minted a
                   // session, go home. Otherwise Supabase is holding the
                   // account for email confirmation — show that screen.
@@ -201,6 +210,9 @@ function LoginPageInner() {
                 required
               />
             </div>
+            {mode === 'signup' && TURNSTILE_ENABLED && (
+              <Turnstile onToken={setTurnstileToken} />
+            )}
             {mode === 'signin' && (
               <div className="l-row">
                 <a

@@ -6,6 +6,9 @@ class RegisterRequest(BaseModel):
     email: EmailStr = Field(..., max_length=255)
     password: str = Field(..., min_length=8, max_length=128)
     display_name: str = Field(..., max_length=50)
+    # Cloudflare Turnstile response token. Only required when the backend has
+    # TURNSTILE_SECRET_KEY set; otherwise ignored.
+    turnstile_token: Optional[str] = Field(default=None, max_length=2048)
 
 class LoginRequest(BaseModel):
     email: EmailStr = Field(..., max_length=255)

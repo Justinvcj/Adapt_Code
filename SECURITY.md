@@ -98,11 +98,34 @@ Currently set via `gcloud run services update --update-env-vars SENTRY_DSN=…`.
 Visible in `gcloud run services describe` for anyone with Viewer. Should move
 to Secret Manager like the other secrets. See [§6](#6-sentry_dsn--secret-manager).
 
-### 4.5 CAPTCHA on signup
-Prevents automated account creation farms. Cloudflare Turnstile is the lowest
-friction (free, privacy-respecting, no re-arrange-the-traffic-lights UX).
-`feat/rate-limits` has shipped, so `auth.py` is stable — this is now
-unblocked and ready to pick up.
+### 4.5 CAPTCHA on signup — ✅ code shipped, feature-flagged OFF
+Cloudflare Turnstile wired into `/api/auth/register` and the signup form.
+Feature-flagged on `TURNSTILE_SECRET_KEY` (backend) and
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` (frontend). Both unset → code is a no-op,
+signup behaves as before. Verification fails CLOSED on Cloudflare API errors
+(a CF DoS cannot be used to bypass).
+
+**To turn it on:**
+
+1. Go to https://dash.cloudflare.com/?to=/:account/turnstile → **Add site**
+   → hostname = `adaptcode.vercel.app` (and any custom domain). Widget mode:
+   Managed. Copy the **Site key** (public) and **Secret key** (private).
+2. In Vercel project settings → Environment Variables, add
+   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` with the site key, Production + Preview.
+   Redeploy once from Vercel for the baked-in var to take effect.
+3. On Cloud Run:
+   ```bash
+   gcloud run services update adaptcode-backend \
+     --region=asia-southeast1 \
+     --update-env-vars=TURNSTILE_SECRET_KEY='<secret-key>'
+   ```
+   Secret Manager is better long-term; see §6 for the pattern. For now this
+   is fine — the secret key is less sensitive than the DB service_role key.
+4. Smoke-test: visit `/login` → Create account → confirm a Turnstile widget
+   appears above the submit button, solve it, verify signup succeeds.
+
+See [backend/app/services/turnstile.py](backend/app/services/turnstile.py)
+and [frontend/src/components/Turnstile.tsx](frontend/src/components/Turnstile.tsx).
 
 ### 4.6 Piston runtime pinning + CVE audit
 `LANGUAGE_MAP` in [backend/app/services/piston.py](backend/app/services/piston.py)

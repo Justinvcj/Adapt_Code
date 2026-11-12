@@ -48,7 +48,7 @@ tailscale --socket="$TS_SOCKET" status | head -5 || true
 export ALL_PROXY="socks5h://localhost:1055"
 export HTTPS_PROXY="http://localhost:1055"
 export HTTP_PROXY="http://localhost:1055"
-export NO_PROXY="localhost,127.0.0.1,$(hostname),.supabase.co,.googleapis.com,.google.com,.sentry.io,.ingest.sentry.io,.ingest.us.sentry.io"
+export NO_PROXY="localhost,127.0.0.1,$(hostname),.supabase.co,.googleapis.com,.google.com,.sentry.io,.ingest.sentry.io,.ingest.us.sentry.io,.cloudflare.com"
 
 echo "[boot] starting uvicorn on :$PORT"
 exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --proxy-headers --forwarded-allow-ips="*"

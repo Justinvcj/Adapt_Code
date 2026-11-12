@@ -41,15 +41,22 @@ const connectSrc = [
 // blocks the loader.js fetch.
 const MONACO_CDN = 'https://cdn.jsdelivr.net';
 
+// Cloudflare Turnstile: script loads from challenges.cloudflare.com and the
+// widget is an iframe from the same origin. Harmless when the feature flag is
+// off (NEXT_PUBLIC_TURNSTILE_SITE_KEY unset) — the CSP entries just allow a
+// hostname that no code is reaching.
+const TURNSTILE_HOST = 'https://challenges.cloudflare.com';
+
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' ${MONACO_CDN}`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' ${MONACO_CDN} ${TURNSTILE_HOST}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `connect-src ${connectSrc} ${MONACO_CDN}`,
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob:",
   "media-src 'self'",
   `worker-src 'self' blob: ${MONACO_CDN}`,
+  `frame-src ${TURNSTILE_HOST}`,
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
