@@ -131,11 +131,11 @@ signup behaves as before. Verification fails CLOSED on Cloudflare API errors
 See [backend/app/services/turnstile.py](backend/app/services/turnstile.py)
 and [frontend/src/components/Turnstile.tsx](frontend/src/components/Turnstile.tsx).
 
-### 4.6 Piston runtime pinning + CVE audit
-`LANGUAGE_MAP` in [backend/app/services/piston.py](backend/app/services/piston.py)
-uses `"version": "*"`, which asks Piston for the newest installed runtime. A
-silent runtime upgrade with a fresh CVE would land in production without any
-code change here. See [§7](#7-piston-runtime-pinning).
+### 4.6 Piston runtime pinning + CVE audit — _closed 2026-11-12_
+`PISTON_PINNED_VERSIONS` env var is now set on Cloud Run (revision
+`adaptcode-backend-00030-8rx`) pinning python 3.12.0, javascript 20.11.1,
+java 15.0.2, c 10.2.0, c++ 10.2.0. Scaffold was shipped in commit `01bda25`;
+activation values came from the EC2 sandbox catalog. See [§7](#7-piston-runtime-pinning).
 
 ### 4.7 Dependency floor bumps
 `python-jose` and `psycopg2-binary` had version floors bumped (commit 3a14419).
