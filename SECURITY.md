@@ -51,7 +51,11 @@ frontend never holds the Supabase service key; it holds only the anon key
   all return 404 in `ENV=production`. See [backend/app/main.py](backend/app/main.py).
 - ✅ **CORS pinned.** `allow_origins` is a comma-separated allowlist plus a
   strict regex for Vercel preview subdomains; non-HTTPS origins fail the assert
-  in prod/staging.
+  in prod/staging. **Gotcha:** the Vercel alias is `adapt-code.vercel.app`
+  (with the dash) — `adaptcode.vercel.app` 404s. Cloud Run's `FRONTEND_URL`
+  must include both. A `gcloud --update-env-vars` call with commas inside
+  the value needs the `^@^` separator prefix, e.g.
+  `--update-env-vars='^@^FRONTEND_URL=https://adapt-code.vercel.app,https://adaptcode.vercel.app'`.
 - ✅ **Session cookie hardened.** `httpOnly`, `secure`, `SameSite=strict`;
   CSRF token issued separately. See [backend/app/routers/auth.py](backend/app/routers/auth.py).
 - ✅ **Security headers everywhere.** `X-Content-Type-Options`, `X-Frame-Options:
