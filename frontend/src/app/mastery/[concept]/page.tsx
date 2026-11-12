@@ -4,10 +4,13 @@ import Link from 'next/link';
 import { Play, ChevronRight, Lock } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
 import Footer from '@/components/adapt/Footer';
-import { CONCEPT_BY_ID, MOCK_MASTERY, type ConceptId } from '@/data/concepts';
+import { CONCEPT_BY_ID, type ConceptId } from '@/data/concepts';
 import { PROBLEMS } from '@/components/adapt/data';
 import { PROBLEM_LIST, PROBLEMS_BY_CONCEPT } from '@/data/problems';
 import toast from 'react-hot-toast';
+import { useLiveMastery } from '@/lib/live-data';
+import { useEffect, useState } from 'react';
+import { problemsAPI, API_ENABLED, type ApiProblemSummary } from '@/lib/api';
 
 const SLUG_BY_ID: Record<number, string> = PROBLEM_LIST.reduce((acc, p) => { acc[p.id] = p.slug; return acc; }, {} as Record<number, string>);
 
@@ -16,6 +19,22 @@ export default function ConceptMasteryPage() {
   const router = useRouter();
   const conceptId = (params?.concept as ConceptId) || null;
   const concept = conceptId ? CONCEPT_BY_ID[conceptId] : undefined;
+  const { mastery: MASTERY } = useLiveMastery();
+
+  // Live problem list — any problem whose concept_tag matches this page's concept.
+  // Falls back to the static PROBLEM_LIST below when the backend is unreachable.
+  const [livePids, setLivePids] = useState<ApiProblemSummary[] | null>(null);
+  useEffect(() => {
+    if (!API_ENABLED || !conceptId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await problemsAPI.list();
+        if (!cancelled && r?.data) setLivePids(r.data.filter((p) => p.concept_tag === conceptId));
+      } catch { /* stay with static fallback */ }
+    })();
+    return () => { cancelled = true; };
+  }, [conceptId]);
 
   if (!concept) {
     return (
@@ -31,18 +50,29 @@ export default function ConceptMasteryPage() {
     );
   }
 
-  const m = MOCK_MASTERY[concept.id];
+  const m = MASTERY[concept.id];
   const Icon = concept.icon;
 
-  // Real problems for this concept come first; fill the rest with other problems
-  // so the catalogue page is never empty while the bank is still growing.
+  // Real problems for this concept come first. When live data is available,
+  // use it so newly-seeded problems show up without a frontend redeploy; else
+  // fall back to the static PROBLEM_LIST so the catalogue is never empty.
   const conceptSlugs = new Set(PROBLEMS_BY_CONCEPT[concept.id] ?? []);
-  const inConcept = PROBLEM_LIST
-    .filter((p) => conceptSlugs.has(p.slug))
-    .map((p) => ({ id: p.id, title: p.title, diff: p.difficulty, acc: p.acceptance, st: '' as const, _real: true }));
+  const inConcept = livePids
+    ? livePids.map((p, i) => ({
+        id: 10_000 + i,
+        title: p.title,
+        diff: (p.difficulty_level.charAt(0).toUpperCase() + p.difficulty_level.slice(1)) as 'Easy' | 'Medium' | 'Hard',
+        acc: 50,
+        st: '' as const,
+        _real: true,
+        _slug: p.id,
+      }))
+    : PROBLEM_LIST
+        .filter((p) => conceptSlugs.has(p.slug))
+        .map((p) => ({ id: p.id, title: p.title, diff: p.difficulty, acc: p.acceptance, st: '' as const, _real: true, _slug: p.slug }));
   const seed = concept.id.length;
   const filler = PROBLEMS
-    .map((p, i) => ({ ...p, _o: ((i + seed) * 2654435761) >>> 0, _real: false as const }))
+    .map((p, i) => ({ ...p, _o: ((i + seed) * 2654435761) >>> 0, _real: false as const, _slug: undefined as string | undefined }))
     .sort((a, b) => a._o - b._o)
     .slice(0, Math.max(0, 18 - inConcept.length))
     .map(({ _o, ...p }) => p);
@@ -108,7 +138,7 @@ export default function ConceptMasteryPage() {
                       <td style={{ color: 'var(--tx-2)' }}>{p.id}.</td>
                       <td className="t-link">
                         <Link
-                          href={`/problem/${SLUG_BY_ID[p.id] ?? 'coming-soon'}`}
+                          href={`/problem/${p._slug ?? SLUG_BY_ID[p.id] ?? 'coming-soon'}`}
                           style={{ color: 'inherit' }}
                           onClick={(e) => { if (!m.unlocked) { e.preventDefault(); toast('Concept is locked — complete prerequisites first.'); } }}
                         >

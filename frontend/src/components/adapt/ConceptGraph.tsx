@@ -1,8 +1,9 @@
 "use client";
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { CONCEPTS, MOCK_MASTERY, type ConceptId } from '@/data/concepts';
+import { CONCEPTS, type ConceptId } from '@/data/concepts';
 import { CONCEPT_LAYERS, EDGE_NOTES, noteFor } from '@/data/edges';
 import { Play, Lock, ArrowRight, ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
+import { useLiveMastery } from '@/lib/live-data';
 
 type Pos = { x: number; y: number };
 type EdgeKey = `${ConceptId}->${ConceptId}`;
@@ -45,21 +46,23 @@ function curvePath(a: Pos, b: Pos): string {
   return `M ${a.x} ${a.y + NODE_R} C ${a.x} ${c1y}, ${b.x} ${c2y}, ${b.x} ${b.y - NODE_R - 4}`;
 }
 
-function conceptTier(id: ConceptId): 'done' | 'progress' | 'weak' | 'locked' {
-  const m = MOCK_MASTERY[id];
-  if (!m.unlocked) return 'locked';
-  if (m.mastery >= 0.75) return 'done';
-  if (m.mastery < 0.4)   return 'weak';
-  return 'progress';
-}
-
 export default function ConceptGraph() {
+  const { mastery: MASTERY } = useLiveMastery();
+
+  const conceptTier = (id: ConceptId): 'done' | 'progress' | 'weak' | 'locked' => {
+    const m = MASTERY[id];
+    if (!m.unlocked) return 'locked';
+    if (m.mastery >= 0.75) return 'done';
+    if (m.mastery < 0.4)   return 'weak';
+    return 'progress';
+  };
+
   const pos = useMemo(computeLayout, []);
   const initialHover = useMemo<ConceptId | null>(() => {
-    const unlocked = CONCEPTS.filter((c) => MOCK_MASTERY[c.id].unlocked);
+    const unlocked = CONCEPTS.filter((c) => MASTERY[c.id].unlocked);
     if (!unlocked.length) return null;
-    return unlocked.sort((a, b) => MOCK_MASTERY[a.id].mastery - MOCK_MASTERY[b.id].mastery)[0].id;
-  }, []);
+    return unlocked.sort((a, b) => MASTERY[a.id].mastery - MASTERY[b.id].mastery)[0].id;
+  }, [MASTERY]);
   const [hoverNode, setHoverNode] = useState<ConceptId | null>(initialHover);
   const [pinnedNode, setPinnedNode] = useState<ConceptId | null>(initialHover);
   const [hoverEdge, setHoverEdge] = useState<EdgeKey | null>(null);
@@ -213,7 +216,7 @@ export default function ConceptGraph() {
           <g className="cg-nodes">
             {CONCEPTS.map((c) => {
               const p = pos[c.id];
-              const m = MOCK_MASTERY[c.id];
+              const m = MASTERY[c.id];
               const tier = conceptTier(c.id);
               const dim  = hoverNode && !connectedToHover(c.id);
               const ringGrad = tier === 'locked'   ? 'rgba(255,255,255,.14)'
@@ -282,7 +285,7 @@ export default function ConceptGraph() {
       {/* Sidecard */}
       {hoverNode && (() => {
         const c = CONCEPTS.find((x) => x.id === hoverNode)!;
-        const m = MOCK_MASTERY[c.id];
+        const m = MASTERY[c.id];
         const Icon = c.icon;
         return (
           <aside className="cg-sidecard">
