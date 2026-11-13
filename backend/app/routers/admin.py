@@ -39,9 +39,12 @@ class ProblemUpdate(BaseModel):
 @router.get("/users")
 async def get_all_users(user: CurrentUser = Depends(require_admin)) -> Dict[str, Any]:
     user_id = user.user_id
-        
+
     try:
-        supabase = get_supabase_admin()
+        # new_supabase_admin() avoids the shared-singleton RLS-drift bug — the
+        # cached admin client gets re-signed to the last login's identity, so a
+        # subsequent service_role query silently returns only that user's rows.
+        supabase = new_supabase_admin()
         users = supabase.table("users").select("user_id, email, display_name, created_at, role").execute()
         return {"status": "success", "data": users.data or []}
     except Exception as e:
@@ -121,9 +124,9 @@ async def admin_delete_problem(problem_id: str, user: CurrentUser = Depends(requ
 @router.get("/stats")
 async def get_platform_stats(user: CurrentUser = Depends(require_admin)) -> Dict[str, Any]:
     user_id = user.user_id
-        
+
     try:
-        supabase = get_supabase_admin()
+        supabase = new_supabase_admin()
         users = supabase.table("users").select("user_id", count="exact").execute()
         sessions = supabase.table("sessions").select("session_id", count="exact").execute()
         events = supabase.table("session_events").select("event_id", count="exact").execute()
