@@ -10,7 +10,7 @@ import { useProfile } from '@/lib/profile-store';
 export default function Navbar({ active, loggedIn = true }: { active?: string; loggedIn?: boolean }) {
   const [smOpen, setSmOpen] = useState(false);
   const [ddOpen, setDdOpen] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { profile } = useProfile();
   const initials = (profile.name || 'U')
     .split(/\s+/)
@@ -54,6 +54,9 @@ export default function Navbar({ active, loggedIn = true }: { active?: string; l
             <Link className={`nav-link ${active === 'graph' ? 'act' : ''}`} href="/graph">Graph</Link>
             <Link className={`nav-link ${active === 'problems' ? 'act' : ''}`} href="/problems">Practice</Link>
             <Link className={`nav-link ${active === 'leaderboard' ? 'act' : ''}`} href="/leaderboard">Leaderboard</Link>
+            {user?.role === 'admin' && (
+              <Link className={`nav-link ${active === 'admin' ? 'act' : ''}`} href="/admin" style={{ color: 'var(--accent)' }}>Admin</Link>
+            )}
           </div>
           <div className="nav-acts">
             <button className="nav-search" onClick={() => setSmOpen(true)}>

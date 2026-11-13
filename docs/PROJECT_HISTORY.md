@@ -950,6 +950,89 @@ commands (the auto-mode classifier refuses to create new secret-manager entries
 regardless of their content, same as it refused `apply_migration`), a toggle on a
 paid plan. Everything in reach via code or `gcloud run services update` is done.
 
+### 2026-11-13 (early morning) — Real acceptance stats, admin CRUD, admin bootstrap, RLS-drift bug returns
+
+A short session that closed the two remaining non-security items from the backlog
+(real problem acceptance stats, admin problem management) and set up the first
+real admin account for the platform. It also caught a recurrence of the exact
+`get_supabase_admin()` RLS-drift bug that PR #28 originally fixed in the login
+lockout path — same singleton, same symptom, different endpoint.
+
+**Real acceptance stats** (commit `f0e490e`, Cloud Run revision
+`adaptcode-backend-00040` after Cloud Build `02fc5b6e`). `/api/problems` used to
+return `{id, title, difficulty_level, concept_tag}` for each of 473 deduped rows;
+the frontend turned that into a fake acceptance percentage with
+`55 + (hash(id) * 7) % 35` — a made-up number that looked plausible but wasn't.
+The endpoint now also aggregates from `session_events`, counting **DISTINCT
+students per (problem, outcome)** so that one student grinding fifty attempts on
+one problem does not dominate the ratio for every other student. Response gets
+three new fields: `attempts`, `accepted`, `acceptance` (a 0..1 ratio, or `null`
+for a problem nobody has attempted yet). Frontend (`/problems`,
+`/mastery/[concept]`) displays untried problems as "—" rather than "0%" — a new
+problem is not impossibly hard, it just hasn't been tried.
+
+**Admin problem management** (commit `b6fa85a`, Cloud Run revision
+`adaptcode-backend-00042` after Cloud Build `ee20495f`). `backend/app/routers/admin.py`
+gets four new endpoints under `require_admin`:
+- `GET /api/admin/problems` — full payload including hidden test cases, solution
+  code, and solution explanation (vs the public catalog which strips those)
+- `POST /api/admin/problems` — create, with Pydantic validation on difficulty
+  (`^(easy|medium|hard)$`), title length (1-200), concept tag length (1-50)
+- `PATCH /api/admin/problems/{id}` — partial update; `test_cases` list replaced
+  wholesale when provided
+- `DELETE /api/admin/problems/{id}` — hard delete, returns 404 if the id is
+  unknown
+All four use `new_supabase_admin()` from the start (the shared-singleton bug was
+remembered this time at the write path).
+
+Frontend `/admin` page (`frontend/src/app/admin/page.tsx`): platform-stats cards
+(users / sessions / submissions), a users table (first 25), a problems table
+(first 50) with inline edit and delete, and a modal form for create/edit with
+dynamic test-case rows. Gated client-side on `user.role === 'admin'` — non-admins
+see a polite "Admin only" screen and the backend rejects them anyway with 401.
+A Navbar link to `/admin` was added, conditionally visible and highlighted in the
+accent color only for admin users.
+
+**Bootstrapping the first admin account.** The project had no admin on the free
+tier — only a sentinel `global_bandit@adaptcode.internal` with the zero UUID,
+used by LinUCB for the fallback bandit. Created
+`admin@adaptcode.dev` via the public `/api/auth/register` endpoint (which already
+bypasses email confirmation because the Supabase project has that toggle off),
+then promoted it to admin by direct insert into `public.users` with
+`role = 'admin'` (the register handler only creates the auth-schema side; the
+public row is created on first login OR by direct insert — the latter is
+instantaneous). Credentials given to the owner privately in chat. The pattern for
+a second admin is the same four lines: register via the public endpoint, grab the
+UUID from `auth.users`, then `INSERT INTO public.users (user_id, …, role) VALUES
+(…, 'admin') ON CONFLICT (user_id) DO UPDATE SET role = 'admin'`.
+
+**The RLS-drift bug came back.** The first `/api/admin/stats` call after logging
+in as the new admin returned `total_users: 1`, `total_sessions: 0`,
+`total_submissions: 0` — numbers that looked correct for a user who had just
+signed up but were obviously wrong for the platform. Root cause: the pre-existing
+`admin.py` endpoints (`/users` and `/stats`, written long before the November
+security sprint) still used `get_supabase_admin()`, which is a cached module-level
+singleton. When the admin login called `supabase.auth.sign_in_with_password(...)`,
+it mutated the singleton's auth session to the admin's JWT. The next query ran
+under that JWT, hit the `public.users` RLS policy that scopes SELECT to
+`auth.uid() = user_id`, and silently filtered to one row — the admin's own.
+Same mechanism, same silent failure mode, same table. Fixed in commit `a5bb395`
+by switching `/users` and `/stats` to `new_supabase_admin()` (which calls
+`create_client(url, service_key, options=ClientOptions(persist_session=False))`
+every time, so there's no session to drift). After redeploy
+(`adaptcode-backend-00043`): `total_users: 7`, `total_sessions: 4`,
+`total_submissions: 14`. Updating `backend/app/core/database.py`'s module
+docstring to make "use new_supabase_admin for anything that runs after a
+sign_in_with_password happens anywhere else in the process" the loud default
+remains an open todo — this is now the third time this bug has bitten.
+
+**Current state after this session.** All frontend pages that previously showed
+mock data now show real backend data; the admin surface is fully operational via
+UI; a bootstrap admin account exists. Supabase advisor still clean (0 ERROR, 1
+WARN HIBP-paywall, 4 INFO intentional). Everything in the November backlog is
+either done or requires an external account the project owner needs to create
+(Cloudflare for WAF, Supabase Pro for HIBP).
+
 ### A note on the git history itself: a rebase/split happened
 
 At some point between two working sessions on this project, the branch holding the
@@ -1538,7 +1621,8 @@ an algorithm or schema changes. Small bug fixes that don't change *how the syste
 works or why* don't need an entry here; this is the "why and how," not a changelog
 (git log already is the changelog).
 
-**Last narrated commit:** `e7a6869` (2026-11-12) — "activate Piston runtime pins
-+ drop one-shot catalog endpoint." If extending this document, run
+**Last narrated commit:** `a5bb395` (2026-11-13) — "fix(admin): use
+new_supabase_admin() in /users and /stats to dodge RLS drift." If extending this
+document, run
 `git log --reverse --pretty=format:"%h|%ad|%s" --date=short` and diff against that
 hash to find everything not yet told.
