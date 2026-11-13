@@ -62,7 +62,7 @@ export default function ConceptMasteryPage() {
         id: 10_000 + i,
         title: p.title,
         diff: (p.difficulty_level.charAt(0).toUpperCase() + p.difficulty_level.slice(1)) as 'Easy' | 'Medium' | 'Hard',
-        acc: 50,
+        acc: typeof p.acceptance === 'number' ? Math.round(p.acceptance * 100) : -1,
         st: '' as const,
         _real: true,
         _slug: p.id,
@@ -145,7 +145,7 @@ export default function ConceptMasteryPage() {
                           {p.title}
                         </Link>
                       </td>
-                      <td>{p.acc}%</td>
+                      <td>{p.acc < 0 ? <span style={{ color: 'var(--tx-3)' }}>—</span> : `${p.acc}%`}</td>
                       <td><span className={`diff diff-${dc}`}>{p.diff}</span></td>
                     </tr>
                   );

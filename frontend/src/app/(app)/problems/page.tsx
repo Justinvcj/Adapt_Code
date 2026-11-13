@@ -79,11 +79,18 @@ export default function ProblemsPage() {
         const res = await problemsAPI.list();
         const next: Row[] = res.data.map((p) => {
           const tag = p.concept_tag as ConceptId | undefined;
+          // Backend sends `acceptance` as a 0..1 ratio, or null when no student
+          // has attempted this problem yet. A new problem with no data is
+          // displayed as "—", not "0%" — rendering 0% for an untouched problem
+          // falsely suggests it's extremely hard.
+          const accPct = typeof p.acceptance === 'number'
+            ? Math.round(p.acceptance * 100)
+            : -1;
           return {
             id: hashToId(p.id),
             title: p.title,
             diff: (p.difficulty_level.charAt(0).toUpperCase() + p.difficulty_level.slice(1)) as Row['diff'],
-            acc: 55 + ((hashToId(p.id) * 7) % 35),
+            acc: accPct,
             st: '',
             slug: titleToSlug(p.title),
             concept: tag && CONCEPT_IDS.has(tag) ? tag : undefined,
@@ -291,7 +298,7 @@ export default function ProblemsPage() {
                       <td className="t-link">
                         <Link href={`/problem/${p.slug}`} style={{ color: 'inherit' }}>{p.title}</Link>
                       </td>
-                      <td>{p.acc.toFixed(1)}%</td>
+                      <td>{p.acc < 0 ? <span style={{ color: 'var(--tx-3)' }}>—</span> : `${p.acc}%`}</td>
                       <td><span className={`diff diff-${dc}`}>{p.diff}</span></td>
                       <td style={{ color: 'var(--tx-2)', fontSize: 12 }}>{conceptName}</td>
                       <td

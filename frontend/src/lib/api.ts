@@ -125,6 +125,9 @@ export type ApiProblemSummary = {
   title: string;
   difficulty_level: 'easy' | 'medium' | 'hard';
   concept_tag: string;
+  attempts?: number;
+  accepted?: number;
+  acceptance?: number | null;
 };
 
 export type ApiProblem = ApiProblemSummary & {

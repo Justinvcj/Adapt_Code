@@ -518,6 +518,23 @@ async def get_all_problems():
     # Problems are public catalogue data — admin client, no per-user JWT needed.
     supabase = get_supabase_admin()
     res = supabase.table("problems").select("problem_id, title, difficulty_level, concept_tag").execute()
+
+    # Pull aggregate acceptance alongside the catalogue so the frontend can
+    # render real stats instead of a fake hash-derived number. Count DISTINCT
+    # students per (problem, outcome) so a single student grinding 50 attempts
+    # on one problem doesn't dominate the acceptance ratio for everyone.
+    events_res = supabase.table("session_events").select("problem_id, student_id, final_verdict").execute()
+    attempts: dict[str, set] = {}
+    accepted: dict[str, set] = {}
+    for e in (events_res.data or []):
+        pid = e.get("problem_id")
+        sid = e.get("student_id")
+        if not pid or not sid:
+            continue
+        attempts.setdefault(pid, set()).add(sid)
+        if e.get("final_verdict") == "Accepted":
+            accepted.setdefault(pid, set()).add(sid)
+
     # Dedupe by title — earlier seeder iterations left orphan rows with
     # concept-scoped UUIDs; the canonical slug-UUID row is the one students
     # actually land on via /problem/<slug>. Keep the first occurrence per title
@@ -529,11 +546,17 @@ async def get_all_problems():
         if not title or title in seen:
             continue
         seen.add(title)
+        pid = p["problem_id"]
+        n_att = len(attempts.get(pid, ()))
+        n_acc = len(accepted.get(pid, ()))
         data.append({
-            "id": p["problem_id"],
+            "id": pid,
             "title": title,
             "difficulty_level": p["difficulty_level"],
             "concept_tag": p["concept_tag"],
+            "attempts": n_att,
+            "accepted": n_acc,
+            "acceptance": round(n_acc / n_att, 3) if n_att > 0 else None,
         })
     return {"status": "success", "data": data}
 
