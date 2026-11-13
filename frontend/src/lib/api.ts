@@ -195,3 +195,44 @@ export type ApiPotd = {
 export const potdAPI = {
   today: () => api.get<{ status: string; data: ApiPotd }>('/api/problem/potd'),
 };
+
+// ---- admin ----
+
+export type ApiAdminProblem = {
+  problem_id: string;
+  title: string;
+  description: string;
+  concept_tag: string;
+  difficulty_level: 'easy' | 'medium' | 'hard';
+  test_cases: Array<{ input: string; expected_output: string }>;
+  hint_text?: string | null;
+  solution_code?: string | null;
+  solution_explanation?: string | null;
+  starter_code?: Record<string, string> | null;
+  created_at?: string;
+};
+
+export type ApiAdminStats = {
+  total_users: number;
+  total_sessions: number;
+  total_submissions: number;
+};
+
+export type ApiAdminUser = {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  role: string | null;
+  created_at: string;
+};
+
+export type ProblemInput = Omit<ApiAdminProblem, 'problem_id' | 'created_at'>;
+
+export const adminAPI = {
+  stats: () => api.get<{ status: string; data: ApiAdminStats }>('/api/admin/stats'),
+  users: () => api.get<{ status: string; data: ApiAdminUser[] }>('/api/admin/users'),
+  listProblems:   () => api.get<{ status: string; data: ApiAdminProblem[] }>('/api/admin/problems'),
+  createProblem:  (p: ProblemInput) => api.post<{ status: string; data: ApiAdminProblem }>('/api/admin/problems', p),
+  updateProblem:  (id: string, p: Partial<ProblemInput>) => api.patch<{ status: string; data: ApiAdminProblem }>(`/api/admin/problems/${id}`, p),
+  deleteProblem:  (id: string) => api.del<{ status: string; deleted_id: string }>(`/api/admin/problems/${id}`),
+};
