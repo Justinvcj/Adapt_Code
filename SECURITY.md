@@ -247,18 +247,18 @@ it per-env without rebuilding.
 
 ---
 
-## 6.5 Supabase "Leaked Password Protection"
+## 6.5 Supabase "Leaked Password Protection" — _Pro-only, deferred_
 
-The Supabase advisor flags `auth_leaked_password_protection` as a WARN. One
-toggle in **Dashboard → Authentication → Policies → Password Settings →
-Prevent use of leaked passwords**. There is no MCP/REST surface for this —
-it is dashboard-only. Flipping it enables HIBP (Have I Been Pwned) password
-checks on signup and password-change.
+The Supabase advisor flags `auth_leaked_password_protection` as a WARN. The
+toggle is in **Dashboard → Authentication → Providers → Email → Prevent use
+of leaked passwords**, but on the free tier flipping it returns:
 
-**Why it's one toggle away:** we already issue the Supabase auth JWT; HIBP
-runs client-side in the auth flow via a k-anonymity k-request so the full
-password never leaves the browser. Enabling it adds zero infra and one
-network round-trip per signup.
+> Failed to update auth configuration: Configuring leaked password protection
+> via HaveIBeenPwned.org is available on Pro Plans and up.
+
+So this item is **blocked by billing**, not by work. Status: accepted as a
+known gap until the Supabase project is on a paid plan. If/when it is, the
+same toggle enables the HIBP check; nothing on our side needs to change.
 
 ---
 
