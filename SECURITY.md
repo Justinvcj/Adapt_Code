@@ -97,10 +97,9 @@ Run directly today. Cloudflare's free tier gives: proxy with rate-limiting,
 Bot Fight Mode, WAF-managed rules, and anonymizes the Cloud Run origin.
 See [§5](#5-cloudflare-runbook-free-tier).
 
-### 4.4 SENTRY_DSN → Secret Manager
-Currently set via `gcloud run services update --update-env-vars SENTRY_DSN=…`.
-Visible in `gcloud run services describe` for anyone with Viewer. Should move
-to Secret Manager like the other secrets. See [§6](#6-sentry_dsn--secret-manager).
+### 4.4 SENTRY_DSN → Secret Manager — _closed 2026-11-13_
+Secret created, IAM granted to the Cloud Run compute SA, and `cloudbuild.yaml`
+updated to carry it in `--set-secrets`. Live on revision `adaptcode-backend-00034-cz8`.
 
 ### 4.5 CAPTCHA on signup — ✅ code shipped, feature-flagged OFF
 Cloudflare Turnstile wired into `/api/auth/register` and the signup form.

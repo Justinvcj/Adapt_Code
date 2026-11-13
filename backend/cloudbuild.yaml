@@ -65,7 +65,7 @@ steps:
       # service — like SENTRY_DSN wired by `gcloud run services update` —
       # survive a redeploy instead of being wiped.
       - --update-env-vars=ENV=production,PISTON_URL=http://100.114.155.33:2000,TS_HOSTNAME=${_SERVICE},FRONTEND_URL=${_FRONTEND_URL},TRUSTED_PROXY_CIDRS=35.191.0.0/16;130.211.0.0/22
-      - --set-secrets=SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_KEY=SUPABASE_KEY:latest,SUPABASE_SERVICE_KEY=SUPABASE_SERVICE_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,TS_AUTHKEY=TS_AUTHKEY:latest
+      - --set-secrets=SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_KEY=SUPABASE_KEY:latest,SUPABASE_SERVICE_KEY=SUPABASE_SERVICE_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,TS_AUTHKEY=TS_AUTHKEY:latest,SENTRY_DSN=SENTRY_DSN:latest
 
 images:
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${_TAG}
