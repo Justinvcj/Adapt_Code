@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from app.core.database import get_supabase_admin, get_supabase_user, new_supabase_admin
 from app.core.dependencies import get_current_user, CurrentUser, require_admin
+from app.services.audit import log_event as audit_log
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -75,7 +76,10 @@ async def admin_create_problem(req: ProblemCreate, user: CurrentUser = Depends(r
         res = supabase.table("problems").insert(payload).execute()
         if not res.data:
             raise HTTPException(status_code=500, detail="Insert returned no row.")
-        return {"status": "success", "data": res.data[0]}
+        row = res.data[0]
+        audit_log("admin_problem_create", actor=user.user_id, target=row.get("problem_id"),
+                   metadata={"title": row.get("title"), "concept_tag": row.get("concept_tag")})
+        return {"status": "success", "data": row}
     except HTTPException:
         raise
     except Exception:
@@ -96,6 +100,8 @@ async def admin_update_problem(problem_id: str, req: ProblemUpdate, user: Curren
         res = supabase.table("problems").update(payload).eq("problem_id", problem_id).execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Problem not found.")
+        audit_log("admin_problem_update", actor=user.user_id, target=problem_id,
+                   metadata={"fields_changed": sorted(payload.keys())})
         return {"status": "success", "data": res.data[0]}
     except HTTPException:
         raise
@@ -112,6 +118,8 @@ async def admin_delete_problem(problem_id: str, user: CurrentUser = Depends(requ
         res = supabase.table("problems").delete().eq("problem_id", problem_id).execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Problem not found.")
+        audit_log("admin_problem_delete", actor=user.user_id, target=problem_id,
+                   metadata={"title": res.data[0].get("title")})
         return {"status": "success", "deleted_id": problem_id}
     except HTTPException:
         raise

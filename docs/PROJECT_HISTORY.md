@@ -1033,6 +1033,41 @@ WARN HIBP-paywall, 4 INFO intentional). Everything in the November backlog is
 either done or requires an external account the project owner needs to create
 (Cloudflare for WAF, Supabase Pro for HIBP).
 
+### Nov 14 — two security reviews, and closing the last code-side backlog item
+
+A `/security-review` pass was run twice against everything shipped since
+`SECURITY.md`'s last full review date: first narrowly (the admin CRUD +
+acceptance-stats + RLS-perf-migration cluster), then widened to every
+security-relevant file touched since (Turnstile wiring, Piston pin activation,
+both RLS migrations, CSP/`NO_PROXY` changes, `auth.py`/`schemas.py`). Both passes
+came back clean — no high- or medium-confidence findings. Worth recording *why*,
+since "the review found nothing" is itself a useful data point distinct from "the
+review wasn't run": every new `/api/admin/*` write route re-verifies the caller's
+`role` server-side via `require_admin` (`backend/app/core/dependencies.py:93-98`)
+rather than trusting anything client-supplied; the RLS-perf migration only changes
+*how fast* a predicate is evaluated, never *what* it evaluates; and the Turnstile/
+Piston-pin changes both move configuration further away from plaintext trust, not
+closer to it.
+
+With no vulnerabilities to fix, the remaining open item was pulled forward from
+the backlog instead: **`SECURITY.md` §4.10, audit logging for admin routes** (the
+one item in the November backlog that was neither closed nor blocked by an
+external account). `backend/app/routers/admin.py`'s three mutating routes
+(`admin_create_problem`, `admin_update_problem`, `admin_delete_problem`) now each
+call `audit.py`'s existing `log_event()` — the same tamper-evident, direct-`psycopg2`
+writer `auth.py` already uses for login/logout/account events, chosen specifically
+because it bypasses PostgREST's role-identity-drift bug (the same bug `a5bb395`
+had just hit for the *read* side, one commit earlier) by writing as the Postgres
+superuser embedded in `SUPABASE_DB_URL`. Each write logs the acting admin's
+`user_id` (read from the already-verified `require_admin` dependency result, never
+a client-supplied field), the target `problem_id`, and narrow, non-sensitive
+metadata — a title and concept tag on create, the *names* of the fields that
+changed on update (never the full new value, so a solution-code edit doesn't dump
+the solution into a log row), and the title on delete. `GET /api/admin/*` routes
+are deliberately left unlogged — `SECURITY.md`'s original note scoped this item to
+writes, and admin reads of already-admin-visible data aren't the tamper/exfil risk
+a write is.
+
 ### A note on the git history itself: a rebase/split happened
 
 At some point between two working sessions on this project, the branch holding the
@@ -1621,8 +1656,9 @@ an algorithm or schema changes. Small bug fixes that don't change *how the syste
 works or why* don't need an entry here; this is the "why and how," not a changelog
 (git log already is the changelog).
 
-**Last narrated commit:** `a5bb395` (2026-11-13) — "fix(admin): use
-new_supabase_admin() in /users and /stats to dodge RLS drift." If extending this
+**Last narrated commit:** `cfd3200` (2026-11-13) plus this session's own
+audit-logging commit on top of it (2026-11-14) — see "Nov 14 — two security
+reviews, and closing the last code-side backlog item" above. If extending this
 document, run
 `git log --reverse --pretty=format:"%h|%ad|%s" --date=short` and diff against that
 hash to find everything not yet told.

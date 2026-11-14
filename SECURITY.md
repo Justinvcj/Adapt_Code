@@ -167,10 +167,16 @@ Supabase SQL editor against the dev project.
 HaveIBeenPwned check is off. One click in Supabase dashboard →
 **Authentication → Password Settings → Leaked Password Protection**.
 
-### 4.10 Audit logging for admin routes
-`/api/admin/*` writes to Supabase but does not log the acting user id to a
-tamper-evident log. Low priority — admin surface is tiny — but worth it before
-a second admin exists.
+### 4.10 Audit logging for admin routes — _closed 2026-11-14_
+`/api/admin/problems` create/update/delete now call
+[backend/services/audit.py](backend/app/services/audit.py)'s `log_event()` —
+the same tamper-evident, direct-psycopg2 writer `auth.py` already uses for
+login/logout/account events. Each write logs the acting admin's `user_id`
+(from the already-verified `require_admin` dependency, not a client-supplied
+value), the target `problem_id`, and non-sensitive metadata (title / changed
+field names on update — never the full problem body or solution code).
+`GET` routes (`/users`, `/problems`, `/stats`) are left unlogged; this item
+was scoped to writes, per the original backlog note.
 
 ---
 
