@@ -2,6 +2,11 @@
 
 **Last Updated:** 2026-09-23
 
+> **Stale (flagged 2026-11-16).** This file predates the Cloud Run + EC2 +
+> Tailscale deployment and still describes Piston on `localhost`. The current
+> as-built description and the target design are in
+> [`docs/roadmap/ARCHITECTURE.md`](roadmap/ARCHITECTURE.md).
+
 AdaptCode is an intelligent tutoring system that evaluates student code submissions, tracks their knowledge probabilistically, and adaptively recommends their next practice problem.
 
 This document describes the implemented architecture.

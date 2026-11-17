@@ -60,3 +60,6 @@ tmp/
 *.docx
 *.xlsx
 *.key
+
+# Local-only audit of unfixed findings (repo is public) — see docs/roadmap/PLAN.md
+docs/roadmap/AUDIT_FINDINGS.md

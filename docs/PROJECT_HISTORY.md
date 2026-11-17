@@ -1068,6 +1068,124 @@ are deliberately left unlogged — `SECURITY.md`'s original note scoped this ite
 writes, and admin reads of already-admin-visible data aren't the tamper/exfil risk
 a write is.
 
+### Nov 16 — a code-truth audit, and the forward roadmap (R0–R13)
+
+No product code changed in this session. Two things were produced: an audit of
+what the code at `7bb0a96` actually does (as opposed to what this document and
+`SECURITY.md` say it does), and a forward plan built on that audit, in
+`docs/roadmap/`.
+
+**Why an audit first.** The request was for a plan to take the project "to the
+next level". Planning new features on top of a description of the system that
+was itself written by the same AI sessions that built it would have compounded
+any gap between description and reality — so the session read the source
+(`backend/app/routers/problems.py`, `services/bkt.py`, `services/linucb.py`,
+`services/piston.py`, `core/dependencies.py`, `core/rate_limit.py`,
+`routers/auth.py`, every SQL file, `frontend/src/lib/api.ts`, the submit and
+run handlers in `frontend/src/app/(app)/problem/[id]/page.tsx`) rather than
+the docs. The live database could not be queried (the Supabase MCP connection
+failed authentication), so anything depending on live state is marked VERIFY
+and is the first task of the roadmap.
+
+**What the audit corrected in this document.** These are corrections to
+statements made earlier in this file, recorded here rather than silently
+edited so the history stays honest:
+
+- **Part 4, BKT behavioural weight.** The formula is as described, but the
+  frontend's `SubmitRequest` (`frontend/src/lib/api.ts`) carries only
+  `problem_id`, `code`, `language`. The backend's `hint_used`,
+  `attempt_count`, `compile_error_count` therefore always take their defaults,
+  so in production `w` is `1.0` for any accepted submission (or `0.9` past the
+  1200 s server-measured threshold). The hint/attempt/compile penalties are not
+  exercised, and LinUCB context features 13 and 14 are constants.
+- **Part 4, mastery dynamics.** With the default parameters
+  `(0.30, 0.12, 0.20, 0.10)` and `w = 1`, two accepted submissions take a
+  concept from `0.30 → 0.6995 → 0.9233`, past `MASTERY_THRESHOLD = 0.85`.
+  Difficulty does not enter the update, and re-submitting an already-accepted
+  problem is a fresh observation.
+- **Part 4 and Part 5, LinUCB state.** Described above as per-student matrices
+  in each student's `agent_state` row. In the code, both `/api/submit` and
+  `/api/next-problem` read and upsert a single row keyed by the sentinel
+  `00000000-0000-0000-0000-000000000000` — one shared model, updated by
+  read-modify-write with no locking.
+- **Part 4, reward attribution.** `submit_code` computes the reward from the
+  verdict of the problem just finished, but applies it to the action selected
+  *for the next problem*, using a context built after the mastery update. The
+  decision that actually led to the finished problem is never rewarded.
+- **"Nothing in the app fakes data anymore."** One element remains: `runCode()`
+  on the problem page renders a success result on a timer without executing
+  the code.
+- **Session cookie.** `auth.py` sets `SameSite=None` in production (the page
+  and API are on different sites), not `Strict` as stated in Part 6 and
+  `SECURITY.md`.
+
+Further integrity and security observations were recorded in a git-ignored
+file (`docs/roadmap/AUDIT_FINDINGS.md`, ids `F-01`…`F-35`) rather than here,
+because this repository is public and those items are not fixed yet. They move
+into `SECURITY.md` and this document as their fixes ship.
+
+**The roadmap.** `docs/roadmap/PLAN.md` is the entry point. Fourteen phases,
+prefixed `R` so the numbers are never reused (see the note under "Aug 11"
+about "Phase 4" meaning three different things):
+
+- **R0** truth and safety baseline (verify live state, backups + restore
+  drill, second Supabase project, Supabase-CLI migration baseline, budget
+  alerts, a network-free backend unit job in CI — pending the owner's
+  approval, since `CLAUDE.md` gates backend CI).
+- **R1** integrity of the learning signal (server-derived telemetry, a real
+  `/api/run`, hints served and recorded by the backend, first-solve rule, one
+  atomic `record_submission` Postgres function, learning-state tables made
+  backend-write-only).
+- **R2** same-origin API through the Vercel origin, first-party cookie, CSRF,
+  session refresh, trustworthy client address.
+- **R3** execution engine v2 (one Piston call per submission via a batched
+  driver, typed Java/C++ harnesses, a concurrency gate that returns 503 rather
+  than recording a wrong verdict, a "golden run" validating every problem
+  against its reference solution).
+- **R4** non-blocking data access, no whole-table reads, load testing.
+- **R5** policy v2: a decision log (`bandit_decisions`) with stored context
+  and logged propensity, reward applied to the decision that caused it,
+  additive model updates under a row lock, gain-based reward
+  `r = clip(0.7·G + 0.3·E − 0.5·[abandoned], −1, 1)`, item selection inside a
+  bucket, a simulator, offline (inverse-propensity) evaluation.
+- **R6** knowledge model v2: difficulty-aware guess/slip, an evidence
+  requirement for "mastered" (≥ 3 distinct problems, at least one above easy),
+  forgetting applied on read with a per-concept half-life, fitted parameters
+  behind a promotion rule, and a standing accuracy report (AUC / log-loss /
+  calibration against three baselines).
+- **R7** original, verified content. **R8** learner experience (placement
+  diagnostic, "why this problem", review queue, mobile, accessibility,
+  on-demand cached explanations). **R9** quality engineering and CI/CD.
+  **R10** security and privacy programme. **R11** observability, runbooks and
+  cost guardrails. **R12** closed beta and a controlled comparison. **R13**
+  classrooms and an extracted open engine.
+
+Milestones: M1 "honest" (R0–R2), M2 "solid" (R3–R4), M3 "actually adaptive"
+(R5–R6 — the point at which the project's central claim is true), M4
+"launchable" (R7–R11), M5 "evidenced" (R12).
+
+**Design decisions recorded in `docs/roadmap/ARCHITECTURE.md` Part C**
+(ADR-01…ADR-10), the ones most worth being able to explain: proxy the API
+through the web origin so the cookie is first-party; make the backend the only
+writer of learning state, because a score the user can write is not a score;
+compute in Python and store through one SQL function so a learning event is
+atomic while the maths stays testable; keep BKT and require any future model
+to beat it on the same held-out test; keep the sandbox on its own host behind
+the tailnet whatever else changes.
+
+**Constraints the plan holds to:** the stack stays locked; nothing may cost
+money (`docs/roadmap/RISKS.md` §3 budgets each free tier and §4 writes down a
+contingency for the sandbox VM's time-limited free period without proposing a
+move now); work stays on `main` in small commits; new behaviour ships behind a
+flag.
+
+**Lesson (added to Part 8 as #11):** documentation written by the same process
+that wrote the code inherits its blind spots — it described intended behaviour
+as live behaviour in several places. The control is not more documentation; it
+is tests that assert on stored data, generated API types so the two sides
+cannot drift, and a periodic audit by a session instructed to distrust the
+docs.
+
 ### A note on the git history itself: a rebase/split happened
 
 At some point between two working sessions on this project, the branch holding the
@@ -1641,6 +1759,13 @@ directly.
     function actually reachable by an untrusted caller, and does it actually trust
     an unchecked argument), not to either dismiss every finding or fix every finding
     blindly.
+11. **Documentation written by the same process that wrote the code inherits
+    its blind spots.** The Nov 16 audit found this document describing
+    per-student bandit state, working behavioural weights and a fully real UI,
+    none of which the code supported. A feature is "wired" only when a test
+    asserts on the data it stores; record "implemented", "verified on dev" and
+    "verified in production" as three different states, and re-audit against
+    the source at each milestone.
 
 ---
 
@@ -1656,9 +1781,9 @@ an algorithm or schema changes. Small bug fixes that don't change *how the syste
 works or why* don't need an entry here; this is the "why and how," not a changelog
 (git log already is the changelog).
 
-**Last narrated commit:** `cfd3200` (2026-11-13) plus this session's own
-audit-logging commit on top of it (2026-11-14) — see "Nov 14 — two security
-reviews, and closing the last code-side backlog item" above. If extending this
+**Last narrated commit:** `7bb0a96` (2026-11-14), plus the docs-only roadmap
+commit made on top of it on 2026-11-16 — see "Nov 16 — a code-truth audit, and
+the forward roadmap (R0–R13)" above. If extending this
 document, run
 `git log --reverse --pretty=format:"%h|%ad|%s" --date=short` and diff against that
 hash to find everything not yet told.
