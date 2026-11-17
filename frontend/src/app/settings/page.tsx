@@ -26,12 +26,12 @@ const TABS: { k: TabKey; label: string; icon: typeof User }[] = [
 /** Tiny visual swatch for each theme card. */
 function ThemePreview({ theme }: { theme: 'dark' | 'light' | 'violet' }) {
   const palettes = {
-    dark:   { bg: '#010102', card: '#141516', ring: '#ffa116', dot: '#27a644' },
-    light:  { bg: '#fafaf7', card: '#ffffff', ring: '#d47300', dot: '#1f8f3a' },
+    dark:   { bg: '#0A0C18', card: '#131629', ring: '#FFC53D', dot: '#8E97FF' },
+    light:  { bg: '#F2F3F9', card: '#ffffff', ring: '#B07600', dot: '#4F5BE0' },
     violet: { bg: '#000000', card: '#13131f', ring: '#8b7cff', dot: '#34d399' },
   };
   const p = palettes[theme];
-  const stroke = theme === 'light' ? '#e4e2db' : 'rgba(255,255,255,.08)';
+  const stroke = theme === 'light' ? '#DFE2F0' : 'rgba(150,160,255,.16)';
   return (
     <div className="theme-preview" style={{ background: p.bg, borderColor: stroke }}>
       <div className="theme-preview-nav" style={{ borderColor: stroke }}>

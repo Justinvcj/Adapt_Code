@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "react-hot-toast";
 import ThemeApplier from "@/components/adapt/ThemeApplier";
 import SplashScreen from "@/components/adapt/SplashScreen";
@@ -7,19 +8,28 @@ import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
 // Runs before React hydrates to prevent a theme flash.
-const PRELOAD_THEME = `(function(){try{var p=localStorage.getItem('adaptcode.prefs.v1');var t='dark';if(p){var o=JSON.parse(p);if(o&&o.theme)t=o.theme;}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
+const PRELOAD_THEME = `(function(){try{var p=localStorage.getItem('adaptcode.prefs.v1');var t='dark';if(p){var o=JSON.parse(p);if(o&&o.theme)t=o.theme;}document.documentElement.setAttribute('data-theme',t);try{if(sessionStorage.getItem('adaptcode.intro.v2')==='1')document.documentElement.setAttribute('data-intro','seen');}catch(e){}}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
 
-const grotesk = Space_Grotesk({
+// Type system (2026-11 rebrand): Bricolage Grotesque for headings, Geist for
+// everything people read, Geist Mono for code. Geist ships from the repo
+// (src/app/fonts) so body text does not depend on a font CDN at build time.
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
-  variable: '--font-grotesk',
-  weight: ['400', '500', '600', '700'],
+  variable: '--font-display',
   display: 'swap',
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: '--font-jetbrains-mono',
-  weight: ['400', '500'],
+const geist = localFont({
+  src: './fonts/GeistVF.woff',
+  variable: '--font-geist',
+  weight: '100 900',
+  display: 'swap',
+});
+
+const geistMono = localFont({
+  src: './fonts/GeistMonoVF.woff',
+  variable: '--font-geist-mono',
+  weight: '100 900',
   display: 'swap',
 });
 
@@ -28,8 +38,8 @@ export const metadata: Metadata = {
   title: "AdaptCode — Learn by solving",
   description: "An adaptive DS&A tutor. BKT models your mastery, a LinUCB bandit picks your next problem, Piston grades your code, Gemini explains what broke.",
   icons: {
-    icon: [{ url: "/logo.webp", type: "image/webp" }],
-    apple: [{ url: "/logo.webp" }],
+    icon: [{ url: "/logo.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/logo.svg" }],
   },
   openGraph: {
     title: "AdaptCode — Learn by solving",
@@ -50,11 +60,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: PRELOAD_THEME }} />
       </head>
-      <body className={`${grotesk.variable} ${jetbrainsMono.variable} antialiased`}>
+      {/* Font variables live on <html>, not <body>: the --font / --display tokens
+          in globals.css are declared on :root, so the variables they reference
+          have to be defined there too or the whole font declaration is invalid
+          and the page silently falls back to the system font. */}
+      <body className="antialiased">
         <ThemeApplier />
         <SplashScreen />
         <AuthProvider>
@@ -66,7 +80,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 color: 'var(--tx)',
                 border: '1px solid var(--border-h)',
                 fontSize: 13,
-                fontFamily: 'var(--font-grotesk)',
+                fontFamily: 'var(--font)',
               },
             }}
           />

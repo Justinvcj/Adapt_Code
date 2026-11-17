@@ -45,8 +45,8 @@ export default function PotdCard() {
   const diffColor = potd?.difficulty_level === 'hard'
     ? 'var(--red, #ff6b6b)'
     : potd?.difficulty_level === 'medium'
-      ? 'var(--accent, #ffb867)'
-      : 'var(--solved, #2fe28a)';
+      ? 'var(--accent, #FFD36B)'
+      : 'var(--solved, #FFD36B)';
 
   return (
     <div
@@ -70,8 +70,8 @@ export default function PotdCard() {
           width: 48, height: 48, borderRadius: 12,
           display: 'grid', placeItems: 'center',
           background: potd?.is_solved
-            ? 'linear-gradient(135deg, #2fe28a, #27a644)'
-            : 'linear-gradient(135deg, #ffb867, #ffa116)',
+            ? 'var(--accent-grad)'
+            : 'var(--accent-grad)',
           boxShadow: potd?.is_solved
             ? '0 0 24px rgba(47,226,138,.25)'
             : '0 0 24px rgba(255,184,103,.3)',
@@ -107,7 +107,7 @@ export default function PotdCard() {
                 {potd.is_solved && (
                   <>
                     <span>·</span>
-                    <span style={{ color: 'var(--solved, #2fe28a)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ color: 'var(--solved, #FFD36B)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <Check size={11} /> Solved
                     </span>
                   </>

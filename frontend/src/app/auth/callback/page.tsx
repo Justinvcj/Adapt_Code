@@ -83,7 +83,7 @@ export default function AuthCallbackPage() {
     }}>
       <div style={{
         width: 40, height: 40, borderRadius: '50%',
-        background: 'linear-gradient(135deg, #ffb867, #ffa116)',
+        background: 'var(--accent-grad)',
         animation: 'auth-pulse 1.2s ease-in-out infinite',
       }} />
       <span>{message}</span>

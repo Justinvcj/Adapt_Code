@@ -21,7 +21,7 @@ export default function NotFound() {
         fontSize: 72,
         fontWeight: 700,
         lineHeight: 1,
-        background: 'linear-gradient(135deg, #ffb867, #ffa116)',
+        background: 'var(--accent-grad)',
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
       }}>404</div>

@@ -1,87 +1,42 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import Logo from "./Logo";
 
 /**
- * Full-screen splash that plays /public/logo-anim.mp4 once on mount, then fades out.
+ * Full-screen intro: the logo draws itself, then the page is revealed.
  *
- * Behaviour:
- * - Shows on every fresh page load (hard refresh, direct URL navigation).
- * - Hides as soon as the video ends, or after FALLBACK_MS if the video can't play
- *   (autoplay blocked, decode error, Safari power-save, etc.).
- * - Honors prefers-reduced-motion by skipping the splash entirely.
- * - Transparent passthrough once hidden so no layout cost.
+ * - Plays once per browser session. The inline script in app/layout.tsx sets
+ *   `data-intro="seen"` on <html> before paint when the session has already
+ *   seen it, and CSS hides the splash in that case (no flash on navigation).
+ * - Skipped entirely under prefers-reduced-motion (handled in CSS).
+ * - Pure SVG + CSS, so there is no video to download or fail to autoplay.
  */
-const FALLBACK_MS = 3000;
+const INTRO_MS = 2750;
+const KEY = "adaptcode.intro.v2";
 
 export default function SplashScreen() {
-  const [phase, setPhase] = useState<"playing" | "fading" | "done">("playing");
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [phase, setPhase] = useState<"playing" | "done" | "gone">("playing");
 
   useEffect(() => {
-    // Respect reduced motion.
-    if (typeof window !== "undefined") {
-      const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-      if (mql.matches) {
-        setPhase("done");
-        return;
-      }
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(KEY) === "1";
+      sessionStorage.setItem(KEY, "1");
+    } catch { /* storage unavailable: just play it */ }
+    if (seen || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPhase("gone");
+      return;
     }
-
-    const fallback = window.setTimeout(() => setPhase("fading"), FALLBACK_MS);
-
-    const v = videoRef.current;
-    if (v) {
-      const onEnded = () => setPhase("fading");
-      const onErr = () => setPhase("fading");
-      v.addEventListener("ended", onEnded);
-      v.addEventListener("error", onErr);
-      // Nudge play — some browsers need an explicit call after mount.
-      v.play().catch(() => setPhase("fading"));
-      return () => {
-        window.clearTimeout(fallback);
-        v.removeEventListener("ended", onEnded);
-        v.removeEventListener("error", onErr);
-      };
-    }
-    return () => window.clearTimeout(fallback);
+    const a = window.setTimeout(() => setPhase("done"), INTRO_MS);
+    const b = window.setTimeout(() => setPhase("gone"), INTRO_MS + 700);
+    return () => { window.clearTimeout(a); window.clearTimeout(b); };
   }, []);
 
-  useEffect(() => {
-    if (phase !== "fading") return;
-    const t = window.setTimeout(() => setPhase("done"), 450);
-    return () => window.clearTimeout(t);
-  }, [phase]);
-
-  if (phase === "done") return null;
+  if (phase === "gone") return null;
 
   return (
-    <div
-      aria-hidden
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        background: "#000",
-        overflow: "hidden",
-        opacity: phase === "fading" ? 0 : 1,
-        transition: "opacity 420ms cubic-bezier(.22,.61,.36,1)",
-        pointerEvents: phase === "fading" ? "none" : "auto",
-      }}
-    >
-      <video
-        ref={videoRef}
-        src="/logo-anim.mp4"
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        style={{
-          width: "100vw",
-          height: "100vh",
-          objectFit: "cover",
-          display: "block",
-        }}
-      />
+    <div aria-hidden className={`ac-splash ${phase === "done" ? "is-done" : ""}`}>
+      <Logo size={96} animate />
     </div>
   );
 }

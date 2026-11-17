@@ -78,15 +78,37 @@ export default function ConceptGraph() {
     return { from, to, why: noteFor(from, to) };
   })() : null;
 
-  const connectedToHover = (id: ConceptId) => {
-    if (!hoverNode) return false;
-    if (id === hoverNode) return true;
-    const c = CONCEPTS.find((x) => x.id === hoverNode)!;
-    if (c.prereqs.includes(id)) return true;
-    return CONCEPTS.find((x) => x.id === id)?.prereqs.includes(hoverNode);
-  };
-  const isEdgeActive = (from: ConceptId, to: ConceptId) =>
-    !!hoverNode && (from === hoverNode || to === hoverNode);
+  // Touching a topic lights its whole chain: every prerequisite above it and
+  // everything it eventually opens below it. `chain` maps each lit topic to
+  // its distance from the touched one, which drives the cascade delay in CSS
+  // (--d × 110ms), so the light visibly travels outward along the edges.
+  const chain = useMemo(() => {
+    const depth = new Map<ConceptId, number>();
+    if (!hoverNode) return depth;
+    depth.set(hoverNode, 0);
+    const walk = (next: (id: ConceptId) => ConceptId[]) => {
+      let layer: ConceptId[] = [hoverNode];
+      let d = 0;
+      while (layer.length) {
+        d += 1;
+        const nx: ConceptId[] = [];
+        for (const n of layer) {
+          for (const m of next(n)) {
+            if (!depth.has(m)) { depth.set(m, d); nx.push(m); }
+          }
+        }
+        layer = nx;
+      }
+    };
+    walk((id) => CONCEPTS.find((x) => x.id === id)?.prereqs ?? []);
+    walk((id) => CONCEPTS.filter((x) => x.prereqs.includes(id)).map((x) => x.id));
+    return depth;
+  }, [hoverNode]);
+
+  const connectedToHover = (id: ConceptId) => chain.has(id);
+  const isEdgeActive = (from: ConceptId, to: ConceptId) => chain.has(from) && chain.has(to);
+  const edgeDelay = (from: ConceptId, to: ConceptId) =>
+    Math.max(chain.get(from) ?? 0, chain.get(to) ?? 0);
 
   // Pan via middle-click or alt-drag anywhere in the canvas
   useEffect(() => {
@@ -161,17 +183,17 @@ export default function ConceptGraph() {
               <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" />
             </marker>
             <linearGradient id="cg-node-earned" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#2fe28a" /><stop offset="100%" stopColor="#27a644" />
+              <stop offset="0%" stopColor="#FFD36B" /><stop offset="100%" stopColor="#FFC53D" />
             </linearGradient>
             <linearGradient id="cg-node-progress" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="var(--accent-2, #ffb867)" /><stop offset="100%" stopColor="var(--accent)" />
+              <stop offset="0%" stopColor="#8E97FF" /><stop offset="100%" stopColor="#FFC53D" />
             </linearGradient>
             <linearGradient id="cg-node-weak" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#828fff" /><stop offset="100%" stopColor="#5e6ad2" />
+              <stop offset="0%" stopColor="#A7AEFF" /><stop offset="100%" stopColor="#8E97FF" />
             </linearGradient>
             <radialGradient id="cg-node-glass" cx="30%" cy="25%" r="80%">
-              <stop offset="0%" stopColor="rgba(255,255,255,.08)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,.02)" />
+              <stop offset="0%" stopColor="rgba(142,151,255,.30)" />
+              <stop offset="100%" stopColor="rgba(142,151,255,.05)" />
             </radialGradient>
             <filter id="cg-glow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="6" result="b" />
@@ -189,13 +211,19 @@ export default function ConceptGraph() {
               return (
                 <g key={key}>
                   <path
+                    className={`cg-edge ${active ? 'lit' : ''}`}
                     d={curvePath(a, b)}
                     stroke={active ? 'url(#cg-edge-h)' : 'url(#cg-edge)'}
                     strokeWidth={active ? 3 : 2}
                     fill="none"
                     opacity={hoverNode && !active ? 0.22 : 1}
                     markerEnd={`url(#${active ? 'cg-arrow-h' : 'cg-arrow'})`}
-                    style={{ transition: 'all .18s' }}
+                    style={{ ['--d' as string]: edgeDelay(e.from, e.to) }}
+                  />
+                  <path
+                    className={`cg-flow ${active ? 'lit' : ''}`}
+                    d={curvePath(a, b)}
+                    style={{ ['--d' as string]: edgeDelay(e.from, e.to) }}
                   />
                   {/* Wide invisible hit path for edge hover */}
                   <path
@@ -219,30 +247,32 @@ export default function ConceptGraph() {
               const m = MASTERY[c.id];
               const tier = conceptTier(c.id);
               const dim  = hoverNode && !connectedToHover(c.id);
-              const ringGrad = tier === 'locked'   ? 'rgba(255,255,255,.14)'
+              const ringGrad = tier === 'locked'   ? 'var(--border-t)'
                              : tier === 'done'     ? 'url(#cg-node-earned)'
                              : tier === 'progress' ? 'url(#cg-node-progress)'
                                                    : 'url(#cg-node-weak)';
-              const iconColor = tier === 'done'     ? '#2fe28a'
+              const iconColor = tier === 'done'     ? '#FFD36B'
                               : tier === 'progress' ? 'var(--accent)'
-                              : tier === 'weak'     ? '#828fff'
+                              : tier === 'weak'     ? '#A7AEFF'
                                                     : 'var(--tx-3)';
               const Icon = c.icon;
               return (
                 <g
                   key={c.id}
                   transform={`translate(${p.x}, ${p.y})`}
-                  className={`cg-node ${hoverNode === c.id ? 'is-hover' : ''}`}
+                  className={`cg-node ${hoverNode === c.id ? 'is-hover' : ''} ${chain.has(c.id) ? 'lit' : ''} ${!hoverNode && initialHover === c.id ? 'is-focus' : ''}`}
                   opacity={dim ? 0.3 : 1}
-                  style={{ transition: 'opacity .18s' }}
+                  style={{ transition: 'opacity .35s', ['--d' as string]: chain.get(c.id) ?? 0 }}
                   onMouseEnter={() => setHoverNode(c.id)}
                   onMouseLeave={() => setHoverNode(pinnedNode)}
                   onClick={() => setPinnedNode(c.id)}
                 >
-                  <circle r={NODE_R - 2} fill="url(#cg-node-glass)" stroke="rgba(255,255,255,.08)" strokeWidth="1" />
+                  <g className="cg-body">
+                  <circle className="cg-halo" r={NODE_R + 12} />
+                  <circle className="cg-glass" r={NODE_R - 2} fill="url(#cg-node-glass)" stroke="var(--border-h)" strokeWidth="1.5" />
                   <circle
                     r={NODE_R - 7} fill="none"
-                    stroke="rgba(255,255,255,.07)" strokeWidth="4"
+                    stroke="var(--bg-sf4)" strokeWidth="4"
                   />
                   <circle
                     r={NODE_R - 7} fill="none"
@@ -253,10 +283,10 @@ export default function ConceptGraph() {
                     style={{ transition: 'stroke-dasharray .4s' }}
                   />
                   {tier === 'done' && (
-                    <circle r={10} cx={NODE_R - 10} cy={-NODE_R + 10} fill="#27a644" />
+                    <circle r={10} cx={NODE_R - 10} cy={-NODE_R + 10} fill="#FFC53D" />
                   )}
                   {tier === 'done' && (
-                    <path d={`M ${NODE_R - 14} -${NODE_R - 10} l 3 3 l 7 -7`} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d={`M ${NODE_R - 14} -${NODE_R - 10} l 3 3 l 7 -7`} fill="none" stroke="#1B1400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   )}
                   <foreignObject x={-14} y={-14} width={28} height={28} style={{ pointerEvents: 'none' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28 }}>
@@ -265,13 +295,14 @@ export default function ConceptGraph() {
                         : <Lock size={20} color="var(--tx-3)" strokeWidth={1.75} />}
                     </div>
                   </foreignObject>
+                  </g>
                   <text
                     y={NODE_R + 20}
                     textAnchor="middle"
                     fill={tier === 'locked' ? 'var(--tx-3)' : 'var(--tx-1)'}
-                    fontSize="12"
+                    fontSize="13"
                     fontWeight="600"
-                    style={{ fontFamily: 'var(--font-grotesk)', pointerEvents: 'none' }}
+                    style={{ fontFamily: 'var(--font)', pointerEvents: 'none' }}
                   >
                     {c.title}
                   </text>
@@ -290,7 +321,7 @@ export default function ConceptGraph() {
         return (
           <aside className="cg-sidecard">
             <div className="cg-sidecard-head">
-              <div className="cg-sidecard-icon"><Icon size={22} color="#010102" strokeWidth={2} /></div>
+              <div className="cg-sidecard-icon"><Icon size={22} color="var(--on-accent)" strokeWidth={2} /></div>
               <div>
                 <div className="cg-sidecard-title">{c.title}</div>
                 <div className="cg-sidecard-sub">{c.short}</div>

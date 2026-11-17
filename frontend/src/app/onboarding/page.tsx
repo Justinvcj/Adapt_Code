@@ -85,7 +85,7 @@ export default function OnboardingPage() {
                 textAlign: 'left',
                 borderRadius: 10,
                 border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
-                background: on ? 'var(--accent-soft, rgba(255,161,22,.08))' : 'transparent',
+                background: on ? 'var(--accent-soft, rgba(var(--accent-rgb),.08))' : 'transparent',
                 color: 'var(--tx)',
                 cursor: 'pointer',
                 transition: 'border-color .15s, background .15s',
@@ -96,7 +96,7 @@ export default function OnboardingPage() {
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{c.title}</div>
                 <div style={{ fontSize: 11, color: 'var(--tx-2)' }}>{c.short}</div>
               </div>
-              {on && <CheckCircle2 size={16} style={{ color: 'var(--accent, #ffa116)' }} />}
+              {on && <CheckCircle2 size={16} style={{ color: 'var(--accent, #FFC53D)' }} />}
             </button>
           );
         })}

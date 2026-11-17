@@ -94,8 +94,8 @@ export default function ConceptMasteryPage() {
           <section className="cm-hero">
             <div className="cm-hero-icon">
               {m.unlocked
-                ? <Icon size={32} color="#010102" strokeWidth={1.75} />
-                : <Lock size={28} color="#010102" strokeWidth={1.75} />}
+                ? <Icon size={32} color="var(--on-accent)" strokeWidth={1.75} />
+                : <Lock size={28} color="var(--on-accent)" strokeWidth={1.75} />}
             </div>
             <div className="cm-hero-info">
               <h1>{concept.title}</h1>

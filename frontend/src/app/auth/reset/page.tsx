@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import Logo from '@/components/adapt/Logo';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -53,7 +54,7 @@ export default function ResetPasswordPage() {
     <div className="auth-pg">
       <header className="auth-top">
         <Link className="auth-brand" href="/">
-          <img src="/logo.webp" alt="" className="brand-mark" width={28} height={28} />
+          <Logo size={26} word={false} />
           <span>AdaptCode</span>
         </Link>
       </header>

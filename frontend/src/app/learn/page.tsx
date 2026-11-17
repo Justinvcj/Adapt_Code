@@ -78,8 +78,8 @@ export default function LearnDispatcher() {
       <style jsx>{`
         .learn-pulse {
           width: 48px; height: 48px; border-radius: 50%;
-          background: linear-gradient(135deg, #ffb867, #ffa116);
-          box-shadow: 0 0 40px rgba(255,161,22,.5);
+          background: var(--accent-grad);
+          box-shadow: 0 0 40px rgba(var(--accent-rgb),.5);
           animation: lp 1.2s ease-in-out infinite;
         }
         @keyframes lp {

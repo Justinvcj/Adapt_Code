@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import SearchModal from './SearchModal';
 import { useAuth } from '@/lib/auth-context';
 import { useProfile } from '@/lib/profile-store';
+import Logo from './Logo';
 
 export default function Navbar({ active, loggedIn = true }: { active?: string; loggedIn?: boolean }) {
   const [smOpen, setSmOpen] = useState(false);
@@ -44,9 +45,8 @@ export default function Navbar({ active, loggedIn = true }: { active?: string; l
     <>
       <nav className="nav">
         <div className="nav-inner">
-          <Link className="nav-brand" href="/">
-            <img src="/logo.webp" alt="" className="brand-mark" width={28} height={28} />
-            AdaptCode
+          <Link className="nav-brand" href="/" aria-label="AdaptCode home">
+            <Logo size={26} />
           </Link>
           <div className="nav-links">
             <Link className={`nav-link ${active === 'home' ? 'act' : ''}`} href="/">Home</Link>

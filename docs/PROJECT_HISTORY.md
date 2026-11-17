@@ -1186,6 +1186,97 @@ is tests that assert on stored data, generated API types so the two sides
 cannot drift, and a periodic audit by a session instructed to distrust the
 docs.
 
+### Nov 17 — the rebrand: "knowledge lights up" (design preview, then stage 1 in the app)
+
+The fourth visual identity this project has had, and the first one designed as
+a system before any app code was touched.
+
+**How it was done, and why that order.** The Nov 8 redesign (Phase G.1–G.3) was
+written straight into the app and reverted the same day. This time the design
+was built first as a standalone static prototype in `design/preview/`
+(`index.html`, `styles.css`, `app.js`, `logo.svg` — no build step, sample data,
+previewed with `python -m http.server`), reviewed, revised once on feedback,
+and only then applied. Two prototype commits: `e5500a8` (v1: light, Mist /
+Midnight / Jade, Hanken Grotesk) and `ac2c02d` (v2, the approved one). The v1
+feedback was specific — more motion, a more detailed logo, bring back the
+original concept graph's "touch a node and it lights up" behaviour, better
+layout, different palette and fonts — and v2 answers each point.
+
+**The system (v2).**
+- *Colour, budgeted 60 / 30 / 10.* 60 % Night `#0A0C18` (page and canvas);
+  30 % the indigo family — surfaces `#131629` / `#1B1F38` / `#252A49`, text
+  `#ECEDF7`, and Iris `#8E97FF` as the structural tint; 10 % Lumen `#FFC53D`.
+  The idea that organises it: **mastery is light.** Lumen is spent only on what
+  the learner has learned and on the one main action of a screen. Red
+  (`#FF7B72`) is reserved for errors. The previous accent, `#FFA116`, was
+  dropped deliberately — it is LeetCode's exact brand orange.
+- *Type.* Bricolage Grotesque for headings, Geist for text, Geist Mono for code.
+- *Logo.* An "A" drawn as a route through a graph: two legs, a crossbar that
+  lands on a lit junction node ("where you are"), and a dotted branch leaving
+  it ("the next problem"), with small knocked-out nodes at the feet and apex.
+  Below 26 px the fine detail is dropped so it survives as a favicon. The
+  intro animation is pure SVG + CSS (stroke-dashoffset draws, spring pops, a
+  halo burst, staggered wordmark letters) — it replaces the 3 s `logo-anim.mp4`
+  splash, so there is no video to download or fail to autoplay.
+- *Difficulty without traffic lights* in the prototype (one/two/three pips).
+  The app still colours difficulty; its three tokens were moved into the
+  palette (`--easy` neutral, `--med` Iris, `--hard` red) rather than removed.
+
+**Stage 1 applied to the real app (this commit).** The app is styled almost
+entirely through CSS custom properties in `frontend/src/app/globals.css`, so
+the foundation could be applied everywhere without touching page logic:
+- `globals.css` — the `dark` and `light` theme token blocks rewritten to the
+  new palette (`violet` kept, given the two new helper tokens); new tokens
+  `--on-accent`, `--glow`, `--display`, `--ease`, `--spring`; radii raised
+  (`--r` 4→8, `--r-md` 8→12, `--r-lg` 12→18); every hard-coded brand colour in
+  the file replaced by a token (45 × `rgba(255,161,22,…)` and 48 ×
+  `rgba(39,166,68,…)` became `rgba(var(--accent-rgb),…)`); text on accent
+  fills now uses `--on-accent` instead of a fixed near-black/white, which is
+  what lets the light theme use a darker gold with white text.
+- `components/adapt/Logo.tsx` rewritten; used in `Navbar.tsx`, `/login`,
+  `/auth/reset` and the problem workspace in place of `logo.webp`.
+- `components/adapt/SplashScreen.tsx` rewritten around the SVG intro; plays
+  once per browser session (`sessionStorage` key `adaptcode.intro.v2`, with the
+  pre-hydration script in `app/layout.tsx` setting `data-intro="seen"` so a
+  returning navigation never flashes the splash); skipped under
+  `prefers-reduced-motion`.
+- `components/adapt/ConceptGraph.tsx` — hovering or pinning a topic now lights
+  its **whole chain**: a breadth-first walk up through prerequisites and down
+  through everything it eventually opens, producing a depth per topic that is
+  passed to CSS as `--d` and used as a transition delay (`--d × 110 ms`), so
+  the light visibly travels outward; lit edges carry an animated dashed
+  "flow" stroke. Previously only direct neighbours highlighted.
+- `app/layout.tsx` — fonts switched; `src/app/favicon.ico` removed in favour of
+  `src/app/icon.svg`; `public/logo.svg` and `public/og-image.svg` redrawn.
+- Hard-coded old-brand colours replaced in eleven component/page files.
+
+**A bug this uncovered: the app had never been rendering its chosen font.**
+`globals.css` declares `--font: var(--font-grotesk), …` on `:root`, but
+`next/font` was attaching the `--font-grotesk` variable class to `<body>`. A
+custom property that references a variable undefined *at the element where it
+is declared* is invalid at computed-value time, so `--font` was empty, the
+`body { font: 14px/1.5 var(--font) }` shorthand was thrown out whole, and the
+page silently fell back to Tailwind's `ui-sans-serif` at the browser default
+16 px. Space Grotesk was being downloaded and never used, for the life of the
+Next.js rebuild. Found only because the new fonts were checked with
+`getComputedStyle` in the browser rather than by eye. Fix: the font variable
+classes now go on `<html>`. Side effect worth knowing: the body size
+declaration now actually applies; it was set to 15 px to stay close to what
+users were seeing.
+
+**Verification.** `tsc --noEmit` clean; `next build` succeeds (18 routes);
+`/login`, `/graph`, `/problems` and `/mastery` viewed in a local dev server
+(against offline fallback data, since no local backend was running) — palette,
+logo, fonts and graph lighting confirmed, computed font families checked.
+
+**Not done yet (stage 2).** The prototype's *layouts* — the sidebar app shell,
+the "Today" page with a route strip, the map inspector panel, the topic rail on
+Problems, the leaderboard podium, the profile banner, pip-based difficulty —
+are not applied. Those pages are wired to live endpoints and are being moved
+one at a time. The `violet` theme is unchanged and no longer matches the brand.
+`public/logo.webp` and `public/logo-anim.mp4` are now unreferenced and can be
+deleted.
+
 ### A note on the git history itself: a rebase/split happened
 
 At some point between two working sessions on this project, the branch holding the
@@ -1766,6 +1857,13 @@ directly.
     asserts on the data it stores; record "implemented", "verified on dev" and
     "verified in production" as three different states, and re-audit against
     the source at each milestone.
+12. **Check computed values, not appearances.** The app shipped for weeks with
+    its brand font silently not applied (a CSS variable defined on `<body>` but
+    consumed on `:root`), because the system-font fallback looked plausible.
+    One `getComputedStyle(document.body).fontFamily` would have caught it. The
+    same goes for colours, sizes and anything else with a quiet fallback — and
+    it is the visual cousin of lesson 5: a fallback that looks fine hides the
+    failure.
 
 ---
 
@@ -1781,9 +1879,9 @@ an algorithm or schema changes. Small bug fixes that don't change *how the syste
 works or why* don't need an entry here; this is the "why and how," not a changelog
 (git log already is the changelog).
 
-**Last narrated commit:** `7bb0a96` (2026-11-14), plus the docs-only roadmap
-commit made on top of it on 2026-11-16 — see "Nov 16 — a code-truth audit, and
-the forward roadmap (R0–R13)" above. If extending this
+**Last narrated commit:** `ac2c02d` (2026-11-17), plus the stage-1 rebrand
+commit made on top of it the same day — see "Nov 17 — the rebrand" above. If
+extending this
 document, run
 `git log --reverse --pretty=format:"%h|%ad|%s" --date=short` and diff against that
 hash to find everything not yet told.

@@ -16,7 +16,7 @@ export default function RouteLoading() {
     }}>
       <div style={{
         width: 36, height: 36, borderRadius: '50%',
-        background: 'linear-gradient(135deg, #ffb867, #ffa116)',
+        background: 'var(--accent-grad)',
         animation: 'adapt-pulse 1.1s ease-in-out infinite',
       }} />
       <span style={{ fontSize: 13 }}>Loading…</span>

@@ -1,5 +1,6 @@
 "use client";
 import Link from 'next/link';
+import Logo from '@/components/adapt/Logo';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -53,7 +54,7 @@ function LoginPageInner() {
       {/* minimal top strip — no learning nav for signed-out visitors */}
       <header className="auth-top">
         <Link className="auth-brand" href="/">
-          <img src="/logo.webp" alt="" className="brand-mark" width={28} height={28} />
+          <Logo size={26} word={false} />
           <span>AdaptCode</span>
         </Link>
         <button
@@ -67,15 +68,7 @@ function LoginPageInner() {
       <main className="auth-main">
         <aside className="auth-pitch">
           <div className="auth-pitch-hero">
-            <video
-              className="auth-pitch-video"
-              src="/logo-anim.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              aria-hidden="true"
-            />
+            <Logo size={132} word={false} animate />
           </div>
           <h1>Learn by solving. Earn by practising.</h1>
           <p>Twelve programming concepts, each one gated by what came before. Progress is a ring that fills; a concept isn&apos;t unlocked until the previous one is understood.</p>

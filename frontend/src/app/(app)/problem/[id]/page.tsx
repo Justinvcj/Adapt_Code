@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
+import Logo from '@/components/adapt/Logo';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -201,7 +202,7 @@ export default function ProblemPage() {
       <>
         <div className="prob-nav">
           <Link href="/" className="prob-nav-logo" style={{ marginRight: 4 }}>
-            <img src="/logo.webp" alt="" width={22} height={22} />
+            <Logo size={22} word={false} />
           </Link>
           <Link className="pn-item" href="/problems"><Menu /> Problem List</Link>
         </div>
@@ -323,7 +324,7 @@ export default function ProblemPage() {
     <>
       <div className="prob-nav">
         <Link href="/" className="prob-nav-logo" style={{ marginRight: 10 }}>
-          <img src="/logo.webp" alt="" width={22} height={22} />
+          <Logo size={22} word={false} />
         </Link>
         <Link className="pn-item" href="/mastery"><Menu size={14} /> All concepts</Link>
         {concept && (

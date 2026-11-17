@@ -27,9 +27,9 @@ export default function GlassNode({ Icon, title, mastery, solved, unlocked, onCl
   const pct    = Math.round(mastery * 100);
   const gradId = `gn-grad-${title.replace(/\s+/g, '-').toLowerCase()}`;
   const stops  = unlocked
-    ? mastery >= 0.75 ? ['#2fe28a', '#27a644']
-    : mastery >= 0.4  ? ['#ffb867', '#ffa116']
-    : ['#828fff', '#5e6ad2']
+    ? mastery >= 0.75 ? ['#FFD36B', '#FFC53D']
+    : mastery >= 0.4  ? ['#8E97FF', '#FFC53D']
+    : ['#A7AEFF', '#8E97FF']
     : ['rgba(255,255,255,.08)', 'rgba(255,255,255,.08)'];
 
   return (

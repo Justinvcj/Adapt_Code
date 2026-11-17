@@ -61,8 +61,8 @@ export default function MasteryPage() {
                 <svg viewBox="0 0 68 68" width="68" height="68">
                   <defs>
                     <linearGradient id="mo-g" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#ffb867" />
-                      <stop offset="100%" stopColor="#ffa116" />
+                      <stop offset="0%" stopColor="#FFD36B" />
+                      <stop offset="100%" stopColor="#FFC53D" />
                     </linearGradient>
                   </defs>
                   <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="6" />
