@@ -6,72 +6,102 @@
 <title>AdaptCode — design preview</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..700&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
-<body>
+<body data-shell="bare">
 
-<!-- icon set, drawn for this project on a 20px grid, 1.6 stroke -->
+<!-- shared paint + icon set, all drawn for this project on a 20px grid -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="i-search" viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2 17 17"/></symbol>
-  <symbol id="i-theme" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 3.5v13a6.5 6.5 0 0 0 0-13Z" fill="currentColor" stroke="none"/></symbol>
-  <symbol id="i-check" viewBox="0 0 20 20"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></symbol>
-  <symbol id="i-lock" viewBox="0 0 20 20"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></symbol>
-  <symbol id="i-chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
-  <symbol id="i-route" viewBox="0 0 20 20"><circle cx="5" cy="15" r="2"/><circle cx="15" cy="5" r="2"/><path d="M5 13V9a2 2 0 0 1 2-2h6"/></symbol>
-  <symbol id="i-play" viewBox="0 0 20 20"><path d="M7 4.5v11l8.5-5.5L7 4.5Z"/></symbol>
-  <symbol id="i-clock" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 6.5V10l2.5 1.5"/></symbol>
-  <symbol id="i-replay" viewBox="0 0 20 20"><path d="M4 10a6 6 0 1 0 2-4.5"/><path d="M4 4v3.5h3.5"/></symbol>
+  <defs>
+    <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8E97FF"/><stop offset="1" stop-color="#FFC53D"/></linearGradient>
+    <radialGradient id="n-glass" cx="32%" cy="24%" r="85%"><stop offset="0" stop-color="#8E97FF" stop-opacity=".30"/><stop offset="1" stop-color="#8E97FF" stop-opacity=".05"/></radialGradient>
+  </defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <symbol id="i-today" viewBox="0 0 20 20"><path d="m10 3 1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8Z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 20 20"><path d="M7.5 5.5H17M7.5 10H17M7.5 14.5H17M3.5 5.5h.01M3.5 10h.01M3.5 14.5h.01"/></symbol>
+    <symbol id="i-route" viewBox="0 0 20 20"><circle cx="5" cy="15" r="2"/><circle cx="15" cy="5" r="2"/><path d="M5 13V9a2 2 0 0 1 2-2h6"/></symbol>
+    <symbol id="i-podium" viewBox="0 0 20 20"><path d="M3 17v-6h4.5v6M7.5 17V5.5H12V17M12 17V8.5h5V17M2 17h16"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 20 20"><path d="M3.5 6H11M15 6h1.5M3.5 14H5M9 14h7.5"/><circle cx="13" cy="6" r="2"/><circle cx="7" cy="14" r="2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2 17 17"/></symbol>
+    <symbol id="i-theme" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 3.5v13a6.5 6.5 0 0 0 0-13Z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-check" viewBox="0 0 20 20"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 20 20"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
+    <symbol id="i-back" viewBox="0 0 20 20"><path d="m12 5-5 5 5 5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 20 20"><path d="M7 4.5v11l8.5-5.5L7 4.5Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 6.5V10l2.5 1.5"/></symbol>
+    <symbol id="i-replay" viewBox="0 0 20 20"><path d="M4 10a6 6 0 1 0 2-4.5"/><path d="M4 4v3.5h3.5"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 20 20"><path d="M10 17a5 5 0 0 0 5-5c0-3-2.4-4.6-3-8-2 1.5-3.4 3.4-3.4 5.4C7.6 9 7.2 8 7.2 8 6 9 5 10.500 5 12a5 5 0 0 0 5 5Z"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 20 20"><rect x="3.500" y="3.500" width="5" height="5" rx="1.2"/><rect x="11.500" y="3.500" width="5" height="5" rx="1.2"/><rect x="3.500" y="11.500" width="5" height="5" rx="1.2"/><rect x="11.500" y="11.500" width="5" height="5" rx="1.2"/></symbol>
+    <!-- one glyph per topic -->
+    <symbol id="c-syntax" viewBox="0 0 20 20"><path d="M7.500 3.500c-2 0-2 1.500-2 3s0 3.500-2 3.500c2 0 2 2 2 3.500s0 3 2 3M12.500 3.500c2 0 2 1.500 2 3s0 3.500 2 3.500c-2 0-2 2-2 3.500s0 3-2 3"/></symbol>
+    <symbol id="c-loops" viewBox="0 0 20 20"><path d="M15.800 8.200A6.200 6.200 0 1 0 16.200 11.500M16.200 3.800v4.400h-4.400"/></symbol>
+    <symbol id="c-arrays" viewBox="0 0 20 20"><path d="M2.500 7h15v6h-15zM7.500 7v6M12.500 7v6"/></symbol>
+    <symbol id="c-strings" viewBox="0 0 20 20"><path d="M4.500 13.500V10A3.500 3.500 0 0 1 8 6.500M11.500 13.500V10A3.500 3.500 0 0 1 15 6.500M4.500 13.500h3M11.500 13.500h3"/></symbol>
+    <symbol id="c-hash" viewBox="0 0 20 20"><path d="M8 3.500 6.500 16.500M13.500 3.500 12 16.500M4 7.500h13M3 12.500h13"/></symbol>
+    <symbol id="c-twoptr" viewBox="0 0 20 20"><path d="M2.500 10H8M5.500 7.500 8 10l-2.500 2.500M17.500 10H12M14.500 7.500 12 10l2.500 2.500"/></symbol>
+    <symbol id="c-bsearch" viewBox="0 0 20 20"><path d="M3 10h14M10 4.500v11M3 7.500v5M17 7.500v5"/></symbol>
+    <symbol id="c-window" viewBox="0 0 20 20"><rect x="6" y="5.500" width="8" height="9" rx="2"/><path d="M2.500 10h.01M8.500 10h.01M11.500 10h.01M17.500 10h.01"/></symbol>
+    <symbol id="c-recur" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2.500"/><rect x="6.500" y="6.500" width="7" height="7" rx="1.500"/><path d="M10 10h.01"/></symbol>
+    <symbol id="c-back" viewBox="0 0 20 20"><path d="M4.500 16.500V9a4 4 0 0 1 4-4h7.500M13 2.500 16 5l-3 2.500M4.500 12h5.500"/></symbol>
+    <symbol id="c-trees" viewBox="0 0 20 20"><circle cx="10" cy="4.500" r="2"/><circle cx="5" cy="15" r="2"/><circle cx="15" cy="15" r="2"/><path d="M9 6.300 6 13.200M11 6.300l3 6.900"/></symbol>
+    <symbol id="c-dp" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2.500"/><path d="M3 10h14M10 3v14"/><rect x="11.300" y="11.300" width="4.400" height="4.400" rx=".8" fill="currentColor" stroke="none"/></symbol>
+  </g>
 </svg>
 
 <div class="splash" id="splash" aria-hidden="true"><span data-logo="word" class="is-drawing"></span></div>
 
-<header class="bar" id="bar">
+<aside class="side" id="side">
   <a href="#today" data-logo="word" aria-label="AdaptCode home"></a>
-  <nav class="bar-nav" aria-label="Main">
-    <a href="#today">Today</a>
-    <a href="#problems">Problems</a>
-    <a href="#mastery">Mastery</a>
-    <a href="#leaderboard">Leaderboard</a>
+  <nav class="side-nav" aria-label="Main">
+    <span class="side-pill" id="side-pill"></span>
+    <a href="#today"><svg class="icon"><use href="#i-today"/></svg>Today</a>
+    <a href="#problems"><svg class="icon"><use href="#i-list"/></svg>Problems</a>
+    <a href="#mastery"><svg class="icon"><use href="#i-route"/></svg>Mastery</a>
+    <a href="#leaderboard"><svg class="icon"><use href="#i-podium"/></svg>Leaderboard</a>
   </nav>
-  <div class="bar-end">
-    <button class="icon-btn hide-sm" aria-label="Search"><svg class="icon"><use href="#i-search"/></svg></button>
-    <button class="icon-btn" data-theme-toggle aria-label="Switch light or dark"><svg class="icon"><use href="#i-theme"/></svg></button>
-    <a href="#profile" class="avatar" aria-label="Your profile">JV</a>
+  <div class="side-foot">
+    <div class="streak">
+      <div style="display:flex;align-items:center;gap:8px;font-weight:600"><svg class="icon" style="color:var(--accent)"><use href="#i-flame"/></svg>6 day streak</div>
+      <div class="streak-days"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px">
+      <a class="me-row" href="#profile" style="flex:1"><span class="avatar">JV</span><span style="font-weight:560">Justin V</span></a>
+      <a class="icon-btn" href="#settings" aria-label="Settings"><svg class="icon"><use href="#i-sliders"/></svg></a>
+      <button class="icon-btn" data-theme-toggle aria-label="Switch light or dark"><svg class="icon"><use href="#i-theme"/></svg></button>
+    </div>
   </div>
-</header>
+</aside>
 
 <main>
 
 <!-- ================= LANDING ================= -->
 <section class="screen" data-screen="landing">
   <div class="wrap">
-    <div class="land-bar">
-      <span data-logo="word"></span>
+    <div class="land-bar" data-rise>
+      <a href="#landing" data-logo="word"></a>
       <nav>
-        <a class="btn btn-plain" href="#login" style="color:var(--ink)">Sign in</a>
+        <button class="icon-btn" data-theme-toggle aria-label="Switch light or dark"><svg class="icon"><use href="#i-theme"/></svg></button>
+        <a class="btn btn-quiet btn-sm" href="#login">Sign in</a>
         <a class="btn btn-ink btn-sm" href="#onboarding">Start free</a>
       </nav>
     </div>
 
     <div class="hero">
       <div>
-        <h1 class="t-display">Practice the problem you are ready for.</h1>
-        <p class="t-sub measure">AdaptCode keeps a running estimate of what you know in twelve areas of data structures and algorithms, and picks your next problem from it. Solve one on the right and watch the plan change.</p>
-        <div class="hero-cta">
+        <h1 class="t-display" data-rise style="--i:1">Practice the problem you are ready for.</h1>
+        <p class="t-sub measure" data-rise style="--i:2">AdaptCode keeps a running estimate of what you know across twelve areas of data structures and algorithms, and picks your next problem from it. Touch a topic to see what it leads to.</p>
+        <div class="hero-cta" data-rise style="--i:3">
           <a class="btn btn-accent btn-lg" href="#onboarding">Find my starting point</a>
-          <span class="t-small">Free. Takes about eight minutes.</span>
+          <span class="t-small">Free. About eight minutes.</span>
         </div>
       </div>
-
-      <div class="stage hero-demo" id="demo">
-        <svg class="graph" id="demo-graph" viewBox="0 0 760 540" role="img" aria-label="Concept map showing which topics are mastered, in progress and locked"></svg>
+      <div class="stage hero-demo" data-rise style="--i:2">
+        <svg class="map" id="demo-map" viewBox="0 0 1200 660" role="img" aria-label="Topic map. Lit topics are learned, dashed ones are locked."></svg>
         <div class="demo-foot">
-          <div class="demo-next">
-            <span class="t-small" id="demo-why">Next, because Two pointers is your weakest open topic</span>
-            <strong id="demo-title">Closest pair in a sorted shelf</strong>
-          </div>
+          <div class="demo-next"><span class="t-small" id="demo-why"></span><strong id="demo-title"></strong></div>
           <button class="btn btn-accent" id="demo-solve">Solve it</button>
         </div>
       </div>
@@ -80,28 +110,43 @@
 
   <div class="band">
     <div class="wrap">
-      <h2 class="t-title measure">One loop, repeated every time you submit.</h2>
+      <h2 class="t-title measure" data-reveal>One loop, repeated every time you submit.</h2>
       <ol class="how">
-        <li><h3>Your code runs for real</h3><p>Every submission is executed against hidden tests in an isolated sandbox. Python, JavaScript, Java and C++.</p></li>
-        <li><h3>The estimate moves</h3><p>A clean solve on a hard problem counts for more than a hinted solve on an easy one. A topic you have not touched in weeks slowly comes back for review.</p></li>
-        <li><h3>The next problem is chosen</h3><p>Harder, the same, easier, or a step back to a missing prerequisite. You always see the reason.</p></li>
+        <li data-reveal style="--i:0">
+          <div class="how-art"><div class="art-tests"><div>test 1<b>passed</b></div><div>test 2<b>passed</b></div><div>test 3<b>passed</b></div></div></div>
+          <h3>Your code runs for real</h3><p>Every submission is executed against hidden tests in an isolated sandbox. Python, JavaScript, Java and C++.</p>
+        </li>
+        <li data-reveal style="--i:1">
+          <div class="how-art"><div style="width:100%;display:grid;gap:10px"><div style="display:flex;justify-content:space-between;font-size:13.5px"><b>Two pointers</b><span class="t-num">41% to 58%</span></div><div class="meter"><span style="--v:.58"></span></div><span class="t-small">Solved without hints</span></div></div>
+          <h3>The estimate moves</h3><p>A clean solve on a hard problem counts for more than a hinted solve on an easy one. Topics you leave alone come back for review.</p>
+        </li>
+        <li data-reveal style="--i:2">
+          <div class="how-art"><div class="art-next"><div><span class="pips"><i class="on"></i><i></i><i></i></span>Something easier</div><div class="pick"><span class="pips"><i class="on"></i><i class="on"></i><i></i></span>Step up to medium</div><div><svg class="icon" style="width:14px;height:14px"><use href="#i-back"/></svg>Back to a prerequisite</div></div></div>
+          <h3>The next problem is chosen</h3><p>Harder, the same, easier, or a step back to something you are missing. You always see the reason.</p>
+        </li>
       </ol>
     </div>
   </div>
 
   <div class="band">
     <div class="wrap proof">
-      <p class="quote">A topic counts as learned after three different problems, one of them above easy. Not before.</p>
-      <div class="group">
-        <div class="row"><div class="row-main"><div class="row-title">Hints never give the answer</div><div class="row-meta">Three levels, and each one tells you what it costs before you open it.</div></div></div>
+      <p class="quote" data-reveal>A topic counts as learned after three different problems, one of them above easy. Not before.</p>
+      <div class="card" data-reveal style="--i:1">
+        <div class="row"><div class="row-main"><div class="row-title">Hints never give the answer</div><div class="row-meta">Three levels, each showing what it costs before you open it.</div></div></div>
         <div class="row"><div class="row-main"><div class="row-title">When your code fails, you get a diagnosis</div><div class="row-meta">What went wrong, why the approach breaks, and what to review.</div></div></div>
         <div class="row"><div class="row-main"><div class="row-title">Your data is yours</div><div class="row-meta">Export everything or delete your account from Settings.</div></div></div>
       </div>
     </div>
   </div>
 
+  <div class="band closer">
+    <div data-reveal><span data-logo="mark" class="is-live"></span></div>
+    <h2 class="t-title" data-reveal style="--i:1">Find out where you really are.</h2>
+    <div data-reveal style="--i:2"><a class="btn btn-accent btn-lg" href="#onboarding">Find my starting point</a></div>
+  </div>
+
   <div class="wrap foot">
-    <span data-logo="word" style="--logo:20px"></span>
+    <span data-logo="word" style="--logo:22px"></span>
     <nav><a href="#brand">Brand</a><a href="#">Privacy</a><a href="#">Terms</a></nav>
   </div>
 </section>
@@ -109,22 +154,21 @@
 <!-- ================= TODAY ================= -->
 <section class="screen" data-screen="today">
   <div class="wrap page">
-    <div class="page-head">
+    <div class="page-head" data-rise>
       <div><h1 class="t-title">Good evening, Justin</h1><p class="t-sub">Two problems left in today's plan.</p></div>
     </div>
-
-    <div class="split">
-      <div class="stack">
-        <div class="stage">
+    <div class="grid">
+      <div class="stage c-8" data-rise style="--i:1">
+        <div class="stage-body">
           <span class="t-small">Next up</span>
-          <h2 class="t-title" style="margin-top:6px">Closest pair in a sorted shelf</h2>
+          <h2 class="t-title" style="margin-top:8px">Closest pair in a sorted shelf</h2>
           <div class="stage-row">
-            <span class="tag">Two pointers</span>
+            <span class="tag"><svg class="icon" style="width:14px;height:14px"><use href="#c-twoptr"/></svg>Two pointers</span>
             <span class="pips" aria-label="Medium"><i class="on"></i><i class="on"></i><i></i></span>
             <span class="t-small">About 20 minutes</span>
           </div>
           <div class="stage-why">
-            <span class="t-small">Why this one</span>
+            <svg class="icon"><use href="#i-route"/></svg>
             <p>Two pointers is at 41%, your weakest open topic, and Sliding window stays locked until it is learned. You solved the last easy one without hints, so this steps up to medium.</p>
           </div>
           <div class="stage-actions">
@@ -132,31 +176,41 @@
             <button class="btn btn-quiet btn-lg">Give me something easier</button>
           </div>
         </div>
-
-        <div class="group">
-          <div class="group-head"><h3>Worth another look</h3><span class="t-small">Topics fading or problems you left</span></div>
-          <a class="row" href="#work"><span class="check tried"></span><div class="row-main"><div class="row-title">Ticket queue window</div><div class="row-meta">Failed twice last week on the empty-queue case</div></div><div class="row-end"><span class="tag">Hashing</span><svg class="icon"><use href="#i-chev"/></svg></div></a>
-          <a class="row" href="#work"><svg class="icon" style="color:var(--ink-3)"><use href="#i-clock"/></svg><div class="row-main"><div class="row-title">Strings</div><div class="row-meta">Last practised 23 days ago, estimate has drifted from 81% to 72%</div></div><div class="row-end"><svg class="icon"><use href="#i-chev"/></svg></div></a>
+      </div>
+      <div class="stack c-4">
+        <div class="card" data-rise style="--i:2">
+          <div class="stats">
+            <div><span class="big-num" data-count="3">0</span><span class="t-small">of 12 topics learned</span></div>
+            <div><span class="big-num" data-count="47">0</span><span class="t-small">problems solved</span></div>
+            <div><span class="big-num" data-count="68" data-suffix="%">0</span><span class="t-small">first-try rate</span></div>
+          </div>
+        </div>
+        <div class="card" data-rise style="--i:3">
+          <div class="card-head"><h3>This week</h3><span class="t-small">11 submissions</span></div>
+          <div class="week"><b style="--v:.4;--i:0"></b><b style="--v:.75;--i:1"></b><b style="--v:.2;--i:2"></b><b style="--v:.04;--i:3"></b><b style="--v:.55;--i:4"></b><b style="--v:1;--i:5"></b><b style="--v:.3;--i:6"></b></div>
+          <div class="week-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
         </div>
       </div>
 
-      <div class="stack">
-        <div class="group">
-          <div class="stat-line">
-            <div><strong class="t-num">3</strong><span class="t-small">of 12 topics learned</span></div>
-            <div><strong class="t-num">47</strong><span class="t-small">problems solved</span></div>
-            <div><strong class="t-num">6</strong><span class="t-small">day streak</span></div>
-          </div>
+      <div class="card c-12" data-rise style="--i:4">
+        <div class="card-head"><h3>Your route through Two pointers</h3><span class="t-small">One more medium and Sliding window opens</span></div>
+        <div class="route">
+          <div class="stop done"><i></i><b>Merge two guest lists</b><span>Solved, no hints</span></div>
+          <div class="stop done"><i></i><b>Trim the matching ends</b><span>Solved on the second try</span></div>
+          <div class="stop now"><i></i><b>Closest pair in a sorted shelf</b><span>Up next</span></div>
+          <div class="stop later"><i></i><b>One more medium</b><span>Chosen after this one</span></div>
+          <div class="stop later"><i></i><b>Sliding window opens</b><span>At 85% with three solved</span></div>
         </div>
-        <div class="group">
-          <div class="group-head"><h3>This week</h3><span class="t-small">11 submissions</span></div>
-          <div class="week">
-            <div><b style="--v:.4"></b>M</div><div><b style="--v:.75"></b>T</div><div><b style="--v:.2"></b>W</div><div><b style="--v:0"></b>T</div><div><b style="--v:.55"></b>F</div><div><b style="--v:1"></b>S</div><div><b style="--v:.3"></b>S</div>
-          </div>
-        </div>
-        <div class="group" id="today-topics">
-          <div class="group-head"><h3>Open topics</h3><a class="btn btn-plain" href="#mastery">See all</a></div>
-        </div>
+      </div>
+
+      <div class="card c-7" data-rise style="--i:5">
+        <div class="card-head"><h3>Worth another look</h3><span class="t-small">Fading topics and problems you left</span></div>
+        <a class="row" href="#work"><span class="check tried"></span><div class="row-main"><div class="row-title">Ticket queue window</div><div class="row-meta">Failed twice last week on the empty-queue case</div></div><div class="row-end"><span class="tag">Hashing</span><svg class="icon"><use href="#i-chev"/></svg></div></a>
+        <a class="row" href="#work"><span class="check tried"></span><div class="row-main"><div class="row-title">Flatten the nested boxes</div><div class="row-meta">Timed out on deep nesting</div></div><div class="row-end"><span class="tag">Recursion</span><svg class="icon"><use href="#i-chev"/></svg></div></a>
+        <a class="row" href="#mastery"><svg class="icon" style="color:var(--tint)"><use href="#i-clock"/></svg><div class="row-main"><div class="row-title">Strings</div><div class="row-meta">Last practised 23 days ago, drifted from 81% to 72%</div></div><div class="row-end"><svg class="icon"><use href="#i-chev"/></svg></div></a>
+      </div>
+      <div class="card c-5" id="today-topics" data-rise style="--i:6">
+        <div class="card-head"><h3>Open topics</h3><a class="btn-plain" href="#mastery">See the map</a></div>
       </div>
     </div>
   </div>
@@ -165,23 +219,25 @@
 <!-- ================= PROBLEMS ================= -->
 <section class="screen" data-screen="problems">
   <div class="wrap page">
-    <div class="page-head">
+    <div class="page-head" data-rise>
       <div><h1 class="t-title">Problems</h1><p class="t-sub">120 problems across twelve topics.</p></div>
       <a class="btn btn-accent" href="#work">Pick for me</a>
     </div>
-    <div class="toolbar">
-      <div class="search"><svg class="icon"><use href="#i-search"/></svg><input class="input" id="p-search" placeholder="Search by title" aria-label="Search problems"></div>
-      <select class="select" id="p-topic" aria-label="Topic"><option value="">All topics</option></select>
-      <div class="seg" id="p-diff" role="group" aria-label="Difficulty">
-        <button aria-pressed="true" data-d="0">Any</button><button aria-pressed="false" data-d="1">Easy</button><button aria-pressed="false" data-d="2">Medium</button><button aria-pressed="false" data-d="3">Hard</button>
+    <div class="lib">
+      <div class="card topics" id="p-topics" data-rise style="--i:1"></div>
+      <div data-rise style="--i:2">
+        <div class="toolbar">
+          <div class="search"><svg class="icon"><use href="#i-search"/></svg><input class="input" id="p-search" placeholder="Search by title" aria-label="Search problems"></div>
+          <div class="seg" id="p-diff" role="group" aria-label="Difficulty"><button aria-pressed="true" data-d="0">Any</button><button aria-pressed="false" data-d="1">Easy</button><button aria-pressed="false" data-d="2">Medium</button><button aria-pressed="false" data-d="3">Hard</button></div>
+        </div>
+        <div class="card">
+          <table class="table">
+            <thead><tr><th class="c-status"></th><th>Title</th><th class="hide-sm">Topic</th><th>Difficulty</th><th class="c-num hide-sm">Solved by</th></tr></thead>
+            <tbody id="p-body"></tbody>
+          </table>
+          <div class="pad t-small" id="p-empty" hidden>No problems match. Clear the search or pick another topic.</div>
+        </div>
       </div>
-    </div>
-    <div class="group">
-      <table class="table">
-        <thead><tr><th class="c-status"></th><th>Title</th><th class="hide-sm">Topic</th><th>Difficulty</th><th class="c-num hide-sm">Solved by</th></tr></thead>
-        <tbody id="p-body"></tbody>
-      </table>
-      <div class="pad t-small" id="p-empty" hidden>No problems match. Clear the search or pick another topic.</div>
     </div>
   </div>
 </section>
@@ -190,32 +246,34 @@
 <section class="screen" data-screen="work">
   <div class="work">
     <div class="work-left">
+      <div class="work-top"><a href="#problems" style="display:inline-flex;align-items:center;gap:6px"><svg class="icon" style="width:15px;height:15px"><use href="#i-back"/></svg>Problems</a><span class="timer"><svg class="icon" style="width:15px;height:15px"><use href="#i-clock"/></svg><span id="w-timer">06:12</span></span></div>
       <div class="tabs" role="tablist" id="w-tabs">
         <button role="tab" aria-selected="true" data-tab="desc">Description</button>
         <button role="tab" aria-selected="false" data-tab="hints">Hints</button>
         <button role="tab" aria-selected="false" data-tab="subs">Submissions</button>
+        <span class="tab-line" id="w-line"></span>
       </div>
       <div class="work-body">
         <div data-pane="desc">
           <h1>Closest pair in a sorted shelf</h1>
-          <div class="work-meta"><span class="tag">Two pointers</span><span class="pips" aria-label="Medium"><i class="on"></i><i class="on"></i><i></i></span><span class="t-small">Solved by 62%</span></div>
+          <div class="work-meta"><span class="tag"><svg class="icon" style="width:14px;height:14px"><use href="#c-twoptr"/></svg>Two pointers</span><span class="pips" aria-label="Medium"><i class="on"></i><i class="on"></i><i></i></span><span class="t-small">Solved by 62%</span></div>
           <div class="why"><svg class="icon"><use href="#i-route"/></svg><span>Chosen because Two pointers is your weakest open topic, and you solved the last easy one unaided.</span></div>
           <div class="prose">
             <p>A warehouse shelf holds boxes in increasing order of weight. Given the list <code>weights</code> and a number <code>limit</code>, return the positions of the two boxes whose combined weight is as close as possible to <code>limit</code> without going over.</p>
             <p>Positions start at 0. If no pair fits, return an empty list. Exactly one best pair exists in every test.</p>
           </div>
-          <div class="example"><b>Input</b>weights = [2, 5, 8, 12, 17], limit = 21<br><b>Output</b>[1, 3]<br><b>Because</b>5 + 12 = 17 is beaten by 2 + 17 = 19, and 8 + 12 = 20 beats both.</div>
+          <div class="example"><b>Input</b>weights = [2, 5, 8, 12, 17], limit = 21<br><b>Output</b>[2, 3]<br><b>Because</b>8 + 12 = 20 is the closest sum that stays under 21.</div>
           <div class="example"><b>Input</b>weights = [9, 14], limit = 10<br><b>Output</b>[]</div>
           <p class="t-small">2 ≤ weights.length ≤ 100 000. Aim for a single pass.</p>
         </div>
         <div data-pane="hints" hidden>
-          <p class="t-sub" style="margin-bottom:18px">Open only what you need. Each level tells you how much of this solve will count.</p>
+          <p class="t-sub" style="margin-bottom:18px">Open only what you need. Each level shows how much of this solve will count.</p>
           <details class="hint"><summary>Nudge <span class="tag accent">Counts in full</span></summary><p>The list is already sorted. What does that let you say about every pair that includes the heaviest box?</p></details>
           <details class="hint"><summary>Approach <span class="tag">Counts 70%</span></summary><p>Keep one marker at each end. When the sum is over the limit, only one of the two markers can sensibly move.</p></details>
           <details class="hint"><summary>Almost the answer <span class="tag">Counts 40%</span></summary><p>Move the right marker left when the sum is too big; otherwise record the pair if it is the best so far and move the left marker right.</p></details>
         </div>
         <div data-pane="subs" hidden>
-          <div class="group">
+          <div class="card">
             <div class="row"><span class="check tried"></span><div class="row-main"><div class="row-title">Wrong answer</div><div class="row-meta">4 of 12 tests, Python, today 21:14</div></div></div>
             <div class="row"><span class="check tried"></span><div class="row-main"><div class="row-title">Time limit exceeded</div><div class="row-meta">9 of 12 tests, Python, today 21:06</div></div></div>
           </div>
@@ -231,7 +289,7 @@
           <button class="btn btn-accent btn-sm" id="w-submit">Submit</button>
         </div>
       </div>
-      <div class="code" aria-label="Code editor">
+      <div class="code" id="w-code" aria-label="Code editor">
 <div><span class="tk-k">class</span> <span class="tk-f">Solution</span>:</div>
 <div>    <span class="tk-k">def</span> <span class="tk-f">closest_pair</span>(self, weights, limit):</div>
 <div>        <span class="tk-c"># one marker at each end of the sorted shelf</span></div>
@@ -247,14 +305,12 @@
 <div>                lo += <span class="tk-n">1</span></div>
 <div>        <span class="tk-k">return</span> best</div>
       </div>
-      <div class="console" id="w-console">
-        <div class="console-head"><span class="verdict" id="w-verdict"><i></i>Run your code to see the example tests</span><span class="t-small" id="w-time" style="color:var(--panel-ink-2)"></span></div>
+      <div class="console">
+        <div class="console-head"><span class="verdict" id="w-verdict"><i></i><span>Run your code to try the example tests</span></span><span class="t-small t-num" id="w-time"></span></div>
         <div class="cases" id="w-cases"></div>
         <div class="gain" id="w-gain">
-          <div style="display:flex;justify-content:space-between;gap:12px"><b>Two pointers</b><span class="t-num" id="w-gain-n">41% to 58%</span></div>
-          <div class="meter"><span id="w-gain-bar" style="--v:.41"></span></div>
-          <p style="margin-top:10px;color:var(--panel-ink-2);font-size:13px">Solved without hints on the third try. One more medium problem and Sliding window opens.</p>
-          <a class="btn btn-accent btn-sm" href="#today" style="margin-top:12px">Next problem</a>
+          <div class="ring-wrap"><svg class="ring" id="w-ring" width="76" height="76" viewBox="0 0 44 44" style="--v:.41"><circle class="track" cx="22" cy="22" r="18" fill="none" stroke-width="4"/><circle class="fill" cx="22" cy="22" r="18" fill="none" stroke-width="4" pathLength="100"/></svg><b id="w-ring-n">41%</b></div>
+          <div><b style="font:650 17px var(--display)">Two pointers moved up</b><p>Solved without hints on the third try. One more medium problem and Sliding window opens.</p><a class="btn btn-accent btn-sm" href="#today">Next problem</a></div>
         </div>
       </div>
     </div>
@@ -264,58 +320,63 @@
 <!-- ================= MASTERY ================= -->
 <section class="screen" data-screen="mastery">
   <div class="wrap page">
-    <div class="page-head">
-      <div><h1 class="t-title">Mastery</h1><p class="t-sub">Each topic opens when the ones before it are learned.</p></div>
-      <div class="seg" id="m-view" role="group" aria-label="View"><button aria-pressed="true" data-v="map">Map</button><button aria-pressed="false" data-v="list">List</button></div>
+    <div class="page-head" data-rise>
+      <div><h1 class="t-title">Mastery</h1><p class="t-sub">Touch a topic to light up what it needs and what it opens.</p></div>
     </div>
-    <div class="group pad" id="m-map"><svg class="graph" id="m-graph" viewBox="0 0 760 540" role="img" aria-label="Concept map"></svg></div>
-    <div class="group" id="m-list" hidden></div>
-    <p class="t-small" style="margin-top:14px">A topic is learned at 85% with at least three different problems solved, one of them above easy.</p>
+    <div class="card map-card" data-rise style="--i:1">
+      <div class="map-layout">
+        <div class="map-canvas">
+          <div class="legend"><span><i class="l-done"></i>Learned</span><span><i class="l-open"></i>In progress</span><span><i class="l-lock"></i>Locked</span></div>
+          <svg class="map" id="m-map" viewBox="0 0 1200 660" role="img" aria-label="Topic map"></svg>
+        </div>
+        <aside class="inspect" id="inspect" aria-live="polite"></aside>
+      </div>
+    </div>
+    <p class="t-small" style="margin-top:16px" data-rise style="--i:2">A topic is learned at 85% with at least three different problems solved, one of them above easy.</p>
   </div>
 </section>
 
 <!-- ================= LEADERBOARD ================= -->
 <section class="screen" data-screen="leaderboard">
-  <div class="wrap page" style="max-width:760px">
-    <div class="page-head">
+  <div class="wrap page" style="max-width:820px">
+    <div class="page-head" data-rise>
       <div><h1 class="t-title">Leaderboard</h1><p class="t-sub">Only people who chose to appear are listed.</p></div>
       <div class="seg" role="group" aria-label="Period"><button aria-pressed="true">This week</button><button aria-pressed="false">All time</button></div>
     </div>
-    <div class="group" id="lb"></div>
+    <div class="podium" id="podium"></div>
+    <div class="card" id="lb" data-rise style="--i:4"></div>
   </div>
 </section>
 
 <!-- ================= PROFILE ================= -->
 <section class="screen" data-screen="profile">
   <div class="wrap page">
-    <div class="profile-head">
-      <span class="avatar lg">JV</span>
-      <div style="flex:1"><h1 class="t-title">Justin V</h1><p class="t-sub">Joined August 2026</p></div>
-      <a class="btn btn-quiet" href="#settings">Settings</a>
-    </div>
-    <div class="split">
-      <div class="stack">
-        <div class="group">
-          <div class="group-head"><h3>Activity</h3><span class="t-small">Last 26 weeks</span></div>
-          <div class="heat" id="heat"></div>
+    <div class="stage" data-rise style="margin-bottom:20px">
+      <div class="banner">
+        <span class="avatar lg">JV</span>
+        <div style="flex:1;min-width:200px"><h1 class="t-title">Justin V</h1><p class="t-sub">Joined August 2026</p></div>
+        <div style="display:flex;gap:34px;flex-wrap:wrap">
+          <div><span class="big-num" data-count="47">0</span><div class="t-small">solved</div></div>
+          <div><span class="big-num" data-count="3">0</span><div class="t-small">topics learned</div></div>
+          <div><span class="big-num" data-count="6">0</span><div class="t-small">day streak</div></div>
         </div>
-        <div class="group">
-          <div class="group-head"><h3>Recent submissions</h3></div>
+        <a class="btn btn-quiet" href="#settings">Settings</a>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="stack c-7">
+        <div class="card" data-rise style="--i:1"><div class="card-head"><h3>Activity</h3><span class="t-small">Last 26 weeks</span></div><div class="heat" id="heat"></div></div>
+        <div class="card" data-rise style="--i:2">
+          <div class="card-head"><h3>Recent submissions</h3></div>
           <a class="row" href="#work"><span class="check"><svg class="icon"><use href="#i-check"/></svg></span><div class="row-main"><div class="row-title">Mirror tree check</div><div class="row-meta">Accepted, Python, 2 hours ago</div></div></a>
           <a class="row" href="#work"><span class="check tried"></span><div class="row-main"><div class="row-title">Ticket queue window</div><div class="row-meta">Wrong answer, Python, yesterday</div></div></a>
           <a class="row" href="#work"><span class="check"><svg class="icon"><use href="#i-check"/></svg></span><div class="row-main"><div class="row-title">Rotate the playlist</div><div class="row-meta">Accepted, JavaScript, 2 days ago</div></div></a>
         </div>
       </div>
-      <div class="stack">
-        <div class="group">
-          <div class="stat-line">
-            <div><strong class="t-num">47</strong><span class="t-small">solved</span></div>
-            <div><strong class="t-num">68%</strong><span class="t-small">first-try rate</span></div>
-            <div><strong class="t-num">6</strong><span class="t-small">day streak</span></div>
-          </div>
-        </div>
-        <div class="group">
-          <div class="group-head"><h3>By difficulty</h3></div>
+      <div class="stack c-5">
+        <div class="card" data-rise style="--i:2"><div class="card-head"><h3>Topics</h3><a class="btn-plain" href="#mastery">See the map</a></div><div class="rings" id="p-rings"></div></div>
+        <div class="card" data-rise style="--i:3">
+          <div class="card-head"><h3>By difficulty</h3></div>
           <div class="row"><span class="pips"><i class="on"></i><i></i><i></i></span><div class="row-main">Easy</div><div class="row-end t-num">29 of 48</div></div>
           <div class="row"><span class="pips"><i class="on"></i><i class="on"></i><i></i></span><div class="row-main">Medium</div><div class="row-end t-num">16 of 52</div></div>
           <div class="row"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i></span><div class="row-main">Hard</div><div class="row-end t-num">2 of 20</div></div>
@@ -330,33 +391,33 @@
   <div class="auth">
     <div class="auth-form">
       <form class="auth-card" onsubmit="location.hash='today';return false">
-        <span data-logo="word"></span>
-        <div><h1 class="t-title">Sign in</h1><p class="t-sub">Pick up where you left off.</p></div>
-        <button type="button" class="btn btn-quiet btn-lg btn-block">Continue with Google</button>
-        <div class="rule">or</div>
-        <div class="field"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="email" placeholder="you@example.com"></div>
-        <div class="field"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password"></div>
-        <button class="btn btn-accent btn-lg btn-block">Sign in</button>
-        <p class="t-small">New here? <a class="btn-plain" href="#onboarding" style="color:var(--accent-ink)">Create an account</a></p>
+        <a href="#landing" data-logo="word" data-rise></a>
+        <div data-rise style="--i:1"><h1 class="t-title">Sign in</h1><p class="t-sub">Pick up where you left off.</p></div>
+        <button type="button" class="btn btn-quiet btn-lg btn-block" data-rise style="--i:2">Continue with Google</button>
+        <div class="rule" data-rise style="--i:3">or</div>
+        <div class="field" data-rise style="--i:4"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="email" placeholder="you@example.com"></div>
+        <div class="field" data-rise style="--i:5"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password"></div>
+        <button class="btn btn-accent btn-lg btn-block" data-rise style="--i:6">Sign in</button>
+        <p class="t-small" data-rise style="--i:7">New here? <a class="btn-plain" href="#onboarding">Create an account</a></p>
       </form>
     </div>
-    <div class="auth-side"><span data-logo="mark"></span></div>
+    <div class="auth-side"><svg class="map" id="auth-map" viewBox="0 0 1200 660" aria-hidden="true"></svg><p>Every solved problem lights a little more of the map.</p></div>
   </div>
 </section>
 
 <!-- ================= ONBOARDING ================= -->
 <section class="screen" data-screen="onboarding">
   <div class="onb">
-    <span data-logo="word"></span>
-    <div class="steps" aria-label="Step 1 of 3"><i class="on"></i><i></i><i></i></div>
-    <h1 class="t-title">How much have you coded before?</h1>
-    <p class="t-sub" style="margin:10px 0 28px">This only decides where the placement check begins. The check itself sets your starting point.</p>
+    <a href="#landing" data-logo="word" data-rise></a>
+    <div class="steps" aria-label="Step 1 of 3" data-rise style="--i:1"><i class="on"></i><i></i><i></i></div>
+    <h1 class="t-title" data-rise style="--i:2">How much have you coded before?</h1>
+    <p class="t-sub" style="margin:12px 0 30px" data-rise style="--i:3">This only decides where the placement check begins. The check itself sets your starting point.</p>
     <div id="onb-choices">
-      <button class="choice" aria-pressed="false"><span class="pips"><i class="on"></i><i></i><i></i></span><div><b>I am just starting</b><span>Begin with variables, loops and lists.</span></div></button>
-      <button class="choice" aria-pressed="true"><span class="pips"><i class="on"></i><i class="on"></i><i></i></span><div><b>I can write programs</b><span>Begin around arrays, strings and hashing.</span></div></button>
-      <button class="choice" aria-pressed="false"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i></span><div><b>I am preparing for interviews</b><span>Begin around recursion, trees and dynamic programming.</span></div></button>
+      <button class="choice" aria-pressed="false" data-rise style="--i:4"><span class="pips"><i class="on"></i><i></i><i></i></span><div><b>I am just starting</b><span>Begin with variables, loops and lists.</span></div></button>
+      <button class="choice" aria-pressed="true" data-rise style="--i:5"><span class="pips"><i class="on"></i><i class="on"></i><i></i></span><div><b>I can write programs</b><span>Begin around arrays, strings and hashing.</span></div></button>
+      <button class="choice" aria-pressed="false" data-rise style="--i:6"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i></span><div><b>I am preparing for interviews</b><span>Begin around recursion, trees and dynamic programming.</span></div></button>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:26px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:28px" data-rise style="--i:7">
       <span class="t-small">Next: six to ten short problems</span>
       <a class="btn btn-accent btn-lg" href="#today">Continue</a>
     </div>
@@ -365,22 +426,22 @@
 
 <!-- ================= SETTINGS ================= -->
 <section class="screen" data-screen="settings">
-  <div class="wrap page" style="max-width:720px">
-    <div class="page-head"><h1 class="t-title">Settings</h1></div>
+  <div class="wrap page" style="max-width:760px">
+    <div class="page-head" data-rise><h1 class="t-title">Settings</h1></div>
     <div class="stack">
-      <div class="group">
-        <div class="group-head"><h3>Profile</h3></div>
+      <div class="card" data-rise style="--i:1">
+        <div class="card-head"><h3>Profile</h3></div>
         <div class="row"><div class="row-main"><div class="row-title">Display name</div><div class="row-meta">Shown on your profile</div></div><input class="input" style="width:220px" value="Justin V" aria-label="Display name"></div>
         <div class="row"><div class="row-main"><div class="row-title">Appear on the leaderboard</div><div class="row-meta">Off by default. Only your display name is shown.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Appear on the leaderboard"></button></div>
       </div>
-      <div class="group">
-        <div class="group-head"><h3>Practice</h3></div>
+      <div class="card" data-rise style="--i:2">
+        <div class="card-head"><h3>Practice</h3></div>
         <div class="row"><div class="row-main"><div class="row-title">Preferred language</div></div><div class="seg"><button aria-pressed="true">Python</button><button aria-pressed="false">JS</button><button aria-pressed="false">Java</button><button aria-pressed="false">C++</button></div></div>
-        <div class="row"><div class="row-main"><div class="row-title">Dark appearance</div></div><button class="switch" role="switch" aria-checked="false" data-theme-toggle aria-label="Dark appearance"></button></div>
-        <div class="row"><div class="row-main"><div class="row-title">Reduce motion</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Reduce motion"></button></div>
+        <div class="row"><div class="row-main"><div class="row-title">Light appearance</div></div><button class="switch" role="switch" aria-checked="false" data-theme-toggle aria-label="Light appearance"></button></div>
+        <div class="row"><div class="row-main"><div class="row-title">Reduce motion</div><div class="row-meta">Turns off the map lighting and entrance animations.</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Reduce motion"></button></div>
       </div>
-      <div class="group">
-        <div class="group-head"><h3>Your data</h3></div>
+      <div class="card" data-rise style="--i:3">
+        <div class="card-head"><h3>Your data</h3></div>
         <div class="row"><div class="row-main"><div class="row-title">Download everything</div><div class="row-meta">Submissions, mastery history and profile, as one file.</div></div><button class="btn btn-quiet btn-sm">Download</button></div>
         <div class="row"><div class="row-main"><div class="row-title" style="color:var(--danger)">Delete account</div><div class="row-meta">Removes your account and all practice data. This cannot be undone.</div></div><button class="btn btn-sm" style="background:var(--danger-wash);color:var(--danger)">Delete account</button></div>
       </div>
@@ -391,48 +452,57 @@
 <!-- ================= BRAND ================= -->
 <section class="screen" data-screen="brand">
   <div class="wrap page">
-    <div class="page-head"><div><h1 class="t-title">Brand sheet</h1><p class="t-sub">The logo, the colour budget and the type, in one place.</p></div></div>
-    <div class="stack">
-      <div>
+    <div class="page-head" data-rise><div><h1 class="t-title">Brand sheet</h1><p class="t-sub">The logo, the colour budget and the type, in one place.</p></div></div>
+    <div class="stack" style="gap:48px">
+      <div data-rise style="--i:1">
         <h2 class="t-head" style="margin-bottom:6px">Logo</h2>
-        <p class="t-sub measure" style="margin-bottom:18px">An A drawn as a route. The crossbar ends in a node that sits on the path: the point you have reached.</p>
+        <p class="t-sub measure" style="margin-bottom:20px">An A drawn as a route through a graph. The crossbar ends in a lit node, the point you have reached, and a dotted branch points to the next one.</p>
         <div class="logo-stage">
-          <div class="logo-tile"><span id="brand-anim" data-logo="word" style="--logo:64px;gap:18px"></span><button class="btn btn-quiet btn-sm" id="brand-replay"><svg class="icon" style="width:14px;height:14px"><use href="#i-replay"/></svg>Replay</button></div>
-          <div class="logo-tile dark"><span data-logo="word" style="--logo:34px"></span></div>
-          <div class="logo-tile jade"><span data-logo="mark" style="--logo:72px"></span></div>
+          <div class="logo-tile"><span id="brand-anim" data-logo="word" style="--logo:72px"></span><button class="btn btn-quiet btn-sm" id="brand-replay"><svg class="icon" style="width:14px;height:14px"><use href="#i-replay"/></svg>Replay</button></div>
+          <div class="logo-tile night"><span data-logo="word" style="--logo:38px"></span></div>
+          <div class="logo-tile paper"><span data-logo="mark" style="--logo:96px"></span></div>
         </div>
-        <div style="display:flex;gap:16px;align-items:center;margin-top:16px;flex-wrap:wrap">
+      </div>
+      <div data-rise style="--i:2">
+        <h2 class="t-head" style="margin-bottom:18px">How the mark is built</h2>
+        <div class="construct">
+          <div class="s1"><span data-logo="mark"></span>A path starts at a node.</div>
+          <div class="s2"><span data-logo="mark"></span>It climbs to a peak and comes down: the letter A, and a route.</div>
+          <div class="s3"><span data-logo="mark"></span>The crossbar links across and lands on a lit node: where you are.</div>
+          <div class="s4"><span data-logo="mark"></span>A dotted branch leaves the node: the next problem.</div>
+        </div>
+        <div style="display:flex;gap:20px;align-items:center;margin-top:20px;flex-wrap:wrap">
           <div class="app-icon"><span data-logo="mark"></span></div>
-          <span data-logo="mark" style="--logo:32px"></span><span data-logo="mark" style="--logo:20px"></span><span data-logo="mark" style="--logo:16px"></span>
-          <span class="t-small">App icon, and the mark at 32, 20 and 16 pixels.</span>
+          <span data-logo="mark" style="--logo:40px"></span><span data-logo="mark" style="--logo:24px"></span><span data-logo="mark" style="--logo:16px"></span>
+          <span class="t-small">App icon, then the mark at 40, 24 and 16 pixels. Small sizes drop the fine detail.</span>
         </div>
       </div>
-      <div>
+      <div data-rise style="--i:3">
         <h2 class="t-head" style="margin-bottom:6px">Colour, 60 / 30 / 10</h2>
-        <p class="t-sub measure" style="margin-bottom:18px">Jade is spent only on mastery and the one main action of a screen. Red appears only for errors. Difficulty uses pips, never colour.</p>
+        <p class="t-sub measure" style="margin-bottom:20px">Lumen is light: it is spent only on what you have learned and on the one main action of a screen. Red appears only for errors. Difficulty uses pips, never colour.</p>
         <div class="ratio">
-          <div class="r60"><b>60</b>Mist #F4F5F7 and white. Pages and surfaces.</div>
-          <div class="r30"><b>30</b>Midnight #101B2D. Text, editor, dark panels.</div>
-          <div class="r10"><b>10</b>Jade #0BA678</div>
+          <div class="r60"><b>60</b>Night #0A0C18. Pages and the map canvas.</div>
+          <div class="r30"><b>30</b>Indigo #1B1F38 with Iris #8E97FF. Surfaces, lines, structure.</div>
+          <div class="r10"><b>10</b>Lumen #FFC53D</div>
         </div>
       </div>
-      <div>
+      <div data-rise style="--i:4">
         <h2 class="t-head" style="margin-bottom:18px">Type</h2>
-        <div class="group type-spec">
-          <div><span class="t-small">Display, 650</span><span class="t-display" style="font-size:52px">Ready for the next one</span></div>
-          <div><span class="t-small">Title, 650</span><span class="t-title">Closest pair in a sorted shelf</span></div>
-          <div><span class="t-small">Body, 400</span><span>Hanken Grotesk for everything people read. It stays quiet at 15 pixels and has enough shape at 76.</span></div>
-          <div><span class="t-small">Code, 400</span><span style="font-family:var(--mono);font-size:14px">while lo &lt; hi: total = weights[lo] + weights[hi]</span></div>
+        <div class="card type-spec">
+          <div><span class="t-small">Bricolage Grotesque 700</span><span class="t-display" style="font-size:54px">Ready for the next one</span></div>
+          <div><span class="t-small">Bricolage Grotesque 700</span><span class="t-title">Closest pair in a sorted shelf</span></div>
+          <div><span class="t-small">Geist 400</span><span>Geist carries everything people read. It stays quiet at 15 pixels so the headings can have the character.</span></div>
+          <div><span class="t-small">Geist Mono 400</span><span style="font-family:var(--mono);font-size:14px">while lo &lt; hi: total = weights[lo] + weights[hi]</span></div>
         </div>
       </div>
-      <div>
+      <div data-rise style="--i:5">
         <h2 class="t-head" style="margin-bottom:18px">Controls</h2>
-        <div class="group pad" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+        <div class="card pad" style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-accent">Start problem</button><button class="btn btn-ink">Sign in</button><button class="btn btn-quiet">Give me something easier</button>
           <span class="tag">Two pointers</span><span class="tag accent">Counts in full</span>
           <span class="pips"><i class="on"></i><i></i><i></i></span><span class="pips"><i class="on"></i><i class="on"></i><i></i></span><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i></span>
           <button class="switch" role="switch" aria-checked="true" aria-label="Example switch"></button>
-          <div class="meter gate" style="width:160px"><span style="--v:.58"></span></div>
+          <div class="meter" style="width:170px"><span style="--v:.58"></span></div>
         </div>
       </div>
     </div>
@@ -441,9 +511,12 @@
 
 </main>
 
-<nav class="proto" aria-label="Preview screens">
-  <a href="#landing">Landing</a><a href="#login">Sign in</a><a href="#onboarding">Onboarding</a><a href="#today">Today</a><a href="#problems">Problems</a><a href="#work">Workspace</a><a href="#mastery">Mastery</a><a href="#leaderboard">Leaderboard</a><a href="#profile">Profile</a><a href="#settings">Settings</a><a href="#brand">Brand</a>
-</nav>
+<div class="proto" id="proto">
+  <div class="proto-menu">
+    <a href="#landing">Landing</a><a href="#login">Sign in</a><a href="#onboarding">Onboarding</a><a href="#today">Today</a><a href="#problems">Problems</a><a href="#work">Workspace</a><a href="#mastery">Mastery</a><a href="#leaderboard">Leaderboard</a><a href="#profile">Profile</a><a href="#settings">Settings</a><a href="#brand">Brand</a>
+  </div>
+  <button aria-expanded="false" aria-label="Preview screens"><svg class="icon"><use href="#i-grid"/></svg>Screens</button>
+</div>
 
 <script src="app.js"></script>
 </body>
