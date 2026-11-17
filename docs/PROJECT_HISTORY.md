@@ -1277,6 +1277,57 @@ one at a time. The `violet` theme is unchanged and no longer matches the brand.
 `public/logo.webp` and `public/logo-anim.mp4` are now unreferenced and can be
 deleted.
 
+### Nov 17 (later) — rebrand stage 2a: the app shell, Today, podium, pips
+
+The first of the prototype's *layouts* to reach the real app. The guiding rule
+was to change structure without touching data wiring, and to show only what
+the backend can actually back up.
+
+- **App shell.** `components/adapt/Navbar.tsx` now renders a fixed left
+  sidebar (logo, search with the existing Ctrl+K modal, Today / Practice /
+  Mastery / Concept map / Leaderboard, Admin for admins, and the user menu at
+  the bottom) and, at ≤ 860 px, a bottom tab bar. It keeps its name and props,
+  so all ten pages that already render `<Navbar active="…"/>` moved to the new
+  shell with no page edits. The page offset is pure CSS:
+  `body:has(.ac-side){padding-left:var(--side-w);--nav-h:0px}` — setting
+  `--nav-h` to zero is what keeps every existing
+  `calc(100vh - var(--nav-h))` layout correct without rewriting it. The active
+  item is a sliding pill (`translateY(index × 44px)` on a spring curve).
+  `Sidebar.tsx`, the old Practice-page rail, became a no-op since it would
+  duplicate the shell. The problem workspace never rendered `Navbar` and keeps
+  its own full-width header.
+- **Today (`app/page.tsx`).** Rebuilt around one "Next up" panel: the weakest
+  open concept from `pickWeakestUnlocked()`, its real mastery, a reason
+  sentence computed from the live vector ("the weakest of your N open
+  concepts, at X %"), and what learning it opens (real edges from the
+  prerequisite data). Counts come from `useLiveMastery` / `useLiveStats`;
+  "learned" uses the backend's own 0.85 threshold. Two things the prototype
+  showed were deliberately **not** carried over because no endpoint supports
+  them: a named next problem (that is chosen by `/learn` when the learner
+  starts) and the "route through this concept" strip. Also fixed in passing:
+  the old page called `useLiveMastery`/`useLiveStats` *after* a conditional
+  early return, a rules-of-hooks violation; hooks now run first.
+- **Leaderboard.** Top three shown as a podium, the rest in the existing
+  table; the off-palette gold/silver/bronze icons were removed.
+- **Difficulty as pips.** The `.diff` badge is now three dots drawn with one
+  pseudo-element and `box-shadow` (filled count = difficulty) plus the word,
+  so difficulty no longer competes with mastery for colour. CSS only — the
+  markup and sort logic on the Practice page are unchanged.
+- **Concept map.** From 1101 px up the details card docks in its own column
+  beside the map instead of floating over (and hiding) nodes; the edge tooltip
+  position accounts for the column via `--cg-side`.
+
+Verified with `tsc`, `next build`, and by viewing Today, Practice, Concept map
+and Leaderboard locally at desktop and phone width in offline mode (forced by a
+temporary, git-ignored `.env.development.local` with an empty
+`NEXT_PUBLIC_API_URL`, since the home page redirects anonymous users). The
+podium could not be seen locally — the offline leaderboard has no rows.
+
+**Still to do:** Mastery page layout, profile banner, settings and onboarding
+restyle, the workspace (hints/result panel/mastery-gain moment), and the
+signed-out marketing landing page, which does not exist in the app yet
+(anonymous visitors go straight to `/login`).
+
 ### A note on the git history itself: a rebase/split happened
 
 At some point between two working sessions on this project, the branch holding the
@@ -1879,8 +1930,9 @@ an algorithm or schema changes. Small bug fixes that don't change *how the syste
 works or why* don't need an entry here; this is the "why and how," not a changelog
 (git log already is the changelog).
 
-**Last narrated commit:** `ac2c02d` (2026-11-17), plus the stage-1 rebrand
-commit made on top of it the same day — see "Nov 17 — the rebrand" above. If
+**Last narrated commit:** `e648a37` (2026-11-17, rebrand stage 1), plus the
+stage-2a commit made on top of it the same day — see the two "Nov 17" entries
+above. If
 extending this
 document, run
 `git log --reverse --pretty=format:"%h|%ad|%s" --date=short` and diff against that

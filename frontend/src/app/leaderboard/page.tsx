@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trophy, Medal, Award } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
 import Footer from '@/components/adapt/Footer';
 import { leaderboardAPI, API_ENABLED, type ApiLeaderboardEntry } from '@/lib/api';
@@ -46,7 +45,7 @@ export default function LeaderboardPage() {
           <header className="mast-head">
             <div className="mast-head-text">
               <h1>Leaderboard</h1>
-              <p>Who&apos;s learning fastest across the twelve concepts. Ranked by problems solved, broken by average mastery.</p>
+              <p>Ranked by problems solved, with average mastery as the tie-break.</p>
             </div>
             {myRow && (
               <div className="mast-overall" style={{ textAlign: 'center' }}>
@@ -81,6 +80,22 @@ export default function LeaderboardPage() {
                 <h2 style={{ fontSize: 16 }}>Top learners</h2>
                 <span className="meta">{rows.length} ranked{live ? ' · live' : ''}</span>
               </div>
+              {rows.length >= 3 && (
+                <div className="ac-podium">
+                  {[rows[1], rows[0], rows[2]].map((r) => {
+                    const name = r.display_name || 'anonymous';
+                    const isMe = user && r.user_id === user.user_id;
+                    return (
+                      <div key={r.user_id} className={`ac-podium-step p${r.rank}`}>
+                        <span className="ac-podium-avatar">{name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span>
+                        <b>{name}{isMe ? ' (you)' : ''}</b>
+                        <span className="ac-podium-meta">{r.solved_count} solved</span>
+                        <span className="ac-podium-rank">{r.rank}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <table className="tbl">
                 <thead>
                   <tr>
@@ -91,15 +106,12 @@ export default function LeaderboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => {
+                  {(rows.length >= 3 ? rows.slice(3) : rows).map((r) => {
                     const isMe = user && r.user_id === user.user_id;
                     const name = r.display_name || 'anonymous';
                     return (
-                      <tr key={r.user_id} style={isMe ? { background: 'rgba(255,184,103,.06)' } : undefined}>
+                      <tr key={r.user_id} style={isMe ? { background: 'rgba(var(--accent-rgb),.08)' } : undefined}>
                         <td style={{ fontWeight: 600 }}>
-                          {r.rank === 1 && <Trophy size={14} color="#ffd166" style={{ verticalAlign: '-2px', marginRight: 6 }} />}
-                          {r.rank === 2 && <Medal size={14} color="#c9d1d9" style={{ verticalAlign: '-2px', marginRight: 6 }} />}
-                          {r.rank === 3 && <Award size={14} color="#cd7f32" style={{ verticalAlign: '-2px', marginRight: 6 }} />}
                           {r.rank}
                         </td>
                         <td>

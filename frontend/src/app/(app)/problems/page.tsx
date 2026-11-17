@@ -281,7 +281,7 @@ export default function ProblemsPage() {
                   <th style={{ width: 48, cursor: 'pointer' }} onClick={() => toggleSort('id')}>#</th>
                   <th>Title</th>
                   <th style={{ width: 90, cursor: 'pointer' }} onClick={() => toggleSort('acc')}>Acceptance</th>
-                  <th style={{ width: 80, cursor: 'pointer' }} onClick={() => toggleSort('diff')}>Difficulty</th>
+                  <th style={{ width: 120, cursor: 'pointer' }} onClick={() => toggleSort('diff')}>Difficulty</th>
                   <th style={{ width: 90 }}>Concept</th>
                   <th style={{ width: 36 }}></th>
                 </tr>

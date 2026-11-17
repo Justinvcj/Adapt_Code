@@ -362,7 +362,7 @@ export default function ConceptGraph() {
       {/* Edge tooltip */}
       {hoverEdgeInfo && hoverEdgeInfo.why && (
         <div className="cg-edge-tip" style={{
-          left: `${((pos[hoverEdgeInfo.from].x + pos[hoverEdgeInfo.to].x) / 2 / W) * 100}%`,
+          left: `calc((100% - var(--cg-side, 0px)) * ${(pos[hoverEdgeInfo.from].x + pos[hoverEdgeInfo.to].x) / 2 / W})`,
           top:  `${((pos[hoverEdgeInfo.from].y + pos[hoverEdgeInfo.to].y) / 2 / H) * 100}%`,
         }}>
           <div className="cg-edge-tip-head">
