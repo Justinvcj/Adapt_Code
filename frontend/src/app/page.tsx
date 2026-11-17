@@ -1,13 +1,13 @@
 "use client";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { Play, Route } from 'lucide-react';
 import Navbar from '@/components/adapt/Navbar';
 import ActivityRail from '@/components/adapt/ActivityRail';
 import ConceptRow from '@/components/adapt/ConceptRow';
 import Footer from '@/components/adapt/Footer';
 import Onboarding from '@/components/adapt/Onboarding';
+import Landing from '@/components/adapt/Landing';
 import { CONCEPTS, CONCEPT_BY_ID } from '@/data/concepts';
 import { useProfile } from '@/lib/profile-store';
 import { useAuth } from '@/lib/auth-context';
@@ -42,13 +42,12 @@ export default function TodayPage() {
   const { mastery } = useLiveMastery();
   const { stats } = useLiveStats();
 
-  // Anonymous visitors are sent to sign in and returned here afterwards.
-  useEffect(() => {
-    if (status === 'anonymous') router.replace('/login?next=/');
-  }, [status, router]);
-  if (status === 'loading' || status === 'anonymous') {
+  // Signed-out visitors get the landing page; the dashboard below would only
+  // show placeholder rings for them.
+  if (status === 'loading') {
     return <div style={{ minHeight: '100dvh', background: 'var(--bg)' }} />;
   }
+  if (status === 'anonymous') return <Landing />;
 
   const displayName = user?.display_name || profile.name || user?.email?.split('@')[0] || 'Learner';
   const firstName = displayName.split(/\s+/)[0];

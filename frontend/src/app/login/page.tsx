@@ -32,7 +32,7 @@ function LoginPageInner() {
     return n.startsWith('/') && !n.startsWith('//') ? n : '/';
   })();
   const { status, login, register } = useAuth();
-  const [mode, setMode] = useState<Mode>('signin');
+  const [mode, setMode] = useState<Mode>(search.get('mode') === 'signup' ? 'signup' : 'signin');
   const [busy, setBusy] = useState(false);
   // When Supabase has "Confirm email" enabled, register() succeeds but the
   // follow-up login 401s because the email isn't verified yet. We can't tell

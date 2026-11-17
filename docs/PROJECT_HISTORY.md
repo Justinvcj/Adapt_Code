@@ -1328,6 +1328,43 @@ restyle, the workspace (hints/result panel/mastery-gain moment), and the
 signed-out marketing landing page, which does not exist in the app yet
 (anonymous visitors go straight to `/login`).
 
+### Nov 17 (evening) — rebrand stage 2b: a signed-out landing page
+
+Until now the app had no public front door: `app/page.tsx` redirected every
+anonymous visitor to `/login?next=/`. It now renders
+`components/adapt/Landing.tsx` for the `anonymous` auth status (signed-in users
+still get Today; the `offline` status still gets the mock-backed dashboard, per
+the offline-fallback rule).
+
+- **The hero is a working demo, not a picture.**
+  `components/adapt/LandingMap.tsx` draws the twelve concepts from
+  `data/concepts.ts` in the layers from `data/edges.ts` with the same
+  chain-lighting behaviour as the signed-in map. A "Solve one" button raises
+  the weakest open topic by 0.17 so a visitor can watch the recommendation move
+  and a locked topic open. The mastery numbers are a **sample learner**, the
+  panel says so in its caption, and nothing is sent to the backend.
+- **Copy rule, written into the component header:** every sentence describes
+  something the product does today. The prototype's landing copy promised a
+  placement test, review of fading topics, hint-weighted scoring and a
+  three-problem rule for "learned"; none of those exist yet (they are roadmap
+  items R1, R6 and R8), so none of them appear. What is claimed: real execution
+  against hidden tests in a sandbox, a per-concept probability updated on every
+  result, a next problem chosen from the learner's own results, prerequisite
+  gating, a diagnosis without the answer on failure, and data export/delete.
+- `/login?mode=signup` now opens on the create-account tab, so the landing
+  page's primary button lands where it says it will.
+- Avatar gradients moved from an off-palette teal to Iris (five rules in
+  `globals.css`).
+
+Reviewed in the same pass and left alone because they already read correctly
+in the new theme: Profile, Settings, Onboarding and the problem workspace.
+Verified with `tsc`, `next build`, and by viewing the landing page locally at
+desktop and phone width (demo interaction exercised; no horizontal overflow).
+
+**Still to do:** the workspace's result panel and mastery-gain moment, the
+Mastery catalogue layout, the `violet` theme, and deleting the unreferenced
+`public/logo.webp` and `public/logo-anim.mp4`.
+
 ### A note on the git history itself: a rebase/split happened
 
 At some point between two working sessions on this project, the branch holding the
@@ -1930,9 +1967,9 @@ an algorithm or schema changes. Small bug fixes that don't change *how the syste
 works or why* don't need an entry here; this is the "why and how," not a changelog
 (git log already is the changelog).
 
-**Last narrated commit:** `e648a37` (2026-11-17, rebrand stage 1), plus the
-stage-2a commit made on top of it the same day — see the two "Nov 17" entries
-above. If
+**Last narrated commit:** `a8c7515` (2026-11-17, rebrand stage 2a), plus the
+stage-2b commit made on top of it the same day — see the three "Nov 17"
+entries above. If
 extending this
 document, run
 `git log --reverse --pretty=format:"%h|%ad|%s" --date=short` and diff against that
